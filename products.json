@@ -1,0 +1,64 @@
+{
+  "profile": {
+    "name": "@dittkonto",
+    "tagline": "Grejer jag faktiskt använder hemma",
+    "image": "https://placehold.co/272x272/8B5E3C/F4EDE3?text=%40",
+    "footerNote": "Frågor? Skicka DM på TikTok."
+  },
+  "categories": [
+    { "id": "kok", "label": "Kök" },
+    { "id": "traning", "label": "Träning" },
+    { "id": "inredning", "label": "Inredning" },
+    { "id": "klader", "label": "Kläder" }
+  ],
+  "products": [
+    {
+      "name": "Gjutjärnspanna 28 cm",
+      "description": "Den jag steker allt i. Tål ugn och blir bara bättre med tiden.",
+      "image": "https://placehold.co/800x1000/E1D3BF/2E231B?text=Panna",
+      "url": "https://example.com/affiliate/gjutjarnspanna",
+      "category": "kok",
+      "dateAdded": "2026-08-18"
+    },
+    {
+      "name": "Motståndsband 5-pack",
+      "description": "Tar ingen plats i väskan och räcker till hela underkroppspasset.",
+      "image": "https://placehold.co/800x1000/E1D3BF/2E231B?text=Band",
+      "url": "https://example.com/affiliate/motstandsband",
+      "category": "traning",
+      "dateAdded": "2026-08-12"
+    },
+    {
+      "name": "Linnelampskärm",
+      "description": "Gör taklampan mjuk istället för skarp. Passar de flesta sockeln.",
+      "image": "https://placehold.co/800x1000/E1D3BF/2E231B?text=Lampa",
+      "url": "https://example.com/affiliate/lampskarm",
+      "category": "inredning",
+      "dateAdded": "2026-08-05"
+    },
+    {
+      "name": "Oversized stickad tröja",
+      "description": "Går i tvättmaskinen utan att bli som en filt. Storlek upp om du vill ha den lös.",
+      "image": "https://placehold.co/800x1000/E1D3BF/2E231B?text=Tr%C3%B6ja",
+      "url": "https://example.com/affiliate/stickad-troja",
+      "category": "klader",
+      "dateAdded": "2026-07-28"
+    },
+    {
+      "name": "Kaffekvarn med gradering",
+      "description": "Jämnt malet kaffe utan att väcka hela huset. 30 lägen.",
+      "image": "https://placehold.co/800x1000/E1D3BF/2E231B?text=Kvarn",
+      "url": "https://example.com/affiliate/kaffekvarn",
+      "category": "kok",
+      "dateAdded": "2026-07-14"
+    },
+    {
+      "name": "Korgar i sjögräs, 3-pack",
+      "description": "Dolde all min sladdröra på en eftermiddag.",
+      "image": "https://placehold.co/800x1000/E1D3BF/2E231B?text=Korgar",
+      "url": "https://example.com/affiliate/korgar",
+      "category": "inredning",
+      "dateAdded": "2026-06-30"
+    }
+  ]
+}
