@@ -1,6 +1,6 @@
 # Länksida (link in bio)
 
-Statisk sida utan build-process. Tre filer gör jobbet:
+Statisk sida utan build-process. Så här hänger den ihop:
 
 | Fil | Vad den gör |
 | --- | --- |
@@ -8,10 +8,58 @@ Statisk sida utan build-process. Tre filer gör jobbet:
 | `index.html` | Sidans skelett. Rör sällan. |
 | `styles.css` | Färger, typografi och layout. |
 | `app.js` | Läser `products.json` och bygger listan. |
+| `admin/` | Adminläget (Decap CMS). Formulär i stället för JSON. |
+| `bilder/` | Bilder du laddar upp via adminen hamnar här. |
+
+---
+
+## Adminläget – enklaste vägen
+
+Gå till **din-sida.netlify.app/admin** och logga in med ditt GitHub-konto.
+Där finns ett formulär för produkterna: skriv namn och beskrivning, dra in
+bilden, välj kategori, sätt datum. Klickar du **Publish** committar adminen
+åt dig och Netlify bygger om sidan på en halvminut.
+
+Fungerar lika bra i mobilen som på datorn. Allt nedan om att redigera
+`products.json` för hand gäller fortfarande – adminen skriver till exakt
+samma fil, så du kan blanda hur du vill.
+
+### Engångsuppsättningen
+
+Innan inloggningen fungerar behöver Netlify få prata med GitHub:
+
+1. **GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**
+   - Application name: valfritt, t.ex. `influencerlink admin`
+   - Homepage URL: adressen till din sajt
+   - Authorization callback URL: `https://api.netlify.com/auth/done`
+   - Skapa appen, kopiera **Client ID** och generera en **Client Secret**.
+2. **Netlify → din sajt → Site configuration → Access control → OAuth →
+   Install provider → GitHub.** Klistra in Client ID och Client Secret.
+3. Ladda om `/admin` och logga in.
+
+Krånglar inloggningen är det nästan alltid callback-URL:en som blivit fel –
+den ska peka på `api.netlify.com`, inte på din egen sajt.
+
+### Lägga till en kategori
+
+Kategorier bor på två ställen, och båda behöver uppdateras:
+
+1. I adminen under **Kategorier** – det är den som styr filterknapparna på sidan.
+2. I `admin/config.yml`, under `Kategori` → `options`, så att den går att
+   välja i produktformuläret:
+
+```yaml
+- { label: Teknik, value: teknik }
+```
+
+Filen redigerar du på GitHub. Det är en irriterande dubbelregistrering, men
+Decap kan inte läsa alternativen ur `products.json`.
 
 ---
 
 ## Lägga till en produkt
+
+Det här är vägen utan adminen – direkt i filen.
 
 Öppna `products.json` och lägg till ett nytt block **överst** i listan
 `"products"` (ordningen i filen spelar ingen roll – sidan sorterar ändå på
@@ -80,7 +128,8 @@ kategorin – och försvinner igen om du tar bort alla produkter i den.
 
 ## Klickstatistik
 
-Ingen tracking-pixel och inga externa skript. Vill du räkna klick: öppna
+Själva sidan laddar inga externa skript alls – Decap hämtas bara inne i
+`/admin`, aldrig av dina besökare. Vill du räkna klick: öppna
 `app.js`, leta upp raden märkt `TODO` högst upp och sätt din endpoint:
 
 ```js
