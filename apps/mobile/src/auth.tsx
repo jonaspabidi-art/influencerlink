@@ -1,6 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, setAccessToken, setUnauthorizedHandler } from './api';
+import { getItem, removeItem, setItem } from './storage';
 import type { SessionUser } from './types';
 
 const TOKEN_KEY = 'influencerlink.session';
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setAccessToken(null);
     setUser(null);
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await removeItem(TOKEN_KEY);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -36,13 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (token: string, nextUser: SessionUser) => {
     setAccessToken(token);
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await setItem(TOKEN_KEY, token);
     setUser(nextUser);
   }, []);
 
   const replaceToken = useCallback(async (token: string) => {
     setAccessToken(token);
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await setItem(TOKEN_KEY, token);
   }, []);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const stored = await SecureStore.getItemAsync(TOKEN_KEY);
+        const stored = await getItem(TOKEN_KEY);
         if (!stored) return;
         setAccessToken(stored);
         const me = await api.get<SessionUser>('/auth/me');
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         // Trasig eller för gammal token: börja om med utloggat läge.
         setAccessToken(null);
-        await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => undefined);
+        await removeItem(TOKEN_KEY);
       } finally {
         if (!cancelled) setLoading(false);
       }

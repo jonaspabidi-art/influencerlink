@@ -1,0 +1,37 @@
+# Render läser den här filen när du kopplar repot ("Blueprint").
+# Databasen ligger hos Supabase; här körs bara API:et.
+services:
+  - type: web
+    name: influencerlink-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    region: frankfurt
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Sätts i Renders gränssnitt – ska inte ligga i repot.
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PERSONAL_NUMBER_HMAC_KEY
+        generateValue: true
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Simulerad BankID och Stripe tills certifikat och betalkonto finns.
+      # Ta bort båda raderna när ni går skarpt.
+      - key: BANKID_MODE
+        value: mock
+      - key: ALLOW_MOCK_INTEGRATIONS
+        value: "true"

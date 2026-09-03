@@ -13,6 +13,8 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:8081'),
 
   DATABASE_URL: z.string().min(1),
+  /** Direktanslutning för migrationer, förbi eventuell pooler. */
+  DIRECT_URL: z.string().min(1).optional(),
 
   JWT_SECRET: z.string().min(32, 'JWT_SECRET måste vara minst 32 tecken'),
   PERSONAL_NUMBER_HMAC_KEY: z
@@ -36,6 +38,13 @@ const envSchema = z.object({
 
   /** Slår på /auth/dev-login. Tvingas av till false i produktion. */
   ENABLE_DEV_LOGIN: booleanish.default('false'),
+
+  /**
+   * Tillåter simulerad BankID och Stripe även när NODE_ENV=production.
+   * Finns för att kunna testa hela flödet i en riktig miljö innan certifikat
+   * och betalkonto är på plats. Måste sättas medvetet, och API:et skriker om det.
+   */
+  ALLOW_MOCK_INTEGRATIONS: booleanish.default('false'),
 });
 
 function loadConfig() {
@@ -49,8 +58,15 @@ function loadConfig() {
   const env = parsed.data;
   const isProduction = env.NODE_ENV === 'production';
 
-  if (isProduction && env.BANKID_MODE === 'mock') {
-    throw new Error('BANKID_MODE=mock är inte tillåtet i produktion');
+  const mockIntegrations: string[] = [];
+  if (env.BANKID_MODE === 'mock') mockIntegrations.push('BankID');
+  if (!env.STRIPE_SECRET_KEY) mockIntegrations.push('Stripe');
+
+  if (isProduction && mockIntegrations.length > 0 && !env.ALLOW_MOCK_INTEGRATIONS) {
+    throw new Error(
+      `Simulerad ${mockIntegrations.join(' och ')} i produktion kräver ALLOW_MOCK_INTEGRATIONS=true. ` +
+        'Sätt den bara i test- och demomiljöer.',
+    );
   }
 
   return {
@@ -61,6 +77,8 @@ function loadConfig() {
       .filter(Boolean),
     /** Dev-inloggning kan aldrig aktiveras i produktion, oavsett env-värde. */
     devLoginEnabled: env.ENABLE_DEV_LOGIN && !isProduction,
+    /** Vilka integrationer som körs simulerat. Tom lista = allt är skarpt. */
+    mockIntegrations,
   };
 }
 

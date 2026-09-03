@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { DemoBanner } from '../../src/components/DemoBanner';
 import { Body, Button, Caption, Card, Heading, Loading, Screen, Title } from '../../src/components/ui';
 import { formatSek } from '../../src/format';
 import { colors, radius, spacing, typography } from '../../src/theme';
@@ -86,6 +87,8 @@ export default function Wallet() {
         </Body>
         <Button label="Logga ut" variant="ghost" onPress={() => void signOut()} />
       </Card>
+
+      <DemoBanner />
     </Screen>
   );
 }

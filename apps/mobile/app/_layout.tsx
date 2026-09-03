@@ -34,8 +34,8 @@ export default function RootLayout() {
             >
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="(influencer)" options={{ headerShown: false }} />
-              <Stack.Screen name="(business)" options={{ headerShown: false }} />
+              <Stack.Screen name="influencer" options={{ headerShown: false }} />
+              <Stack.Screen name="business" options={{ headerShown: false }} />
               <Stack.Screen
                 name="onboarding/influencer"
                 options={{ title: 'Skapa din profil' }}

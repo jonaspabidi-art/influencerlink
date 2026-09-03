@@ -15,8 +15,6 @@ export function createPaymentProvider(config: Config): PaymentProvider {
   if (config.STRIPE_SECRET_KEY) {
     return new StripePaymentProvider(config);
   }
-  if (config.isProduction) {
-    throw new Error('STRIPE_SECRET_KEY krävs i produktion');
-  }
+  // config.ts har redan avgjort om simulering får förekomma här.
   return new MockPaymentProvider();
 }

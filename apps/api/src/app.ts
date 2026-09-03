@@ -88,7 +88,19 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
     reply.status(404).send({ error: 'not_found', message: 'Slutpunkten finns inte.' });
   });
 
-  app.get('/health', async () => ({ status: 'ok', bankIdMode: config.BANKID_MODE }));
+  app.get('/health', async () => ({
+    status: 'ok',
+    bankIdMode: config.BANKID_MODE,
+    // Syns utåt så att ingen tror att en demomiljö är skarp.
+    mockIntegrations: config.mockIntegrations,
+  }));
+
+  if (config.mockIntegrations.length > 0) {
+    app.log.warn(
+      { mockIntegrations: config.mockIntegrations },
+      'SIMULERADE INTEGRATIONER: ingen riktig legitimering och inga riktiga betalningar',
+    );
+  }
 
   await registerRoutes(app, services);
 

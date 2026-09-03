@@ -25,5 +25,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={user.role === 'BUSINESS' ? '/(business)/campaigns' : '/(influencer)/swipe'} />;
+  return <Redirect href={user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe'} />;
 }

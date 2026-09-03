@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { DemoBanner } from '../../src/components/DemoBanner';
 import {
   Body,
   Button,
@@ -76,7 +77,10 @@ export default function BusinessCampaigns() {
           />
         }
         ListFooterComponent={
-          <Button label="Logga ut" variant="ghost" onPress={() => void signOut()} />
+          <>
+            <Button label="Logga ut" variant="ghost" onPress={() => void signOut()} />
+            <DemoBanner />
+          </>
         }
         renderItem={({ item }) => (
           <View style={styles.row}>

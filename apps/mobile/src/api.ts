@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { DemoError, handleDemoRequest } from './demo/backend';
 
 export class ApiError extends Error {
   constructor(
@@ -12,17 +13,24 @@ export class ApiError extends Error {
   }
 }
 
-function resolveBaseUrl(): string {
-  const configured = Constants.expoConfig?.extra?.apiUrl;
-  if (typeof configured === 'string' && configured.length > 0) return configured;
+function resolveBaseUrl(): string | null {
+  // Sätts vid bygget (t.ex. i Netlify eller Vercel) och pekar på det riktiga API:et.
+  const fromEnv = process.env.EXPO_PUBLIC_API_URL;
+  if (typeof fromEnv === 'string' && fromEnv.length > 0) return fromEnv.replace(/\/$/, '');
 
-  // Faller tillbaka på datorn som kör Metro, så att en fysisk telefon i samma
-  // nät når API:et utan att någon behöver skriva in en IP-adress för hand.
-  const host = Constants.expoConfig?.hostUri?.split(':')[0];
-  return host ? `http://${host}:3000` : 'http://localhost:3000';
+  const configured = Constants.expoConfig?.extra?.apiUrl;
+  if (typeof configured === 'string' && configured.length > 0) return configured.replace(/\/$/, '');
+
+  return null;
 }
 
 export const API_BASE_URL = resolveBaseUrl();
+
+/**
+ * Utan konfigurerad API-adress kör appen mot en inbyggd demobackend. Då går
+ * hela flödet att klicka igenom utan server, databas, BankID eller Stripe.
+ */
+export const DEMO_MODE = API_BASE_URL === null;
 
 let accessToken: string | null = null;
 let onUnauthorized: (() => void) | undefined;
@@ -43,6 +51,18 @@ interface RequestOptions {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (DEMO_MODE) {
+    try {
+      return (await handleDemoRequest(options.method ?? 'GET', path, options.body, accessToken)) as T;
+    } catch (error) {
+      if (error instanceof DemoError) {
+        if (error.status === 401) onUnauthorized?.();
+        throw new ApiError(error.status, error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? 'GET',
     headers: {

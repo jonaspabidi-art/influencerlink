@@ -28,6 +28,8 @@ const config = {
   isProduction: false,
   corsOrigins: ['http://localhost:8081'],
   devLoginEnabled: false,
+  ALLOW_MOCK_INTEGRATIONS: false,
+  mockIntegrations: ['BankID', 'Stripe'],
 } as unknown as Config;
 
 /** Databasen används inte i det här testet – varje anrop mot den ska falla. */

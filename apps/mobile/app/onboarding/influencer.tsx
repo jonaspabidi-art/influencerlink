@@ -106,7 +106,7 @@ export default function InfluencerOnboarding() {
 
   const finish = async () => {
     await refresh();
-    router.replace('/(influencer)/swipe');
+    router.replace('/influencer/swipe');
   };
 
   return (

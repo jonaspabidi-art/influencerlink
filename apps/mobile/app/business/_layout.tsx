@@ -1,8 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
+import { useAuth } from '../../src/auth';
 import { colors } from '../../src/theme';
 
 export default function BusinessTabs() {
+  const { user, loading } = useAuth();
+
+  // Efter utloggning ska flikarna inte ligga kvar bakom en tom session.
+  if (!loading && !user) return <Redirect href="/login" />;
+
   return (
     <Tabs
       screenOptions={{

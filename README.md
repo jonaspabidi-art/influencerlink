@@ -74,6 +74,23 @@ som heltal.
 
 Utan `STRIPE_SECRET_KEY` används en simulator lokalt; i produktion krävs nyckeln.
 
+## Titta på appen utan att sätta upp något
+
+Appen har ett inbyggt demoläge som används när `EXPO_PUBLIC_API_URL` inte är
+satt. Då kör den mot en backend som ligger i appen själv: BankID legitimerar
+direkt, avtal signeras och betalningar bokförs utan att pengar rör sig. Reglerna,
+statusflödena och avtalstexten är samma kod som i det riktiga API:et.
+
+```bash
+npm install
+npm run build -w @influencerlink/shared
+npm run export:web -w @influencerlink/mobile   # statisk webbversion i apps/mobile/dist
+```
+
+Lägg upp `apps/mobile/dist` på Netlify, Vercel eller Cloudflare Pages och öppna
+adressen i mobilen. Se `docs/DEPLOY.md` för hela vägen: demoläge → Supabase →
+hostat API.
+
 ## Kom igång
 
 Kräver Node 22 och Docker.
@@ -113,10 +130,10 @@ avtalstextens determinism (viktigt: texten hashas och signeras), BankID:s
 tillståndsmaskin och QR-rotation, AI-lagrets fallback när modellen är otillgänglig,
 samt HTTP-lagrets roll- och valideringskontroller.
 
-Mobilappen verifieras med `tsc --noEmit` och `npx expo export`. Notera att
-`expo export` med Hermes-bytecode misslyckas i vissa Linux-miljöer på
-React Natives egen källkod (privata klassfält i `DOMRectReadOnly`) – bundlingen
-i sig går igenom, kör `--no-bytecode` för att verifiera lokalt.
+Mobilappen verifieras med `tsc --noEmit`, `expo export` och en genomklickning
+i Chromium mot webbversionen i demoläge: inloggning, swipe till matchning,
+avtal, signering från båda håll, betalning, leverans och godkännande – hela
+kedjan, utan fel i konsolen.
 
 ## Vad som återstår före produktion
 
@@ -125,6 +142,8 @@ i sig går igenom, kör `--no-bytecode` för att verifiera lokalt.
   genererar stabil statistik; endpointerna som ska anropas står i koden.
 - **Stripes betalningsvy i appen.** API:et returnerar `clientSecret`; appen
   behöver `@stripe/stripe-react-native` för att slutföra betalningen.
+- **Migrationsfiler.** Schemat finns, men `prisma/migrations` är tomt. Kör
+  `prisma migrate dev --name init` mot en databas och checka in resultatet.
 - **Automatiskt godkännande** när granskningstiden löpt ut – kräver ett schemalagt
   jobb som anropar utbetalningen.
 - **Push-notiser** vid matchning, nytt meddelande och signeringsbegäran.

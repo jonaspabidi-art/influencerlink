@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BankIdPanel, useBankId } from '../src/bankid';
+import { DemoBanner } from '../src/components/DemoBanner';
 import { Body, Button, Caption, Card, Heading, Screen, Title } from '../src/components/ui';
 import { useAuth } from '../src/auth';
 import { colors, radius, spacing } from '../src/theme';
@@ -25,7 +26,7 @@ export default function Login() {
         return;
       }
       router.replace(
-        status.user.role === 'BUSINESS' ? '/(business)/campaigns' : '/(influencer)/swipe',
+        status.user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe',
       );
     },
     [router, signIn],
@@ -92,6 +93,8 @@ export default function Login() {
           onPress={() => beginLogin('BUSINESS')}
         />
       </Card>
+
+      <DemoBanner />
 
       <View style={styles.legal}>
         <Caption>

@@ -15,7 +15,9 @@
       "bundleIdentifier": "se.influencerlink.app",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
-        "LSApplicationQueriesSchemes": ["bankid"]
+        "LSApplicationQueriesSchemes": [
+          "bankid"
+        ]
       }
     },
     "android": {
@@ -24,17 +26,31 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "data": [{ "scheme": "influencerlink" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "influencerlink"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
     "experiments": {
       "typedRoutes": false
     },
     "extra": {
-      "apiUrl": "http://localhost:3000"
+      "apiUrl": ""
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }
