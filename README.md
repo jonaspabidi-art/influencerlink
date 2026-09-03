@@ -116,7 +116,7 @@ hostat API.
 Datorn och telefonen på samma wifi. Serva den byggda mappen på nätverket:
 
 ```bash
-npx serve apps/mobile/dist -l 4180
+npx serve apps/mobile/dist -s -l 4180   # -s: alla vägar till index.html
 ipconfig getifaddr en0        # macOS – din adress på nätverket
 hostname -I | awk '{print $1}'  # Linux
 ```
