@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "InfluencerLink",
+    "slug": "influencerlink",
+    "scheme": "influencerlink",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "locales": {
+      "sv": "./locales/sv.json"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "se.influencerlink.app",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "LSApplicationQueriesSchemes": ["bankid"]
+      }
+    },
+    "android": {
+      "package": "se.influencerlink.app",
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "influencerlink" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3000"
+    }
+  }
+}
