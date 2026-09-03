@@ -1,23 +1,27 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, radius, spacing } from '../theme';
+import { HEIGHTS, colors, radius, spacing, type } from '../theme';
+import { CheckIcon, CloseIcon, LockIcon } from './icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 /** Hur långt kortet måste dras för att räknas som ett svep. */
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
 /** Hastighet som räknas som ett svep även vid kort dragning. */
 const FLICK_VELOCITY = 900;
+/** Kortet flyger ut på 420 ms, nytt kort centreras efter 650 ms (handoffen). */
+const FLY_OUT_MS = 420;
+const SETTLE_MS = 230;
 
 export type SwipeDirection = 'LIKE' | 'PASS';
 
@@ -26,22 +30,24 @@ interface SwipeDeckProps<T> {
   keyExtractor: (item: T) => string;
   renderCard: (item: T) => ReactNode;
   onSwipe: (item: T, direction: SwipeDirection) => void;
-  /** Anropas när sista kortet lämnat högen. */
+  /** Meningen i trygghetsraden under kortleken. */
+  trustText: string;
   onExhausted?: () => void;
 }
 
 /**
- * Kortlek där översta kortet dras i sidled. Kortet under skalas upp när det
- * översta rör sig, så att högen känns fysisk.
+ * Kortleken. Gesten körs på UI-tråden; först när svepet är avgjort hoppar vi
+ * över till JS-tråden för att rapportera resultatet.
  *
- * Gesten körs på UI-tråden via Reanimated; först när svepet är avgjort hoppar
- * vi över till JS-tråden för att rapportera resultatet.
+ * Kortkanten byter färg och en stämpel tonas in när dragningen passerar
+ * tröskeln, så att utfallet syns innan man släpper.
  */
 export function SwipeDeck<T>({
   items,
   keyExtractor,
   renderCard,
   onSwipe,
+  trustText,
   onExhausted,
 }: SwipeDeckProps<T>) {
   const [index, setIndex] = useState(0);
@@ -71,12 +77,12 @@ export function SwipeDeck<T>({
     [index, items, onSwipe, onExhausted, translateX, translateY],
   );
 
-  /** Knapparna under kortleken ska kännas som ett svep, inte som ett hopp. */
+  /** Knapparna ska kännas som ett svep, inte som ett hopp. */
   const swipeProgrammatically = useCallback(
     (direction: SwipeDirection) => {
       translateX.value = withTiming(
         direction === 'LIKE' ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5,
-        { duration: 220 },
+        { duration: FLY_OUT_MS },
         (finished) => {
           if (finished) runOnJS(commit)(direction);
         },
@@ -98,15 +104,15 @@ export function SwipeDeck<T>({
         const direction: SwipeDirection = event.translationX > 0 ? 'LIKE' : 'PASS';
         translateX.value = withTiming(
           Math.sign(event.translationX || 1) * SCREEN_WIDTH * 1.5,
-          { duration: 200 },
+          { duration: FLY_OUT_MS },
           (finished) => {
             if (finished) runOnJS(commit)(direction);
           },
         );
         return;
       }
-      translateX.value = withSpring(0);
-      translateY.value = withSpring(0);
+      translateX.value = withSpring(0, { duration: SETTLE_MS });
+      translateY.value = withSpring(0, { duration: SETTLE_MS });
     });
 
   const topCardStyle = useAnimatedStyle(() => ({
@@ -115,136 +121,148 @@ export function SwipeDeck<T>({
       { translateY: translateY.value },
       { rotate: `${interpolate(translateX.value, [-SCREEN_WIDTH, SCREEN_WIDTH], [-12, 12])}deg` },
     ],
+    borderColor: interpolateColor(
+      translateX.value,
+      [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+      [colors.danger, colors.border, colors.positive],
+    ),
   }));
 
-  const likeStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [0, SWIPE_THRESHOLD], [0, 1], 'clamp'),
+  const likeStampStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [30, SWIPE_THRESHOLD], [0, 1], 'clamp'),
   }));
 
-  const passStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, 0], [1, 0], 'clamp'),
+  const passStampStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, -30], [1, 0], 'clamp'),
   }));
-
-  const nextCardStyle = useAnimatedStyle(() => {
-    const progress = Math.min(Math.abs(translateX.value) / SWIPE_THRESHOLD, 1);
-    return {
-      transform: [{ scale: interpolate(progress, [0, 1], [0.94, 1]) }],
-      opacity: interpolate(progress, [0, 1], [0.6, 1]),
-    };
-  });
 
   if (!current) return null;
 
   return (
     <View style={styles.container}>
       <View style={styles.deck}>
-        {next ? (
-          <Animated.View
-            key={keyExtractor(next)}
-            style={[styles.card, styles.cardBehind, nextCardStyle]}
-            pointerEvents="none"
-          >
-            {renderCard(next)}
-          </Animated.View>
-        ) : null}
+        {/* Nästa kort skymtar bakom, indraget i sidorna och nedskjutet. */}
+        {next ? <View style={styles.cardBehind} pointerEvents="none" /> : null}
 
         <GestureDetector gesture={pan}>
           <Animated.View key={keyExtractor(current)} style={[styles.card, topCardStyle]}>
             {renderCard(current)}
-            <Animated.View style={[styles.stamp, styles.stampLike, likeStyle]} pointerEvents="none">
-              <Ionicons name="heart" size={20} color={colors.success} />
+
+            <Animated.View style={[styles.stamp, styles.stampLike, likeStampStyle]} pointerEvents="none">
+              <Text style={[styles.stampLabel, styles.stampLabelLike]}>INTRESSERAD</Text>
             </Animated.View>
-            <Animated.View style={[styles.stamp, styles.stampPass, passStyle]} pointerEvents="none">
-              <Ionicons name="close" size={20} color={colors.danger} />
+            <Animated.View style={[styles.stamp, styles.stampPass, passStampStyle]} pointerEvents="none">
+              <Text style={[styles.stampLabel, styles.stampLabelPass]}>HOPPAR ÖVER</Text>
             </Animated.View>
           </Animated.View>
         </GestureDetector>
       </View>
 
+      <View style={styles.trustBar}>
+        <LockIcon size={14} color={colors.positive} />
+        <Text style={styles.trustText}>{trustText}</Text>
+      </View>
+
       <View style={styles.actions}>
-        <SwipeButton
-          icon="close"
-          color={colors.danger}
-          label="Hoppa över"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Hoppa över"
           onPress={() => swipeProgrammatically('PASS')}
-        />
-        <SwipeButton
-          icon="heart"
-          color={colors.success}
-          label="Intresserad"
+          style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
+        >
+          <CloseIcon size={26} color={colors.muted} />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Intresserad"
           onPress={() => swipeProgrammatically('LIKE')}
-        />
+          style={({ pressed }) => [styles.likeButton, pressed && styles.pressed]}
+        >
+          <CheckIcon size={30} color={colors.ink} />
+        </Pressable>
       </View>
     </View>
   );
 }
 
-function SwipeButton({
-  icon,
-  color,
-  label,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.actionButton,
-        { borderColor: color },
-        pressed && styles.actionButtonPressed,
-      ]}
-    >
-      <Ionicons name={icon} size={28} color={color} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  deck: { flex: 1, justifyContent: 'center' },
+  deck: { flex: 1, marginHorizontal: spacing.base, position: 'relative' },
   card: {
     position: 'absolute',
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    borderRadius: radius.lg,
+    borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cardBehind: { zIndex: -1 },
+  cardBehind: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    top: 14,
+    bottom: -10,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
   stamp: {
     position: 'absolute',
-    top: spacing.lg,
-    borderRadius: radius.pill,
-    padding: spacing.sm,
-    backgroundColor: colors.overlay,
+    top: 56,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.base,
+    borderWidth: 3,
+    borderRadius: radius.card,
+    backgroundColor: colors.bg,
   },
-  stampLike: { right: spacing.lg },
-  stampPass: { left: spacing.lg },
-  actions: {
+  stampLike: { left: 16, borderColor: colors.positive, transform: [{ rotate: '-10deg' }] },
+  stampPass: { right: 16, borderColor: colors.danger, transform: [{ rotate: '10deg' }] },
+  stampLabel: { fontFamily: type.amount.fontFamily, fontSize: 22, letterSpacing: 0.88 },
+  stampLabelLike: { color: colors.positive },
+  stampLabelPass: { color: colors.danger },
+
+  trustBar: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xl,
-    paddingVertical: spacing.md,
-  },
-  actionButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceRaised,
+    gap: spacing.sm,
+    paddingTop: 14,
+    paddingBottom: 4,
+    paddingHorizontal: spacing.lg,
   },
-  actionButtonPressed: { opacity: 0.7, transform: [{ scale: 0.95 }] },
+  trustText: { ...type.secondary, color: colors.muted },
+
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xl,
+    paddingTop: 4,
+    paddingBottom: 14,
+  },
+  skipButton: {
+    width: HEIGHTS.swipeSkip,
+    height: HEIGHTS.swipeSkip,
+    borderRadius: radius.round,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  likeButton: {
+    width: HEIGHTS.swipeLike,
+    height: HEIGHTS.swipeLike,
+    borderRadius: radius.round,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
 });

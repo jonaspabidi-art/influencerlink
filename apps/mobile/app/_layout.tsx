@@ -1,10 +1,18 @@
+import {
+  InstrumentSans_400Regular,
+  InstrumentSans_500Medium,
+  InstrumentSans_600SemiBold,
+  InstrumentSans_700Bold,
+  useFonts,
+} from '@expo-google-fonts/instrument-sans';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../src/auth';
-import { colors } from '../src/theme';
+import { colors, type } from '../src/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,35 +26,37 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    InstrumentSans_400Regular,
+    InstrumentSans_500Medium,
+    InstrumentSans_600SemiBold,
+    InstrumentSans_700Bold,
+  });
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.text,
-                headerTitleStyle: { fontWeight: '700' },
-                contentStyle: { backgroundColor: colors.background },
-              }}
-            >
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="influencer" options={{ headerShown: false }} />
-              <Stack.Screen name="business" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="onboarding/influencer"
-                options={{ title: 'Skapa din profil' }}
+            {/* Ljust tema: mörk statusfältstext. */}
+            <StatusBar style="dark" />
+            {fontsLoaded ? (
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.bg },
+                  headerStyle: { backgroundColor: colors.bg },
+                  headerTintColor: colors.text,
+                  headerTitleStyle: { fontFamily: type.rowTitleMedium.fontFamily, fontSize: 17 },
+                  headerShadowVisible: false,
+                }}
               />
-              <Stack.Screen name="onboarding/business" options={{ title: 'Om restaurangen' }} />
-              <Stack.Screen name="campaign/new" options={{ title: 'Nytt samarbete' }} />
-              <Stack.Screen name="campaign/[id]" options={{ title: 'Kampanj' }} />
-              <Stack.Screen name="discover/[campaignId]" options={{ title: 'Hitta influencers' }} />
-              <Stack.Screen name="match/[id]" options={{ title: 'Matchning' }} />
-              <Stack.Screen name="contract/[id]" options={{ title: 'Avtal' }} />
-            </Stack>
+            ) : (
+              // Typsnittet laddas innan något ritas, annars hoppar all text.
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            )}
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

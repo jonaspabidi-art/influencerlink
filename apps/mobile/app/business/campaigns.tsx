@@ -4,17 +4,19 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
+import { PlusIcon } from '../../src/components/icons';
 import {
-  Body,
   Button,
-  Caption,
-  EmptyState,
+  Card,
   ErrorState,
+  Header,
   Loading,
   Screen,
+  StatusBadge,
+  type StatusTone,
 } from '../../src/components/ui';
 import { describeCompensation, formatSek } from '../../src/format';
-import { colors, radius, spacing, typography } from '../../src/theme';
+import { colors, radius, spacing, type } from '../../src/theme';
 import type { Campaign } from '../../src/types';
 
 const STATUS_LABELS: Record<Campaign['status'], string> = {
@@ -22,6 +24,13 @@ const STATUS_LABELS: Record<Campaign['status'], string> = {
   ACTIVE: 'Publicerad',
   PAUSED: 'Pausad',
   CLOSED: 'Avslutad',
+};
+
+const STATUS_TONES: Record<Campaign['status'], StatusTone> = {
+  DRAFT: 'pending',
+  ACTIVE: 'active',
+  PAUSED: 'pending',
+  CLOSED: 'cancelled',
 };
 
 export default function BusinessCampaigns() {
@@ -35,6 +44,7 @@ export default function BusinessCampaigns() {
   if (campaigns.isLoading) {
     return (
       <Screen>
+        <Header title="Kampanjer" large />
         <Loading />
       </Screen>
     );
@@ -42,7 +52,11 @@ export default function BusinessCampaigns() {
   if (campaigns.isError) {
     return (
       <Screen>
-        <ErrorState message="Kunde inte hämta kampanjerna." onRetry={() => void campaigns.refetch()} />
+        <Header title="Kampanjer" large />
+        <ErrorState
+          message="Kunde inte hämta kampanjerna."
+          onRetry={() => void campaigns.refetch()}
+        />
       </Screen>
     );
   }
@@ -52,57 +66,74 @@ export default function BusinessCampaigns() {
   if (data.length === 0) {
     return (
       <Screen>
-        <EmptyState
-          icon="megaphone-outline"
-          title="Inget samarbete ännu"
-          message="Skriv några rader om vad du vill ha så gör vi ett färdigt kampanjförslag åt dig."
-        />
-        <Button label="Skapa samarbete" onPress={() => router.push('/campaign/new')} />
-        <Button label="Logga ut" variant="ghost" onPress={() => void signOut()} />
+        <Header title="Kampanjer" large subtitle="Inget samarbete ännu" />
+        <View style={styles.emptyBody}>
+          <Card>
+            <Text style={styles.emptyTitle}>Skriv två meningar, få en färdig kampanj</Text>
+            <Text style={styles.emptyText}>
+              Beskriv vad du vill ha som du skulle sagt det till en kollega. Vi föreslår rubrik,
+              brief och ersättning – sedan ändrar du fritt innan du publicerar.
+            </Text>
+            <Button
+              label="Skapa samarbete"
+              icon={<PlusIcon size={18} color={colors.ink} />}
+              onPress={() => router.push('/campaign/new')}
+            />
+          </Card>
+          <Button label="Logga ut" variant="secondary" onPress={() => void signOut()} />
+          <DemoBanner />
+        </View>
       </Screen>
     );
   }
 
   return (
     <Screen>
+      <Header
+        title="Kampanjer"
+        large
+        subtitle={`${data.filter((item) => item.status === 'ACTIVE').length} publicerade`}
+      />
       <FlatList
         data={data}
         keyExtractor={(campaign) => campaign.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <Button
             label="Nytt samarbete"
-            icon="add"
+            icon={<PlusIcon size={18} color={colors.ink} />}
             onPress={() => router.push('/campaign/new')}
           />
         }
         ListFooterComponent={
-          <>
-            <Button label="Logga ut" variant="ghost" onPress={() => void signOut()} />
+          <View style={styles.footer}>
+            <Button label="Logga ut" variant="secondary" onPress={() => void signOut()} />
             <DemoBanner />
-          </>
+          </View>
         }
         renderItem={({ item }) => (
           <View style={styles.row}>
             <View style={styles.rowHeader}>
               <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.status}>{STATUS_LABELS[item.status]}</Text>
+              <StatusBadge label={STATUS_LABELS[item.status]} tone={STATUS_TONES[item.status]} />
             </View>
-            <Caption>
+            <Text style={styles.amount}>
               {describeCompensation(
                 item.compensationType,
                 item.budgetPerCreator,
                 item.productValue,
                 formatSek,
-              )}{' '}
-              · {item.slotsFilled}/{item.slots} platser
-            </Caption>
-            <Body muted>{item.brief.slice(0, 110)}…</Body>
+              )}
+            </Text>
+            <Text style={styles.secondary}>
+              {item.slotsFilled} av {item.slots} platser fyllda · {item.city}
+            </Text>
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
                 onPress={() => router.push(`/campaign/${item.id}`)}
-                style={styles.linkButton}
+                hitSlop={8}
               >
                 <Text style={styles.link}>Hantera</Text>
               </Pressable>
@@ -110,7 +141,7 @@ export default function BusinessCampaigns() {
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => router.push(`/discover/${item.id}`)}
-                  style={styles.linkButton}
+                  hitSlop={8}
                 >
                   <Text style={styles.link}>Hitta influencers</Text>
                 </Pressable>
@@ -124,19 +155,24 @@ export default function BusinessCampaigns() {
 }
 
 const styles = StyleSheet.create({
-  list: { gap: spacing.sm, paddingVertical: spacing.md },
+  list: { gap: 10, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
   row: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.xs,
+    padding: spacing.base,
+    gap: 6,
   },
-  rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  title: { ...typography.label, color: colors.text, fontSize: 16, flex: 1 },
-  status: { ...typography.caption, color: colors.accent, fontWeight: '600' },
-  actions: { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.xs },
-  linkButton: { paddingVertical: spacing.xs },
-  link: { ...typography.label, color: colors.primary },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  title: { ...type.listTitle, fontSize: 16, color: colors.text, flex: 1 },
+  amount: { fontFamily: type.rowTitle.fontFamily, fontSize: 17, color: colors.accent },
+  secondary: { ...type.secondary, color: colors.muted },
+  actions: { flexDirection: 'row', gap: spacing.base, paddingTop: 6 },
+  link: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.primary },
+  footer: { gap: spacing.md, paddingTop: spacing.sm },
+
+  emptyBody: { flex: 1, paddingHorizontal: spacing.base, gap: spacing.md },
+  emptyTitle: { ...type.sectionTitle, color: colors.text },
+  emptyText: { ...type.bodySmall, color: colors.muted },
 });

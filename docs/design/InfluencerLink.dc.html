@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#17140F; }
+  a { color:#E8543F; }
+  a:hover { color:#F2B544; }
+  [data-theme="dark"] {
+    --bg:#12100E; --surface:#1D1A17; --raised:#272320; --border:#3A3430;
+    --text:#F6F1EA; --muted:#A79C90; --dim:#6E645A; --stripe:#2C2622; --photo:#241F1C;
+    --primary:#E8543F; --ink:#12100E; --accent:#F2B544; --pos:#4FA97B; --danger:#D9534F;
+    --tint:#241C19;
+  }
+  [data-theme="light"] {
+    --bg:#F7F2EA; --surface:#FFFFFF; --raised:#F1EAE0; --border:#E1D7C9;
+    --text:#1A1512; --muted:#75695C; --dim:#A99C8C; --stripe:#E7DFD3; --photo:#EFE8DD;
+    --primary:#E8543F; --ink:#FFFFFF; --accent:#9A6A00; --pos:#2E7D57; --danger:#C0392B;
+    --tint:#FBEFEA;
+  }
+  [data-primary="plommon"] { --primary:#B0426B; --ink:#FFFFFF; }
+  [data-theme="dark"][data-primary="plommon"] { --ink:#1A0F14; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#17140F;display:flex;font-family:'Instrument Sans',-apple-system,Helvetica,sans-serif;color:#F6F1EA">
+
+  <div style="width:248px;flex-shrink:0;border-right:1px solid #302B26;padding:32px 20px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh;overflow:auto">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:19px;font-weight:700;letter-spacing:-0.01em">InfluencerLink</span>
+      <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#8A7F73;letter-spacing:0.06em">PROTOTYP · 390 × 844</span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#8A7F73;letter-spacing:0.1em">UTSEENDE</span>
+      <div style="display:flex;gap:8px">
+        <div onClick="{{ setDark }}" style="flex:1;height:36px;border-radius:6px;border:1px solid #3A3430;background:#12100E;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer">Mörkt</div>
+        <div onClick="{{ setLight }}" style="flex:1;height:36px;border-radius:6px;border:1px solid #E1D7C9;background:#F7F2EA;color:#1A1512;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer">Ljust</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div onClick="{{ setKorall }}" style="flex:1;height:36px;border-radius:6px;background:#E8543F;color:#12100E;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer">Korall</div>
+        <div onClick="{{ setPlommon }}" style="flex:1;height:36px;border-radius:6px;background:#B0426B;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer">Plommon</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#8A7F73;letter-spacing:0.1em;padding-bottom:6px">SKÄRMAR</span>
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="12">
+        <div onClick="{{ item.go }}" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;cursor:pointer;font-size:14px" style-hover="background:#221E1A">
+          <sc-if value="{{ item.active }}" hint-placeholder-val="{{ true }}"><span style="width:6px;height:6px;border-radius:999px;background:#E8543F;flex-shrink:0"></span></sc-if>
+          <sc-if value="{{ item.inactive }}"><span style="width:6px;height:6px;border-radius:999px;background:#3A3430;flex-shrink:0"></span></sc-if>
+          <sc-if value="{{ item.soon }}"><span style="width:6px;height:6px;border-radius:999px;border:1px solid #3A3430;flex-shrink:0"></span></sc-if>
+          <span style="flex:1">{{ item.label }}</span>
+          <sc-if value="{{ item.soon }}"><span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:#6E645A;letter-spacing:0.08em">SNART</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <p style="margin:0;font-size:12px;line-height:1.6;color:#8A7F73;text-wrap:pretty">Randiga ytor är platshållare för foton restaurangen och kreatören laddar upp. Klicka i telefonen — flikar, svep och avtalsknappar fungerar.</p>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 40px 72px">
+    <div style="display:flex;align-items:center;gap:14px;min-height:36px">
+      <span style="font-size:15px;font-weight:600">{{ title }}</span>
+      <sc-if value="{{ hasVariants }}">
+        <div style="display:flex;gap:6px;padding:4px;border-radius:8px;background:#221E1A;border:1px solid #302B26">
+          <sc-if value="{{ varA }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:6px 12px;border-radius:5px;font-size:12px;font-weight:700;background:#E8543F;color:#12100E">{{ labelA }}</div>
+            <div onClick="{{ setVarB }}" style="padding:6px 12px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;color:#8A7F73">{{ labelB }}</div>
+          </sc-if>
+          <sc-if value="{{ varB }}">
+            <div onClick="{{ setVarA }}" style="padding:6px 12px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;color:#8A7F73">{{ labelA }}</div>
+            <div style="padding:6px 12px;border-radius:5px;font-size:12px;font-weight:700;background:#E8543F;color:#12100E">{{ labelB }}</div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+
+    <div data-theme="{{ theme }}" data-primary="{{ primary }}" style="width:390px;height:844px;border-radius:30px;border:1px solid var(--border);background:var(--bg);color:var(--text);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,0.5)">
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="flex:1;padding:24px;display:flex;flex-direction:column;gap:24px">
+            <div style="flex:1;min-height:120px;border-radius:12px;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);letter-spacing:0.06em">BILD: BORD MED MAT</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;text-wrap:pretty">Restauranger och kreatörer, ihop.</span>
+              <p style="margin:0;font-size:15px;line-height:1.55;color:var(--muted);text-wrap:pretty">Hitta ett samarbete, signera med BankID och låt pengarna ligga spärrade tills jobbet är godkänt.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div onClick="{{ goBankid }}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;cursor:pointer">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:44px;height:44px;border-radius:8px;background:var(--tint);display:flex;align-items:center;justify-content:center;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"></rect><path d="M7 20h10"></path></svg></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:17px;font-weight:700">Jag är influencer</span>
+                    <span style="font-size:13px;color:var(--muted)">Svep bland betalda uppdrag</span>
+                  </div>
+                </div>
+                <div style="height:48px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:700">Fortsätt med BankID</div>
+              </div>
+              <div onClick="{{ goBankid }}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;cursor:pointer">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:44px;height:44px;border-radius:8px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--text)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1"></rect></svg></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:17px;font-weight:700">Jag driver en restaurang</span>
+                    <span style="font-size:13px;color:var(--muted)">Lägg upp ett samarbete på 2 minuter</span>
+                  </div>
+                </div>
+                <div style="height:48px;border-radius:8px;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Fortsätt med BankID</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding-bottom:18px">
+              <span style="display:flex;color:var(--pos)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+              <span style="font-size:13px;color:var(--muted)">Plattformsavgift 12 %. Inga avgifter innan avtal.</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBankid }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 20px;display:flex;align-items:center;gap:12px">
+            <div onClick="{{ goLogin }}" style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+            <span style="font-size:17px;font-weight:600">Legitimera dig</span>
+          </div>
+          <div style="flex:1;padding:24px;display:flex;flex-direction:column;align-items:center;gap:28px">
+            <div style="width:220px;height:220px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-top:24px">
+              <div style="width:164px;height:164px;background-color:var(--text);background-image:repeating-linear-gradient(90deg,var(--bg) 0 6px,transparent 6px 12px),repeating-linear-gradient(0deg,var(--bg) 0 6px,transparent 6px 12px)"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+              <span style="font-size:22px;font-weight:700">Skriv in din säkerhetskod</span>
+              <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted);text-align:center;max-width:280px;text-wrap:pretty">Öppna BankID-appen och skanna koden. Vi hämtar bara namn och personnummer.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;background:var(--raised)">
+              <span style="width:8px;height:8px;border-radius:999px;background:var(--accent)"></span>
+              <span style="font-size:13px;color:var(--muted)">Väntar på BankID …</span>
+            </div>
+            <div style="flex:1"></div>
+            <div style="width:100%;display:flex;flex-direction:column;gap:12px;padding-bottom:24px">
+              <div onClick="{{ goDiscover }}" style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:pointer">Öppna BankID på denna enhet</div>
+              <div onClick="{{ goLogin }}" style="height:52px;border-radius:8px;border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;cursor:pointer">Avbryt</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDiscover }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 20px 12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:24px;font-weight:700;letter-spacing:-0.01em">Upptäck</span>
+              <span style="font-size:13px;color:var(--muted)">14 kampanjer i Göteborg</span>
+            </div>
+            <div onClick="{{ goEmpty }}" style="width:44px;height:44px;border-radius:999px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"></path><circle cx="16" cy="8" r="2"></circle><circle cx="10" cy="16" r="2"></circle></svg></div>
+          </div>
+
+          <div style="flex:1;margin:0 16px;position:relative;display:flex">
+            <div style="position:absolute;left:10px;right:10px;top:14px;bottom:-10px;border-radius:12px;background:var(--surface);border:1px solid var(--border)"></div>
+            <div style="position:relative;flex:1;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform 420ms ease;transform:{{ deckTransform }}">
+              <div style="flex:1;min-height:168px;position:relative;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px)">
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);letter-spacing:0.06em">BILD: LUNCHRÄTT</div>
+                <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:5px;background:var(--bg);border:1px solid var(--accent)">
+                  <span style="display:flex;color:var(--accent)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"></path></svg></span>
+                  <span style="font-size:13px;font-weight:700;color:var(--accent)">87 % match</span>
+                </div>
+                <sc-if value="{{ swipedRight }}">
+                  <div style="position:absolute;left:16px;top:56px;padding:10px 16px;border:3px solid var(--pos);border-radius:12px;transform:rotate(-10deg);background:var(--bg)">
+                    <span style="font-size:22px;font-weight:800;color:var(--pos);letter-spacing:0.04em">INTRESSERAD</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ swipedLeft }}">
+                  <div style="position:absolute;right:16px;top:56px;padding:10px 16px;border:3px solid var(--danger);border-radius:12px;transform:rotate(10deg);background:var(--bg)">
+                    <span style="font-size:22px;font-weight:800;color:var(--danger);letter-spacing:0.04em">HOPPAR ÖVER</span>
+                  </div>
+                </sc-if>
+                <div style="position:absolute;left:0;right:0;bottom:0;padding:14px;background:var(--bg);display:flex;align-items:center;gap:12px">
+                  <div style="width:48px;height:48px;border-radius:8px;background:var(--raised);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted)">LOGO</div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:17px;font-weight:700">Sävenäs Kök &amp; Bar</span>
+                    <span style="font-size:13px;color:var(--muted)">Göteborg · 2 lediga platser</span>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+                <span style="font-size:22px;font-weight:700;line-height:1.15;letter-spacing:-0.01em;text-wrap:pretty">Gör en TikTok om vår nya lunchmeny</span>
+                <div style="display:flex;align-items:baseline;gap:8px">
+                  <span style="font-size:22px;font-weight:700;color:var(--accent)">4 000 kr</span>
+                  <span style="font-size:14px;color:var(--muted)">+ besök (300 kr)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:7px;height:7px;border-radius:999px;background:var(--pos)"></span>
+                  <span style="font-size:13px;color:var(--pos)">Finns på plats i Göteborg</span>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:1.5;color:var(--text);opacity:0.82;text-wrap:pretty">Vi byter lunchmeny varje vecka och vill visa hur det ser ut i köket. Kom en vardag mellan 11 och 14, ät på vår bekostnad och filma fritt.</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">1 TikTok-video</span>
+                  <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">3 stories</span>
+                </div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:6px">
+                  <span style="width:28px;height:28px;border-radius:5px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">TT</span>
+                  <span style="width:28px;height:28px;border-radius:5px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted)">IG</span>
+                </div>
+                <span style="font-size:13px;color:var(--muted)">Sista ansökan 17 sep.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:14px 20px 4px;display:flex;align-items:center;justify-content:center;gap:8px">
+            <span style="display:flex;color:var(--pos)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+            <span style="font-size:13px;color:var(--muted)">Arvodet spärras hos InfluencerLink</span>
+          </div>
+          <div style="padding:4px 20px 14px;display:flex;align-items:center;justify-content:center;gap:24px">
+            <div onClick="{{ swipeLeft }}" style="width:64px;height:64px;border-radius:999px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
+            <div onClick="{{ swipeRight }}" style="width:76px;height:76px;border-radius:999px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding:8px 12px 30px;display:flex">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0"><span style="display:flex;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"></rect><path d="M7 20h10"></path></svg></span><span style="font-size:11px;font-weight:600;color:var(--primary)">Upptäck</span></div>
+            <div onClick="{{ goMatch }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4.5 20l1.3-4.4A7.5 7.5 0 1 1 20 12z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Matchningar</span></div>
+            <div onClick="{{ goContract }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M9 12h6M9 16h4"></path></svg></span><span style="font-size:11px;color:var(--muted)">Avtal</span></div>
+            <div onClick="{{ goWallet }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M16 12h2"></path></svg></span><span style="font-size:11px;color:var(--muted)">Plånbok</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEmpty }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 20px 16px;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:24px;font-weight:700;letter-spacing:-0.01em">Upptäck</span>
+            <span style="font-size:13px;color:var(--muted)">Du har sett alla 14 kampanjer</span>
+          </div>
+          <div style="flex:1;padding:0 16px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+              <span style="font-size:20px;font-weight:700;line-height:1.2">Du är i kö på 3 kampanjer</span>
+              <p style="margin:0;font-size:14px;line-height:1.5;color:var(--muted);text-wrap:pretty">Nya kampanjer läggs upp löpande, oftast i början av veckan. Vi hör av oss så snart något dyker upp i Göteborg.</p>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:12px;background:var(--raised);border-radius:8px;padding:12px">
+                  <div style="width:40px;height:40px;border-radius:12px;background:var(--photo);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:8px;color:var(--muted)">LOGO</div>
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Bar Centro</span><span style="font-size:13px;color:var(--muted)">Väntar på svar</span></div>
+                  <span style="font-size:15px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0">3 500 kr</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;background:var(--raised);border-radius:8px;padding:12px">
+                  <div style="width:40px;height:40px;border-radius:12px;background:var(--photo);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:8px;color:var(--muted)">LOGO</div>
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Nudelhuset</span><span style="font-size:13px;color:var(--muted)">Väntar på svar</span></div>
+                  <span style="font-size:15px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0">2 000 kr</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+              <span style="font-size:17px;font-weight:700">Få fler kort att svepa på</span>
+              <p style="margin:0;font-size:14px;line-height:1.5;color:var(--muted)">Utöka sökområdet till 50 km eller lägg till fler nischer i din profil.</p>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div onClick="{{ goDiscover }}" style="height:50px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:pointer">Utöka till 50 km</div>
+                <div onClick="{{ goOnb }}" style="height:50px;border-radius:8px;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;cursor:pointer">Ändra mina nischer</div>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:8px 12px 30px;display:flex;margin-top:16px">
+            <div onClick="{{ goDiscover }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"></rect><path d="M7 20h10"></path></svg></span><span style="font-size:11px;font-weight:600;color:var(--primary)">Upptäck</span></div>
+            <div onClick="{{ goMatch }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4.5 20l1.3-4.4A7.5 7.5 0 1 1 20 12z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Matchningar</span></div>
+            <div onClick="{{ goContract }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M9 12h6M9 16h4"></path></svg></span><span style="font-size:11px;color:var(--muted)">Avtal</span></div>
+            <div onClick="{{ goWallet }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M16 12h2"></path></svg></span><span style="font-size:11px;color:var(--muted)">Plånbok</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMatch }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <sc-if value="{{ varA }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column">
+              <div style="flex:1;min-height:200px;position:relative;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center">
+                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);letter-spacing:0.06em">BILD: RESTAURANGENS RUM</span>
+                <div style="position:absolute;left:0;right:0;bottom:-40px;display:flex;align-items:center;justify-content:center">
+                  <div style="width:84px;height:84px;border-radius:999px;background:var(--raised);border:4px solid var(--bg);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted);margin-right:-14px">LOGO</div>
+                  <div style="width:84px;height:84px;border-radius:999px;background:var(--raised);border:4px solid var(--bg);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted);margin-left:-14px">FOTO</div>
+                </div>
+              </div>
+              <div style="padding:56px 24px 24px;display:flex;flex-direction:column;gap:22px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+                  <span style="font-size:13px;font-weight:700;color:var(--pos);letter-spacing:0.08em">NI MATCHADE</span>
+                  <span style="font-size:30px;font-weight:700;letter-spacing:-0.02em;text-align:center;line-height:1.15">Sävenäs Kök &amp; Bar vill jobba med dig</span>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                  <span style="font-size:16px;font-weight:600">Gör en TikTok om vår nya lunchmeny</span>
+                  <div style="display:flex;align-items:baseline;gap:8px">
+                    <span style="font-size:26px;font-weight:700;color:var(--accent)">4 000 kr</span>
+                    <span style="font-size:14px;color:var(--muted)">+ besök (300 kr)</span>
+                  </div>
+                  <div style="height:1px;background:var(--border)"></div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span style="display:flex;color:var(--pos)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+                    <span style="font-size:13px;line-height:1.45;color:var(--muted)">Arvodet spärras hos oss när avtalet är signerat och betalas ut när leveransen godkänts.</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:24px">
+                  <div style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Skriv till Sävenäs</div>
+                  <div onClick="{{ goDiscover }}" style="height:52px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;cursor:pointer">Fortsätt svepa</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ varB }}">
+            <div style="flex:1;padding:24px;display:flex;flex-direction:column;gap:24px">
+              <div style="display:flex;align-items:center">
+                <div style="width:64px;height:64px;border-radius:999px;background:var(--raised);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted)">LOGO</div>
+                <div style="width:64px;height:64px;border-radius:999px;background:var(--raised);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted);margin-left:-16px">FOTO</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font-size:13px;font-weight:700;color:var(--pos);letter-spacing:0.08em">NI MATCHADE</span>
+                <span style="font-size:30px;font-weight:700;line-height:1.12;letter-spacing:-0.02em;text-wrap:pretty">Nu är det tre steg kvar till 4 000 kr</span>
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;gap:14px">
+                  <div style="display:flex;flex-direction:column;align-items:center"><div style="width:32px;height:32px;border-radius:999px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">1</div><div style="width:2px;flex:1;background:var(--border)"></div></div>
+                  <div style="padding-bottom:20px;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Chatta om detaljerna</span><span style="font-size:14px;color:var(--muted)">Datum, tid och vad som ska filmas.</span></div>
+                </div>
+                <div style="display:flex;gap:14px">
+                  <div style="display:flex;flex-direction:column;align-items:center"><div style="width:32px;height:32px;border-radius:999px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--muted)">2</div><div style="width:2px;flex:1;background:var(--border)"></div></div>
+                  <div style="padding-bottom:20px;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Signera avtalet med BankID</span><span style="font-size:14px;color:var(--muted)">Restaurangen betalar in arvodet direkt efter.</span></div>
+                </div>
+                <div style="display:flex;gap:14px">
+                  <div style="width:32px;height:32px;border-radius:999px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--muted)">3</div>
+                  <div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Leverera och få betalt</span><span style="font-size:14px;color:var(--muted)">Pengarna ligger spärrade tills leveransen godkänts.</span></div>
+                </div>
+              </div>
+              <div style="flex:1;min-height:60px;border-radius:12px;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim)">BILD: LUNCHRÄTT</div>
+              <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:24px">
+                <div style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Skriv till Sävenäs</div>
+                <div onClick="{{ goDiscover }}" style="height:52px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;cursor:pointer">Senare</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFind }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 16px 12px;display:flex;align-items:center;gap:8px">
+            <div onClick="{{ goWizard1 }}" style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em">Hitta influencers</span>
+              <span style="font-size:13px;color:var(--muted)">Ny lunchmeny · 2 av 3 platser kvar</span>
+            </div>
+          </div>
+          <div style="flex:1;margin:0 16px;position:relative;display:flex">
+            <div style="position:absolute;left:10px;right:10px;top:14px;bottom:-10px;border-radius:12px;background:var(--surface);border:1px solid var(--border)"></div>
+            <div style="position:relative;flex:1;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="flex:1;min-height:130px;position:relative;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px)">
+                <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);letter-spacing:0.06em">BILD: SENASTE INLÄGGET</span>
+                <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:5px;background:var(--bg);border:1px solid var(--accent)">
+                  <span style="display:flex;color:var(--accent)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"></path></svg></span><span style="font-size:13px;font-weight:700;color:var(--accent)">91 % match</span>
+                </div>
+                <div style="position:absolute;left:0;right:0;bottom:0;padding:14px;background:var(--bg);display:flex;align-items:center;gap:12px">
+                  <div style="width:52px;height:52px;border-radius:8px;background:var(--raised);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted)">FOTO</div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:18px;font-weight:700">Amanda Lindh</span>
+                    <span style="font-size:13px;color:var(--muted)">Göteborg · Street food, Kafé</span>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--muted);letter-spacing:0.06em">FÖLJARE</span><span style="font-size:18px;font-weight:700">42 300</span></div>
+                  <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--muted);letter-spacing:0.06em">SNITTVISN.</span><span style="font-size:18px;font-weight:700">18 900</span></div>
+                  <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--muted);letter-spacing:0.06em">ENGAGEMANG</span><span style="font-size:18px;font-weight:700;color:var(--pos)">6,4 %</span></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:flex;color:var(--accent)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"></path></svg></span>
+                  <span style="font-size:13px;color:var(--accent)">Gör mest mat i Göteborg, lokal publik</span>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:1.5;color:var(--text);opacity:0.82;text-wrap:pretty">Jag filmar lunchställen i Göteborg och gillar enkel husmanskost. Kommer helst på vardagar.</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">Street food</span>
+                  <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">Kafé</span>
+                  <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">Vegetariskt</span>
+                </div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:6px">
+                  <span style="width:28px;height:28px;border-radius:5px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">TT</span>
+                  <span style="width:28px;height:28px;border-radius:5px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">IG</span>
+                </div>
+                <span style="font-size:13px;color:var(--muted)">Riktpris <span style="color:var(--text);font-weight:600">3 500 kr</span></span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:14px 20px 4px;display:flex;align-items:center;justify-content:center;gap:8px">
+            <span style="display:flex;color:var(--pos)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span><span style="font-size:13px;color:var(--muted)">Du betalar först när avtalet är signerat</span>
+          </div>
+          <div style="padding:4px 20px 14px;display:flex;align-items:center;justify-content:center;gap:24px">
+            <div style="width:64px;height:64px;border-radius:999px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
+            <div onClick="{{ goMatch }}" style="width:76px;height:76px;border-radius:999px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:8px 12px 30px;display:flex">
+            <div onClick="{{ goWizard1 }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1"></rect></svg></span><span style="font-size:11px;font-weight:600;color:var(--primary)">Kampanjer</span></div>
+            <div onClick="{{ goMatch }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4.5 20l1.3-4.4A7.5 7.5 0 1 1 20 12z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Matchningar</span></div>
+            <div onClick="{{ goContract }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Avtal</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isWizard1 }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px">
+            <div onClick="{{ goFind }}" style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+            <span style="flex:1;font-size:17px;font-weight:600">Nytt samarbete</span>
+            <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)">1 / 2</span>
+          </div>
+          <div style="padding:8px 16px 16px;display:flex;gap:6px">
+            <span style="flex:1;height:3px;background:var(--primary)"></span>
+            <span style="flex:1;height:3px;background:var(--border)"></span>
+          </div>
+
+          <sc-if value="{{ varA }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;padding:0 16px 20px;display:flex;flex-direction:column;gap:18px">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-size:27px;font-weight:700;line-height:1.15;letter-spacing:-0.02em;text-wrap:pretty">Beskriv vad du vill ha</span>
+                <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted);text-wrap:pretty">Som du skulle sagt det till en kollega. Vi gör om det till en färdig kampanj som du får ändra i.</p>
+              </div>
+              <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+                <p style="margin:0;font-size:17px;line-height:1.5;color:var(--text)">Vi har ny lunchmeny från måndag och vill att någon kommer och filmar den. Gärna en tiktok. Vi kan bjuda på maten och betala nåt tusen.<span style="color:var(--primary)">|</span></p>
+                <span style="font-size:12px;color:var(--muted);align-self:flex-end">142 tecken</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">ELLER BÖRJA HÄR</span>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <span style="padding:8px 12px;border-radius:5px;border:1px solid var(--border);font-size:14px">Ny lunchmeny</span>
+                  <span style="padding:8px 12px;border-radius:5px;border:1px solid var(--border);font-size:14px">Fredagsafterwork</span>
+                  <span style="padding:8px 12px;border-radius:5px;border:1px solid var(--border);font-size:14px">Vi öppnar nytt</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div onClick="{{ goWizard2 }}" style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:700;cursor:pointer">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"></path></svg>
+                  Gör ett utkast
+                </div>
+                <span style="font-size:13px;color:var(--muted);text-align:center">Tar några sekunder. Inget publiceras än.</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ varB }}">
+            <div style="flex:1;padding:0 16px 20px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-size:27px;font-weight:700;line-height:1.15;letter-spacing:-0.02em;text-wrap:pretty">Vad vill du ha gjort?</span>
+                <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted)">Välj något som liknar ditt fall, eller skriv eget.</p>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div onClick="{{ goWizard2 }}" style="background:var(--surface);border:1px solid var(--primary);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer">
+                  <span style="font-size:11px;font-weight:700;color:var(--primary);letter-spacing:0.08em">LUNCH</span>
+                  <span style="font-size:16px;line-height:1.45">”Ny lunchmeny från måndag, vill ha en TikTok filmad på plats. Bjuder på maten.”</span>
+                  <span style="font-size:13px;color:var(--muted)">Ger oftast 3 500 – 4 500 kr, 1 video</span>
+                </div>
+                <div onClick="{{ goWizard2 }}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer">
+                  <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.08em">KVÄLL</span>
+                  <span style="font-size:16px;line-height:1.45">”Vi vill fylla fredagarna. Någon som gör stories från baren under en kväll.”</span>
+                  <span style="font-size:13px;color:var(--muted)">Ger oftast 2 000 – 3 000 kr, 3 – 5 stories</span>
+                </div>
+                <div onClick="{{ goWizard2 }}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer">
+                  <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.08em">NYÖPPNING</span>
+                  <span style="font-size:16px;line-height:1.45">”Vi öppnar om tre veckor och vill att folk i stan känner till oss innan.”</span>
+                  <span style="font-size:13px;color:var(--muted)">Ger oftast 4 000 – 6 000 kr, 2 – 3 kreatörer</span>
+                </div>
+              </div>
+              <div style="flex:1"></div>
+              <div onClick="{{ goWizard2 }}" style="height:52px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;cursor:pointer">Skriv med egna ord i stället</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isWizard2 }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px">
+            <div onClick="{{ goWizard1 }}" style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+            <span style="flex:1;font-size:17px;font-weight:600">Utkastet</span>
+            <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)">2 / 2</span>
+          </div>
+          <div style="padding:8px 16px 14px;display:flex;gap:6px">
+            <span style="flex:1;height:3px;background:var(--primary)"></span>
+            <span style="flex:1;height:3px;background:var(--primary)"></span>
+          </div>
+
+          <div style="flex:1;overflow:auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;background:var(--tint)">
+              <span style="display:flex;color:var(--accent)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"></path></svg></span>
+              <span style="font-size:13px;line-height:1.4;color:var(--text)">Ifyllt utifrån det du skrev. Ändra fritt.</span>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">RUBRIK</span>
+              <span style="font-size:19px;font-weight:700;line-height:1.25">Gör en TikTok om vår nya lunchmeny</span>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">BRIEF</span>
+              <p style="margin:0;font-size:15px;line-height:1.5">Vi byter lunchmeny varje vecka och vill visa hur det ser ut i köket. Kom en vardag mellan 11 och 14, ät på vår bekostnad och filma fritt.</p>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">LEVERABLER</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:14px">1 TikTok-video</span>
+                <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:14px">3 stories</span>
+                <span style="padding:6px 10px;border-radius:5px;border:1px dashed var(--border);font-size:14px;color:var(--muted)">+ lägg till</span>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">ERSÄTTNING</span>
+              <div style="display:flex;gap:6px">
+                <span style="flex:1;height:40px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)">Bara arvode</span>
+                <span style="flex:1;height:40px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)">Bara besök</span>
+                <span style="flex:1.2;height:40px;border-radius:6px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">Arvode + besök</span>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;color:var(--muted)">ARVODE</span><span style="font-size:19px;font-weight:700">4 000 kr</span></div>
+                <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;color:var(--muted)">BESÖK</span><span style="font-size:19px;font-weight:700">300 kr</span></div>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:15px">Antal kreatörer</span><span style="font-size:16px;font-weight:700">3</span></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:15px">Lägsta följarantal</span><span style="font-size:16px;font-weight:700">5 000</span></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:15px">Plattformar</span><span style="font-size:15px;color:var(--muted)">TikTok, Instagram</span></div>
+            </div>
+            <div style="background:var(--raised);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--muted)">Arvode 4 000 kr × 3</span><span>12 000 kr</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--muted)">Plattformsavgift 12 %</span><span>1 440 kr</span></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:15px;font-weight:600">Du betalar in</span><span style="font-size:20px;font-weight:700;color:var(--accent)">13 440 kr</span></div>
+              <div style="display:flex;gap:8px">
+                <span style="display:flex;color:var(--pos);flex-shrink:0;padding-top:1px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+                <span style="font-size:13px;line-height:1.45;color:var(--muted)">Först när avtalet är signerat. Beloppet ligger spärrat hos oss tills du godkänt leveransen.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding:12px 16px 30px;display:flex;flex-direction:column;gap:8px">
+            <div onClick="{{ goFind }}" style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:pointer">Publicera och hitta influencers</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isContract }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 16px 12px;display:flex;align-items:center;gap:8px">
+            <div onClick="{{ goDiscover }}" style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+            <span style="flex:1;font-size:17px;font-weight:600">Avtal</span>
+            <div onClick="{{ goContractDone }}" style="padding:6px 10px;border-radius:5px;border:1px solid var(--accent);font-size:12px;font-weight:700;color:var(--accent);cursor:pointer">Väntar på signaturer</div>
+          </div>
+
+          <div style="flex:1;overflow:auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:23px;font-weight:700;line-height:1.2;letter-spacing:-0.01em">Gör en TikTok om vår nya lunchmeny</span>
+              <span style="font-size:14px;color:var(--muted)">Sävenäs Kök &amp; Bar · Göteborg</span>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Arvode</span><span style="font-weight:600">4 000 kr</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Plattformsavgift 12 %</span><span style="font-weight:600">−480 kr</span></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:15px;font-weight:600">Till kreatören</span><span style="font-size:20px;font-weight:700;color:var(--accent)">3 520 kr</span></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Deadline</span><span style="font-weight:600">24 sep.</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Leverans</span><span style="font-weight:600">1 video + 3 stories</span></div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">SIGNERAT</span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span>
+                <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Sävenäs Kök &amp; Bar</span><span style="font-size:13px;color:var(--muted)">Signerade 12 sep. 14:20</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="width:18px;height:18px;border-radius:999px;border:1.5px solid var(--border)"></span>
+                <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Amanda Lindh</span><span style="font-size:13px;color:var(--muted)">Väntar på signatur</span></div>
+              </div>
+            </div>
+
+            <div style="border:1px solid var(--primary);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:17px;font-weight:700">Din tur att signera</span>
+                <span style="font-size:14px;line-height:1.45;color:var(--muted)">När båda signerat betalar restaurangen in 4 000 kr till det spärrade kontot.</span>
+              </div>
+              <div style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Signera med BankID</div>
+            </div>
+
+            <div style="background:var(--raised);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="display:flex;color:var(--pos)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+                <span style="font-size:14px;font-weight:600">Så hanteras pengarna</span>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="height:3px;background:var(--pos)"></span><span style="font-size:12px;line-height:1.35;color:var(--muted)">Avtal signeras</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="height:3px;background:var(--border)"></span><span style="font-size:12px;line-height:1.35;color:var(--muted)">4 000 kr spärras</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="height:3px;background:var(--border)"></span><span style="font-size:12px;line-height:1.35;color:var(--muted)">Utbetalning</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">AVTALSTEXT</span>
+              <p style="margin:0;font-size:13px;line-height:1.6;color:var(--muted)">1. Parterna. Detta avtal ingås mellan Sävenäs Kök &amp; Bar (org.nr 556123-4567) och Amanda Lindh, nedan kallad kreatören. 2. Uppdrag. Kreatören ska producera och publicera en TikTok-video samt tre stories från restaurangens lunchservering …</p>
+              <span style="font-size:14px;font-weight:600;color:var(--primary)">Läs hela avtalet</span>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding:8px 12px 30px;display:flex">
+            <div onClick="{{ goDiscover }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"></rect><path d="M7 20h10"></path></svg></span><span style="font-size:11px;color:var(--muted)">Upptäck</span></div>
+            <div onClick="{{ goMatch }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4.5 20l1.3-4.4A7.5 7.5 0 1 1 20 12z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Matchningar</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0"><span style="display:flex;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M9 12h6M9 16h4"></path></svg></span><span style="font-size:11px;font-weight:600;color:var(--primary)">Avtal</span></div>
+            <div onClick="{{ goWallet }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M16 12h2"></path></svg></span><span style="font-size:11px;color:var(--muted)">Plånbok</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isContractDone }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 16px 12px;display:flex;align-items:center;gap:8px">
+            <div onClick="{{ goContract }}" style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+            <span style="flex:1;font-size:17px;font-weight:600">Avtal</span>
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:5px;background:var(--pos);color:var(--bg)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg>
+              <span style="font-size:12px;font-weight:700">Klart och utbetalt</span>
+            </div>
+          </div>
+
+          <div style="flex:1;overflow:auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:23px;font-weight:700;line-height:1.2;letter-spacing:-0.01em">Gör en TikTok om vår nya lunchmeny</span>
+              <span style="font-size:14px;color:var(--muted)">Sävenäs Kök &amp; Bar · Göteborg</span>
+            </div>
+
+            <div style="border:1px solid var(--pos);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:13px;color:var(--muted)">Utbetalt till dig 26 sep.</span>
+              <span style="font-size:34px;font-weight:700;letter-spacing:-0.02em;color:var(--pos)">3 520 kr</span>
+              <span style="font-size:13px;color:var(--muted)">Till konto ●●●● 4471, Swedbank</span>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Arvode</span><span style="font-weight:600">4 000 kr</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Plattformsavgift 12 %</span><span style="font-weight:600">−480 kr</span></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Besök</span><span style="font-weight:600">300 kr, betalt på plats</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--muted)">Levererat</span><span style="font-weight:600">23 sep.</span></div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column">
+              <div style="display:flex;gap:12px">
+                <div style="display:flex;flex-direction:column;align-items:center"><span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span><span style="width:2px;flex:1;background:var(--border)"></span></div>
+                <div style="padding-bottom:16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">Båda signerade</span><span style="font-size:13px;color:var(--muted)">12 sep. 14:20 och 12 sep. 18:04</span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="display:flex;flex-direction:column;align-items:center"><span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span><span style="width:2px;flex:1;background:var(--border)"></span></div>
+                <div style="padding-bottom:16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">4 000 kr spärrades</span><span style="font-size:13px;color:var(--muted)">13 sep.</span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="display:flex;flex-direction:column;align-items:center"><span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span><span style="width:2px;flex:1;background:var(--border)"></span></div>
+                <div style="padding-bottom:16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">Leverans godkänd</span><span style="font-size:13px;color:var(--muted)">25 sep., av Sävenäs</span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span>
+                <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">3 520 kr utbetalt</span><span style="font-size:13px;color:var(--muted)">26 sep.</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="height:50px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Hämta kvitto (PDF)</div>
+              <div style="height:50px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Läs hela avtalet</div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding:8px 12px 30px;display:flex">
+            <div onClick="{{ goDiscover }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"></rect><path d="M7 20h10"></path></svg></span><span style="font-size:11px;color:var(--muted)">Upptäck</span></div>
+            <div onClick="{{ goMatch }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4.5 20l1.3-4.4A7.5 7.5 0 1 1 20 12z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Matchningar</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0"><span style="display:flex;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M9 12h6M9 16h4"></path></svg></span><span style="font-size:11px;font-weight:600;color:var(--primary)">Avtal</span></div>
+            <div onClick="{{ goWallet }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M16 12h2"></path></svg></span><span style="font-size:11px;color:var(--muted)">Plånbok</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isWallet }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 20px 16px"><span style="font-size:24px;font-weight:700;letter-spacing:-0.01em">Plånbok</span></div>
+
+          <div style="flex:1;overflow:auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:13px;color:var(--muted)">På väg till dig</span>
+                <span style="font-size:38px;font-weight:700;letter-spacing:-0.03em;color:var(--accent)">3 520 kr</span>
+                <span style="font-size:13px;color:var(--muted)">1 avtal, spärrat tills leveransen godkänts</span>
+              </div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-size:15px;color:var(--muted)">Utbetalt totalt</span>
+                <span style="font-size:20px;font-weight:700">11 200 kr</span>
+              </div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
+              <span style="display:flex;color:var(--pos)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:15px;font-weight:600">Utbetalningskontot är klart</span>
+                <span style="font-size:13px;color:var(--muted)">Swedbank ●●●● 4471</span>
+              </div>
+              <span style="font-size:14px;font-weight:600;color:var(--primary)">Ändra</span>
+            </div>
+
+            <div style="background:var(--raised);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="display:flex;color:var(--pos)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+                <span style="font-size:15px;font-weight:700">Så får du dina pengar</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;gap:12px"><span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted);padding-top:2px">01</span><span style="font-size:14px;line-height:1.45;flex:1">Ni signerar avtalet med BankID.</span></div>
+                <div style="display:flex;gap:12px"><span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted);padding-top:2px">02</span><span style="font-size:14px;line-height:1.45;flex:1">Restaurangen betalar in arvodet till oss. Det ligger spärrat — varken du eller restaurangen kan röra det.</span></div>
+                <div style="display:flex;gap:12px"><span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted);padding-top:2px">03</span><span style="font-size:14px;line-height:1.45;flex:1">Du levererar och restaurangen godkänner. Pengarna går till ditt konto inom 1–2 bankdagar.</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.06em">SENASTE</span>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Bar Centro</span><span style="font-size:13px;color:var(--muted)">Utbetalt 2 sep.</span></div>
+                  <span style="font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0">3 080 kr</span>
+                </div>
+                <div style="height:1px;background:var(--border)"></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Nudelhuset</span><span style="font-size:13px;color:var(--muted)">Utbetalt 18 aug.</span></div>
+                  <span style="font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0">1 760 kr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding:8px 12px 30px;display:flex">
+            <div onClick="{{ goDiscover }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"></rect><path d="M7 20h10"></path></svg></span><span style="font-size:11px;color:var(--muted)">Upptäck</span></div>
+            <div onClick="{{ goMatch }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4.5 20l1.3-4.4A7.5 7.5 0 1 1 20 12z"></path></svg></span><span style="font-size:11px;color:var(--muted)">Matchningar</span></div>
+            <div onClick="{{ goContract }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer"><span style="display:flex;color:var(--muted)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M9 12h6M9 16h4"></path></svg></span><span style="font-size:11px;color:var(--muted)">Avtal</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0"><span style="display:flex;color:var(--primary)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M16 12h2"></path></svg></span><span style="font-size:11px;font-weight:600;color:var(--primary)">Plånbok</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOnb }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+
+          <sc-if value="{{ varA }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column">
+              <div style="padding:8px 16px 20px;display:flex;align-items:center;gap:10px">
+                <div style="width:44px;height:44px;display:flex;align-items:center;color:var(--muted)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+                <div style="flex:1;display:flex;gap:5px">
+                  <span style="flex:1;height:3px;background:var(--primary)"></span>
+                  <span style="flex:1;height:3px;background:var(--primary)"></span>
+                  <span style="flex:1;height:3px;background:var(--primary)"></span>
+                  <span style="flex:1;height:3px;background:var(--border)"></span>
+                  <span style="flex:1;height:3px;background:var(--border)"></span>
+                </div>
+                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)">3 / 5</span>
+              </div>
+              <div style="flex:1;padding:0 24px;display:flex;flex-direction:column;gap:20px">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <span style="font-size:30px;font-weight:700;line-height:1.12;letter-spacing:-0.02em;text-wrap:pretty">Vad filmar du helst?</span>
+                  <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted)">Välj minst två. Vi visar bara kampanjer som passar.</p>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <span style="padding:11px 14px;border-radius:6px;background:var(--primary);color:var(--ink);font-size:15px;font-weight:600">Street food</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Restaurang</span>
+                  <span style="padding:11px 14px;border-radius:6px;background:var(--primary);color:var(--ink);font-size:15px;font-weight:600">Kafé</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Fine dining</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Vegetariskt</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Bageri</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Bar</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Sushi</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Pizza</span>
+                  <span style="padding:11px 14px;border-radius:6px;border:1px solid var(--border);font-size:15px">Brunch</span>
+                </div>
+                <div style="flex:1;display:flex;align-items:flex-end;padding-bottom:4px">
+                  <div style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+                    <span style="font-size:15px;font-weight:600">Med Street food och Kafé i Göteborg</span>
+                    <div style="display:flex;align-items:baseline;gap:8px">
+                      <span style="font-size:30px;font-weight:700;letter-spacing:-0.02em;color:var(--accent)">9</span>
+                      <span style="font-size:15px;color:var(--muted)">kampanjer att svepa på nu</span>
+                    </div>
+                    <span style="font-size:13px;line-height:1.45;color:var(--muted)">Arvodena ligger mellan 1 500 kr och 6 000 kr.</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:24px">
+                  <div style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Fortsätt</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ varB }}">
+            <div style="flex:1;display:flex;flex-direction:column">
+              <div style="padding:8px 20px 14px;display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:22px;font-weight:700;letter-spacing:-0.01em">Din profil</span>
+                <span style="font-size:14px;color:var(--muted)">Så här ser restaurangerna dig</span>
+              </div>
+              <div style="margin:0 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="height:104px;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--dim)">LÄGG TILL EN BILD</div>
+                <div style="padding:14px;display:flex;align-items:center;gap:12px">
+                  <div style="width:48px;height:48px;border-radius:999px;background:var(--raised);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--muted)">FOTO</div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:17px;font-weight:700">Amanda Lindh</span>
+                    <span style="font-size:13px;color:var(--muted)">Göteborg · Street food, Kafé</span>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;overflow:auto;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+                  <span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span>
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Namn och stad</span><span style="font-size:13px;color:var(--muted)">Amanda Lindh, Göteborg</span></div>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+                  <span style="display:flex;color:var(--pos)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></span>
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Nischer</span><span style="font-size:13px;color:var(--muted)">Street food, Kafé</span></div>
+                </div>
+                <div style="border:1px solid var(--primary);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                  <div style="display:flex;flex-direction:column;gap:3px">
+                    <span style="font-size:15px;font-weight:700">Koppla TikTok</span>
+                    <span style="font-size:13px;line-height:1.45;color:var(--muted)">Vi hämtar följarantal och snittvisningar. Restaurangerna ser bara siffrorna.</span>
+                  </div>
+                  <div style="height:48px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Koppla konto</div>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+                  <span style="width:18px;height:18px;border-radius:999px;border:1.5px solid var(--border);flex-shrink:0"></span>
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Riktpris och lägsta arvode</span><span style="font-size:13px;color:var(--muted)">Behövs innan du kan svepa</span></div>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+                  <span style="width:18px;height:18px;border-radius:999px;border:1.5px solid var(--border);flex-shrink:0"></span>
+                  <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Kort presentation</span><span style="font-size:13px;color:var(--muted)">Två rader räcker</span></div>
+                </div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding:12px 16px 30px">
+                <div onClick="{{ goDiscover }}" style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:pointer">Klar för nu — börja svepa</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isKit }}">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-size:13px;font-weight:600"><span>9:41</span><span style="display:flex;align-items:flex-end;gap:5px;color:var(--muted)"><span style="display:flex;align-items:flex-end;gap:1.5px"><span style="width:3px;height:4px;background:currentColor"></span><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:10px;background:currentColor"></span></span><span style="width:22px;height:11px;border:1px solid currentColor;border-radius:2px;padding:1.5px;display:flex"><span style="flex:1;background:currentColor"></span></span></span></div>
+          <div style="padding:8px 20px 16px;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:24px;font-weight:700;letter-spacing:-0.01em">Komponenter</span>
+            <span style="font-size:13px;color:var(--muted)">Instrument Sans · hörn 5 / 8 / 12 · avstånd 4 / 8 / 16 / 24</span>
+          </div>
+          <div style="flex:1;overflow:auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:22px">
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">KNAPPAR · 52 PT</span>
+              <div style="height:52px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Primär</div>
+              <div style="height:52px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Sekundär</div>
+              <div style="height:52px;border-radius:8px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--muted)">Inaktiv</div>
+              <div style="display:flex;gap:16px;align-items:center;padding-top:4px">
+                <div style="width:64px;height:64px;border-radius:999px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
+                <div style="width:76px;height:76px;border-radius:999px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.8 4.8L19 7"></path></svg></div>
+                <span style="font-size:13px;color:var(--muted);flex:1">Svepknappar, runda enligt plattformsnorm</span>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">TAGGAR</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">1 TikTok-video</span>
+                <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:13px">3 stories</span>
+                <span style="padding:6px 10px;border-radius:5px;border:1px solid var(--border);font-size:13px">Kafé</span>
+                <span style="padding:6px 10px;border-radius:5px;background:var(--primary);color:var(--ink);font-size:13px;font-weight:600">Vald</span>
+                <span style="padding:6px 10px;border-radius:5px;border:1px dashed var(--border);font-size:13px;color:var(--muted)">+ lägg till</span>
+                <span style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:5px;background:var(--bg);border:1px solid var(--accent);color:var(--accent);font-size:13px;font-weight:700"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"></path></svg>87 % match</span>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">STATUSMÄRKEN</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <span style="padding:6px 10px;border-radius:5px;border:1px solid var(--accent);color:var(--accent);font-size:12px;font-weight:700">Väntar på signaturer</span>
+                <span style="padding:6px 10px;border-radius:5px;border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:700">En part har signerat</span>
+                <span style="padding:6px 10px;border-radius:5px;background:var(--raised);font-size:12px;font-weight:700">Pågår</span>
+                <span style="padding:6px 10px;border-radius:5px;border:1px solid var(--pos);color:var(--pos);font-size:12px;font-weight:700">Levererat – väntar</span>
+                <span style="padding:6px 10px;border-radius:5px;background:var(--pos);color:var(--bg);font-size:12px;font-weight:700">Klart och utbetalt</span>
+                <span style="padding:6px 10px;border-radius:5px;border:1px solid var(--danger);color:var(--danger);font-size:12px;font-weight:700">Avbrutet</span>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">NYCKELTAL</span>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--muted);letter-spacing:0.06em">FÖLJARE</span><span style="font-size:18px;font-weight:700">42 300</span></div>
+                <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--muted);letter-spacing:0.06em">SNITTVISN.</span><span style="font-size:18px;font-weight:700">18 900</span></div>
+                <div style="flex:1;background:var(--raised);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--muted);letter-spacing:0.06em">ENGAGEMANG</span><span style="font-size:18px;font-weight:700;color:var(--pos)">6,4 %</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">TRYGGHETSBAND</span>
+              <div style="background:var(--raised);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:flex;color:var(--pos)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span>
+                  <span style="font-size:14px;font-weight:600">Så hanteras pengarna</span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="height:3px;background:var(--pos)"></span><span style="font-size:12px;line-height:1.35;color:var(--muted)">Avtal signeras</span></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="height:3px;background:var(--border)"></span><span style="font-size:12px;line-height:1.35;color:var(--muted)">4 000 kr spärras</span></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="height:3px;background:var(--border)"></span><span style="font-size:12px;line-height:1.35;color:var(--muted)">Utbetalning</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">TOMT LÄGE</span>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                <span style="font-size:18px;font-weight:700;line-height:1.25">Inga fler kort just nu</span>
+                <p style="margin:0;font-size:14px;line-height:1.5;color:var(--muted);text-wrap:pretty">Säg alltid vad som händer härnäst och ge en handling. Ett tomt läge är inte ett fel.</p>
+                <div style="height:48px;border-radius:8px;background:var(--primary);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Utöka till 50 km</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">BILDPLATSER</span>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;height:88px;border-radius:12px;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--dim)">KAMPANJBILD</div>
+                <div style="width:88px;height:88px;border-radius:8px;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--dim)">LOGO</div>
+                <div style="width:88px;height:88px;border-radius:999px;background-color:var(--photo);background-image:repeating-linear-gradient(135deg,var(--stripe) 0 8px,var(--photo) 8px 16px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;color:var(--dim)">AVATAR</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:1000}}">
+class Component extends DCLogic {
+  state = { screen: 'discover', theme: 'dark', primary: 'korall', swipe: null,
+            vMatch: 'a', vWizard: 'a', vOnb: 'a' };
+
+  go(screen) { return () => this.setState({ screen, swipe: null }); }
+
+  swipe(dir) {
+    return () => {
+      this.setState({ swipe: dir });
+      clearTimeout(this._t);
+      this._t = setTimeout(() => {
+        if (dir === 'right') this.setState({ screen: 'match', swipe: null });
+        else this.setState({ swipe: null });
+      }, 650);
+    };
+  }
+
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  renderVals() {
+    const s = this.state;
+    const items = [
+      ['login', 'Inloggning'], ['bankid', 'BankID'],
+      ['discover', 'Upptäck · kortlek'], ['empty', 'Upptäck · slut på kort'],
+      ['match', 'Matchningen'], ['find', 'Hitta influencers'],
+      ['wizard1', 'Nytt samarbete · steg 1'], ['wizard2', 'Nytt samarbete · steg 2'],
+      ['contract', 'Avtal · väntar'], ['contractDone', 'Avtal · utbetalt'],
+      ['wallet', 'Plånbok'], ['onb', 'Onboarding'], ['kit', 'Komponenter']
+    ];
+    const titles = Object.fromEntries(items);
+    const variants = {
+      match: ['Kvitto på matchningen', 'Nästa steg direkt'],
+      wizard1: ['Skriv fritt', 'Guidade exempel'],
+      onb: ['Ett steg per fråga', 'Kort som fylls i']
+    };
+    const v = variants[s.screen];
+    const key = s.screen === 'match' ? 'vMatch' : s.screen === 'wizard1' ? 'vWizard' : 'vOnb';
+    const cur = s[key];
+
+    return {
+      theme: s.theme, primary: s.primary,
+      title: titles[s.screen] || '',
+      nav: items.map(([id, label]) => {
+        const built = true;
+        return {
+          label, go: built ? this.go(id) : null, soon: !built,
+          active: built && s.screen === id, inactive: built && s.screen !== id
+        };
+      }),
+      hasVariants: !!v,
+      labelA: v ? v[0] : '', labelB: v ? v[1] : '',
+      setVarA: () => this.setState({ [key]: 'a' }),
+      setVarB: () => this.setState({ [key]: 'b' }),
+      varB: cur === 'b',
+      varA: cur !== 'b',
+      setDark: () => this.setState({ theme: 'dark' }),
+      setLight: () => this.setState({ theme: 'light' }),
+      setKorall: () => this.setState({ primary: 'korall' }),
+      setPlommon: () => this.setState({ primary: 'plommon' }),
+      goLogin: this.go('login'), goBankid: this.go('bankid'), goDiscover: this.go('discover'),
+      goEmpty: this.go('empty'), goMatch: this.go('match'), goFind: this.go('find'),
+      goWizard1: this.go('wizard1'), goWizard2: this.go('wizard2'),
+      goContract: this.go('contract'), goContractDone: this.go('contractDone'),
+      goWallet: this.go('wallet'), goOnb: this.go('onb'), goKit: this.go('kit'),
+      isLogin: s.screen === 'login', isBankid: s.screen === 'bankid',
+      isDiscover: s.screen === 'discover', isEmpty: s.screen === 'empty',
+      isMatch: s.screen === 'match', isFind: s.screen === 'find',
+      isWizard1: s.screen === 'wizard1', isWizard2: s.screen === 'wizard2',
+      isContract: s.screen === 'contract', isContractDone: s.screen === 'contractDone',
+      isWallet: s.screen === 'wallet', isOnb: s.screen === 'onb', isKit: s.screen === 'kit',
+      swipedRight: s.swipe === 'right', swipedLeft: s.swipe === 'left',
+      swipeRight: this.swipe('right'), swipeLeft: this.swipe('left'),
+      deckTransform: s.swipe === 'right' ? 'rotate(7deg) translate(52px,-8px)'
+                   : s.swipe === 'left' ? 'rotate(-7deg) translate(-52px,-8px)' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

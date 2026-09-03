@@ -12,12 +12,14 @@
     "export:web": "expo export --platform web --output-dir dist"
   },
   "dependencies": {
+    "@expo-google-fonts/instrument-sans": "^0.4.2",
     "@expo/metro-runtime": "~57.0.15",
     "@expo/vector-icons": "^15.0.2",
     "@influencerlink/shared": "*",
     "@tanstack/react-query": "^5.62.0",
     "expo": "^57.0.0",
     "expo-constants": "~57.0.17",
+    "expo-font": "~57.0.3",
     "expo-haptics": "~57.0.2",
     "expo-linking": "~57.0.9",
     "expo-router": "~57.0.18",

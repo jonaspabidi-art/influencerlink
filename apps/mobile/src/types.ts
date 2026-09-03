@@ -142,3 +142,12 @@ export interface PayoutStatus {
   pendingPayout: number;
   paidOut: number;
 }
+
+export interface PendingLike {
+  campaignId: string;
+  title: string;
+  businessName: string;
+  businessLogoUrl: string | null;
+  budgetPerCreator: number;
+  likedAt: string;
+}

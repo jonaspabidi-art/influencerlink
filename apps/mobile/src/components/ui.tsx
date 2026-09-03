@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,45 +13,174 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, spacing, typography } from '../theme';
+import { HEIGHTS, colors, radius, spacing, type } from '../theme';
+import { CheckIcon, ChevronLeftIcon, LockIcon } from './icons';
+
+// --- Ytor -------------------------------------------------------------------
 
 export function Screen({
   children,
-  scroll = false,
   style,
+  edges = ['top', 'bottom'],
 }: {
   children: ReactNode;
-  scroll?: boolean;
   style?: StyleProp<ViewStyle>;
+  edges?: Array<'top' | 'bottom'>;
 }) {
-  const content = scroll ? (
-    <ScrollView
-      contentContainerStyle={[styles.scrollContent, style]}
-      keyboardShouldPersistTaps="handled"
+  return (
+    <SafeAreaView style={styles.screen} edges={edges}>
+      <View style={[styles.screenBody, style]}>{children}</View>
+    </SafeAreaView>
+  );
+}
+
+/** Skärm med rullande innehåll. Sidmarginal 16, som i handoffen. */
+export function ScrollScreen({
+  children,
+  contentStyle,
+  edges = ['top', 'bottom'],
+}: {
+  children: ReactNode;
+  contentStyle?: StyleProp<ViewStyle>;
+  edges?: Array<'top' | 'bottom'>;
+}) {
+  return (
+    <SafeAreaView style={styles.screen} edges={edges}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+/** Skärmrubrik med valfri underrubrik, tillbakapil och högerslot. */
+export function Header({
+  title,
+  subtitle,
+  onBack,
+  right,
+  large = false,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  right?: ReactNode;
+  /** 24/700 i stället för 17/600 – används på flikarnas toppnivå. */
+  large?: boolean;
+}) {
+  return (
+    <View style={styles.header}>
+      {onBack ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Tillbaka"
+          onPress={onBack}
+          style={styles.backButton}
+        >
+          <ChevronLeftIcon size={22} color={colors.muted} />
+        </Pressable>
+      ) : null}
+      <View style={styles.headerText}>
+        <Text style={large ? styles.screenTitle : styles.headerTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.secondary}>{subtitle}</Text> : null}
+      </View>
+      {right}
+    </View>
+  );
+}
+
+export function Card({
+  children,
+  style,
+  tone = 'surface',
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  /** surface = vit yta med kant, raised = förklarande panel, primary/positive = markerad. */
+  tone?: 'surface' | 'raised' | 'primary' | 'positive';
+}) {
+  return (
+    <View
+      style={[
+        styles.card,
+        tone === 'surface' && styles.cardSurface,
+        tone === 'raised' && styles.cardRaised,
+        tone === 'primary' && styles.cardPrimary,
+        tone === 'positive' && styles.cardPositive,
+        style,
+      ]}
     >
       {children}
-    </ScrollView>
-  ) : (
-    <View style={[styles.screenBody, style]}>{children}</View>
+    </View>
   );
-  return <SafeAreaView style={styles.screen}>{content}</SafeAreaView>;
 }
 
-export function Title({ children }: { children: ReactNode }) {
-  return <Text style={styles.title}>{children}</Text>;
-}
+export const Divider = () => <View style={styles.divider} />;
 
-export function Heading({ children }: { children: ReactNode }) {
-  return <Text style={styles.heading}>{children}</Text>;
-}
+// --- Text -------------------------------------------------------------------
 
-export function Body({ children, muted = false }: { children: ReactNode; muted?: boolean }) {
-  return <Text style={[styles.body, muted && styles.muted]}>{children}</Text>;
-}
+export const ScreenTitle = ({ children }: { children: ReactNode }) => (
+  <Text style={styles.screenTitle}>{children}</Text>
+);
 
-export function Caption({ children }: { children: ReactNode }) {
-  return <Text style={styles.caption}>{children}</Text>;
-}
+export const Display = ({ children, center }: { children: ReactNode; center?: boolean }) => (
+  <Text style={[styles.display, center && styles.center]}>{children}</Text>
+);
+
+export const SectionTitle = ({ children }: { children: ReactNode }) => (
+  <Text style={styles.sectionTitle}>{children}</Text>
+);
+
+export const RowTitle = ({ children }: { children: ReactNode }) => (
+  <Text style={styles.rowTitle}>{children}</Text>
+);
+
+export const Body = ({
+  children,
+  muted = true,
+  center,
+}: {
+  children: ReactNode;
+  muted?: boolean;
+  center?: boolean;
+}) => (
+  <Text style={[styles.body, muted && styles.mutedText, center && styles.center]}>{children}</Text>
+);
+
+export const Secondary = ({ children }: { children: ReactNode }) => (
+  <Text style={styles.secondary}>{children}</Text>
+);
+
+/** Liten versal etikett i monospace, t.ex. SIGNERAT eller AVTALSTEXT. */
+export const Label = ({ children }: { children: ReactNode }) => (
+  <Text style={styles.label}>{children}</Text>
+);
+
+export const Amount = ({
+  children,
+  tone = 'accent',
+  size = 'card',
+}: {
+  children: ReactNode;
+  tone?: 'accent' | 'positive' | 'text';
+  size?: 'card' | 'large' | 'hero';
+}) => (
+  <Text
+    style={[
+      size === 'hero' ? styles.amountHero : size === 'large' ? styles.amountLarge : styles.amount,
+      tone === 'accent' && styles.accentText,
+      tone === 'positive' && styles.positiveText,
+    ]}
+  >
+    {children}
+  </Text>
+);
+
+// --- Knappar ----------------------------------------------------------------
 
 export function Button({
   label,
@@ -60,14 +189,17 @@ export function Button({
   loading = false,
   disabled = false,
   icon,
+  compact = false,
   style,
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary';
   loading?: boolean;
   disabled?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: ReactNode;
+  /** 48 i stället för 52 – används inuti rollkorten på inloggningen. */
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const isDisabled = disabled || loading;
@@ -79,31 +211,22 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.button,
-        variant === 'primary' && styles.buttonPrimary,
-        variant === 'secondary' && styles.buttonSecondary,
-        variant === 'ghost' && styles.buttonGhost,
-        variant === 'danger' && styles.buttonDanger,
+        { height: compact ? HEIGHTS.buttonCompact : HEIGHTS.buttonPrimary },
+        variant === 'primary' ? styles.buttonPrimary : styles.buttonSecondary,
         isDisabled && styles.buttonDisabled,
-        pressed && !isDisabled && styles.buttonPressed,
+        pressed && !isDisabled && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.primaryText : colors.text} />
+        <ActivityIndicator color={variant === 'primary' ? colors.ink : colors.text} />
       ) : (
         <View style={styles.buttonInner}>
-          {icon ? (
-            <Ionicons
-              name={icon}
-              size={18}
-              color={variant === 'primary' ? colors.primaryText : colors.text}
-            />
-          ) : null}
+          {icon}
           <Text
-            style={[
-              styles.buttonLabel,
-              variant === 'primary' ? styles.buttonLabelPrimary : styles.buttonLabelSecondary,
-            ]}
+            style={
+              variant === 'primary' ? styles.buttonLabelPrimary : styles.buttonLabelSecondary
+            }
           >
             {label}
           </Text>
@@ -113,6 +236,53 @@ export function Button({
   );
 }
 
+/** Rund ikonknapp i headern, 44 × 44. */
+export function IconButton({
+  onPress,
+  label,
+  children,
+}: {
+  onPress: () => void;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+/** Kvadratisk ikonruta 44 × 44 med rundade hörn, t.ex. rollkortens ikon. */
+export function IconBox({ children, tone = 'raised' }: { children: ReactNode; tone?: 'raised' | 'tint' }) {
+  return (
+    <View style={[styles.iconBox, tone === 'tint' && styles.iconBoxTint]}>{children}</View>
+  );
+}
+
+// --- Taggar, chips och märken ------------------------------------------------
+
+export function Tag({ label, tone = 'filled' }: { label: string; tone?: 'filled' | 'outline' | 'dashed' }) {
+  return (
+    <View
+      style={[
+        styles.tag,
+        tone === 'filled' && styles.tagFilled,
+        tone === 'outline' && styles.tagOutline,
+        tone === 'dashed' && styles.tagDashed,
+      ]}
+    >
+      <Text style={[styles.tagLabel, tone === 'dashed' && styles.mutedText]}>{label}</Text>
+    </View>
+  );
+}
+
+/** Valbart nischchip: fyllt i primärfärg när det är valt, annars outline. */
 export function Chip({
   label,
   selected = false,
@@ -123,8 +293,8 @@ export function Chip({
   onPress?: () => void;
 }) {
   const content = (
-    <View style={[styles.chip, selected && styles.chipSelected]}>
-      <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{label}</Text>
+    <View style={[styles.chip, selected ? styles.chipSelected : styles.chipUnselected]}>
+      <Text style={selected ? styles.chipLabelSelected : styles.chipLabel}>{label}</Text>
     </View>
   );
   if (!onPress) return content;
@@ -133,15 +303,177 @@ export function Chip({
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
+      style={({ pressed }) => (pressed ? styles.pressed : undefined)}
     >
       {content}
     </Pressable>
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+/** Matchningspill: bg-färgad platta med accentkant, gnista och procent. */
+export function MatchPill({ score, icon }: { score: number; icon?: ReactNode }) {
+  return (
+    <View style={styles.matchPill}>
+      {icon}
+      <Text style={styles.matchPillLabel}>{Math.round(score)} % match</Text>
+    </View>
+  );
 }
+
+export type StatusTone = 'pending' | 'active' | 'done' | 'cancelled';
+
+/** Statusmärke i headern på avtalsvyn. */
+export function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
+  if (tone === 'done') {
+    return (
+      <View style={[styles.statusBadge, styles.statusDone]}>
+        <CheckIcon size={13} color={colors.bg} />
+        <Text style={styles.statusDoneLabel}>{label}</Text>
+      </View>
+    );
+  }
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        tone === 'pending' && styles.statusPending,
+        tone === 'active' && styles.statusActive,
+        tone === 'cancelled' && styles.statusCancelled,
+      ]}
+    >
+      <Text
+        style={[
+          styles.statusLabel,
+          tone === 'pending' && styles.accentText,
+          tone === 'active' && styles.positiveText,
+          tone === 'cancelled' && styles.dangerText,
+        ]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** Nyckeltalsruta: versal etikett över ett värde. */
+export function StatBox({
+  label,
+  value,
+  tone = 'text',
+}: {
+  label: string;
+  value: string;
+  tone?: 'text' | 'positive' | 'accent';
+}) {
+  return (
+    <View style={styles.statBox}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text
+        style={[
+          styles.statValue,
+          tone === 'positive' && styles.positiveText,
+          tone === 'accent' && styles.accentText,
+        ]}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+/** Rad med etikett till vänster och värde till höger, som i ekonomikortet. */
+export function DetailRow({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: ReactNode;
+  /** Större och i accentfärg – används för "Till kreatören". */
+  emphasis?: boolean;
+}) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={emphasis ? styles.detailLabelEmphasis : styles.detailLabel}>{label}</Text>
+      {typeof value === 'string' ? (
+        <Text style={emphasis ? styles.detailValueEmphasis : styles.detailValue}>{value}</Text>
+      ) : (
+        value
+      )}
+    </View>
+  );
+}
+
+/** Trygghetsraden: hänglås plus en mening om att pengarna ligger spärrade. */
+export function TrustBar({ text }: { text: string }) {
+  return (
+    <View style={styles.trustBar}>
+      <LockIcon size={14} color={colors.positive} />
+      <Text style={styles.secondary}>{text}</Text>
+    </View>
+  );
+}
+
+// --- Bilder -----------------------------------------------------------------
+
+/**
+ * Bildyta. Finns ingen bild blir det en tom photo-färgad yta utan ikon och
+ * text, precis som handoffen säger – kortet håller ändå eftersom bildytan är
+ * den som flexar.
+ */
+export function Photo({
+  uri,
+  style,
+  children,
+}: {
+  uri?: string | null;
+  style?: StyleProp<ViewStyle>;
+  children?: ReactNode;
+}) {
+  return (
+    <View style={[styles.photo, style]}>
+      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+      {children}
+    </View>
+  );
+}
+
+/** Logotypruta 48 × 48 med radius 8. */
+export function Logo({ uri, size = 48 }: { uri?: string | null; size?: number }) {
+  return (
+    <View style={[styles.logo, { width: size, height: size }]}>
+      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+    </View>
+  );
+}
+
+/**
+ * Rund avatar. `ring` lägger till den 4 px breda bakgrundsfärgade ramen som
+ * skiljer bilderna från varandra när de överlappar på matchningsskärmen.
+ */
+export function Avatar({
+  uri,
+  size = 52,
+  ring = false,
+}: {
+  uri?: string | null;
+  size?: number;
+  ring?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.avatar,
+        { width: size, height: size, borderRadius: size / 2 },
+        ring && styles.avatarRing,
+      ]}
+    >
+      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+    </View>
+  );
+}
+
+// --- Formulär ---------------------------------------------------------------
 
 export function Field({
   label,
@@ -151,7 +483,6 @@ export function Field({
   multiline = false,
   keyboardType = 'default',
   hint,
-  error,
 }: {
   label: string;
   value: string;
@@ -160,60 +491,78 @@ export function Field({
   multiline?: boolean;
   keyboardType?: 'default' | 'numeric';
   hint?: string;
-  error?: string;
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Label>{label.toUpperCase()}</Label>
       <TextInput
-        style={[styles.input, multiline && styles.inputMultiline, error ? styles.inputError : null]}
+        style={[styles.input, multiline && styles.inputMultiline]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.dim}
         multiline={multiline}
         keyboardType={keyboardType}
         accessibilityLabel={label}
       />
-      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
-      {!error && hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
+      {hint ? <Text style={styles.secondary}>{hint}</Text> : null}
     </View>
   );
 }
 
-/** Matchningspoäng med markering när Claude har bedömt kortet. */
-export function ScoreBadge({ score, aiReviewed }: { score: number; aiReviewed: boolean }) {
+/** Segmenterat val, 40 px högt, valt segment fyllt i primärfärg. */
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
   return (
-    <View style={styles.scoreBadge}>
-      {aiReviewed ? <Ionicons name="sparkles" size={12} color={colors.accent} /> : null}
-      <Text style={styles.scoreText}>{Math.round(score)} % match</Text>
+    <View style={styles.segmented}>
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            onPress={() => onChange(option.value)}
+            style={[styles.segment, selected && styles.segmentSelected]}
+          >
+            <Text style={selected ? styles.segmentLabelSelected : styles.segmentLabel}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
-export function Loading({ label = 'Laddar …' }: { label?: string }) {
+/** Framstegsindikator: staplar där de avklarade är i primärfärg. */
+export function Progress({ total, current }: { total: number; current: number }) {
+  return (
+    <View style={styles.progress}>
+      {Array.from({ length: total }, (_, index) => (
+        <View
+          key={index}
+          style={[styles.progressBar, index < current && styles.progressBarDone]}
+        />
+      ))}
+    </View>
+  );
+}
+
+// --- Lägen ------------------------------------------------------------------
+
+export function Loading({ label }: { label?: string }) {
   return (
     <View style={styles.centered}>
       <ActivityIndicator color={colors.primary} />
-      <Text style={styles.caption}>{label}</Text>
-    </View>
-  );
-}
-
-export function EmptyState({
-  icon,
-  title,
-  message,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  message: string;
-}) {
-  return (
-    <View style={styles.centered}>
-      <Ionicons name={icon} size={44} color={colors.textMuted} />
-      <Text style={styles.heading}>{title}</Text>
-      <Text style={[styles.body, styles.muted, styles.centeredText]}>{message}</Text>
+      {label ? <Text style={styles.secondary}>{label}</Text> : null}
     </View>
   );
 }
@@ -221,91 +570,196 @@ export function EmptyState({
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <View style={styles.centered}>
-      <Ionicons name="alert-circle-outline" size={44} color={colors.danger} />
-      <Text style={[styles.body, styles.centeredText]}>{message}</Text>
+      <Text style={[styles.body, styles.center]}>{message}</Text>
       {onRetry ? <Button label="Försök igen" variant="secondary" onPress={onRetry} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  screenBody: { flex: 1, paddingHorizontal: spacing.md },
-  scrollContent: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
-  title: { ...typography.title, color: colors.text },
-  heading: { ...typography.heading, color: colors.text },
-  body: { ...typography.body, color: colors.text, lineHeight: 22 },
-  caption: { ...typography.caption, color: colors.textMuted },
-  muted: { color: colors.textMuted },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
-  centeredText: { textAlign: 'center' },
+  screen: { flex: 1, backgroundColor: colors.bg },
+  screenBody: { flex: 1 },
+  scrollContent: { padding: spacing.base, gap: spacing.md, paddingBottom: spacing.xl },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  backButton: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
+  headerText: { flex: 1, gap: 2 },
+  headerTitle: { ...type.rowTitleMedium, color: colors.text },
+  screenTitle: { ...type.screenTitle, color: colors.text },
+
+  card: { borderRadius: radius.card, padding: spacing.base, gap: spacing.md },
+  cardSurface: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  cardRaised: { backgroundColor: colors.raised },
+  cardPrimary: { borderWidth: 1, borderColor: colors.primary },
+  cardPositive: { borderWidth: 1, borderColor: colors.positive },
+  divider: { height: 1, backgroundColor: colors.border },
+
+  display: { ...type.display, color: colors.text },
+  sectionTitle: { ...type.sectionTitle, color: colors.text },
+  rowTitle: { ...type.rowTitle, color: colors.text },
+  body: { ...type.body, color: colors.text },
+  secondary: { ...type.secondary, color: colors.muted },
+  label: { ...type.label, color: colors.muted },
+  mutedText: { color: colors.muted },
+  accentText: { color: colors.accent },
+  positiveText: { color: colors.positive },
+  dangerText: { color: colors.danger },
+  center: { textAlign: 'center' },
+
+  amount: { ...type.amount, color: colors.text },
+  amountLarge: { ...type.amountLarge, color: colors.text },
+  amountHero: { ...type.amountHero, color: colors.text },
 
   button: {
-    borderRadius: radius.pill,
-    paddingVertical: 14,
-    paddingHorizontal: spacing.lg,
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 50,
+    paddingHorizontal: spacing.base,
   },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   buttonPrimary: { backgroundColor: colors.primary },
-  buttonSecondary: { backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border },
-  buttonGhost: { backgroundColor: 'transparent' },
-  buttonDanger: { backgroundColor: colors.danger },
-  buttonDisabled: { opacity: 0.5 },
-  buttonPressed: { opacity: 0.85 },
-  buttonLabel: { ...typography.label, fontSize: 15 },
-  buttonLabelPrimary: { color: colors.primaryText },
-  buttonLabelSecondary: { color: colors.text },
+  buttonSecondary: { borderWidth: 1, borderColor: colors.border },
+  buttonDisabled: { opacity: 0.45 },
+  pressed: { opacity: 0.85 },
+  buttonLabelPrimary: { ...type.buttonPrimary, color: colors.ink },
+  buttonLabelSecondary: { ...type.buttonSecondary, color: colors.text },
 
-  chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceRaised,
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.round,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipLabel: { ...typography.caption, color: colors.textMuted },
-  chipLabelSelected: { color: colors.primaryText, fontWeight: '600' },
-
-  card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.control,
+    backgroundColor: colors.raised,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBoxTint: { backgroundColor: colors.tint },
+
+  tag: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.tag },
+  tagFilled: { backgroundColor: colors.raised },
+  tagOutline: { borderWidth: 1, borderColor: colors.border },
+  tagDashed: { borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
+  tagLabel: { ...type.secondary, color: colors.text },
+
+  chip: { paddingVertical: 11, paddingHorizontal: 14, borderRadius: radius.chip },
+  chipUnselected: { borderWidth: 1, borderColor: colors.border },
+  chipSelected: { backgroundColor: colors.primary },
+  chipLabel: { ...type.bodySmall, color: colors.text },
+  chipLabelSelected: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.ink },
+
+  matchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: radius.tag,
+    backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.accent,
+  },
+  matchPillLabel: { fontFamily: type.rowTitle.fontFamily, fontSize: 13, color: colors.accent },
+
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: radius.tag,
+  },
+  statusPending: { borderWidth: 1, borderColor: colors.accent },
+  statusActive: { borderWidth: 1, borderColor: colors.positive },
+  statusCancelled: { borderWidth: 1, borderColor: colors.danger },
+  statusDone: { backgroundColor: colors.positive },
+  statusLabel: { fontFamily: type.rowTitle.fontFamily, fontSize: 12 },
+  statusDoneLabel: { fontFamily: type.rowTitle.fontFamily, fontSize: 12, color: colors.bg },
+
+  statBox: {
+    flex: 1,
+    backgroundColor: colors.raised,
+    borderRadius: radius.control,
+    padding: spacing.md,
+    gap: 2,
+  },
+  statLabel: { fontFamily: type.label.fontFamily, fontSize: 10, letterSpacing: 0.6, color: colors.muted },
+  statValue: { fontFamily: type.rowTitle.fontFamily, fontSize: 18, color: colors.text },
+
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: spacing.md },
+  detailLabel: { ...type.body, color: colors.muted },
+  detailValue: { fontFamily: type.listTitle.fontFamily, fontSize: 15, color: colors.text, textAlign: 'right', flexShrink: 1 },
+  detailLabelEmphasis: { fontFamily: type.listTitle.fontFamily, fontSize: 15, color: colors.text },
+  detailValueEmphasis: { ...type.amountSmall, color: colors.accent },
+
+  trustBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
   },
 
-  field: { gap: spacing.xs },
-  fieldLabel: { ...typography.label, color: colors.textMuted },
+  photo: { backgroundColor: colors.photo, overflow: 'hidden' },
+  logo: {
+    borderRadius: radius.control,
+    backgroundColor: colors.raised,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  avatar: { backgroundColor: colors.raised, overflow: 'hidden' },
+  avatarRing: { borderWidth: 4, borderColor: colors.bg },
+
+  field: { gap: 6 },
   input: {
     backgroundColor: colors.surface,
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 13,
     color: colors.text,
+    fontFamily: type.body.fontFamily,
     fontSize: 15,
+    minHeight: 48,
   },
   inputMultiline: { minHeight: 110, textAlignVertical: 'top' },
-  inputError: { borderColor: colors.danger },
-  fieldError: { ...typography.caption, color: colors.danger },
-  fieldHint: { ...typography.caption, color: colors.textMuted },
 
-  scoreBadge: {
-    flexDirection: 'row',
+  segmented: { flexDirection: 'row', gap: 6 },
+  segment: {
+    flex: 1,
+    height: 40,
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.overlay,
-    borderRadius: radius.pill,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    justifyContent: 'center',
   },
-  scoreText: { ...typography.caption, color: colors.text, fontWeight: '600' } as TextStyle,
+  segmentSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  segmentLabel: { ...type.secondary, color: colors.muted },
+  segmentLabelSelected: { fontFamily: type.listTitle.fontFamily, fontSize: 13, color: colors.ink },
+
+  progress: { flexDirection: 'row', gap: 6 },
+  progressBar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.border },
+  progressBarDone: { backgroundColor: colors.primary },
+
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl },
 });
+
+export { styles as uiStyles };
+export type { TextStyle };

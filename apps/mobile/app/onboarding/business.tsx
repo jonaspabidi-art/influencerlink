@@ -1,22 +1,34 @@
 import { CATEGORIES, type Category } from '@influencerlink/shared';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
-import { Body, Button, Caption, Card, Chip, Field, Heading, Screen, Title } from '../../src/components/ui';
+import {
+  Button,
+  Card,
+  Chip,
+  Field,
+  Header,
+  Progress,
+  ScrollScreen,
+} from '../../src/components/ui';
 import { CATEGORY_LABELS } from '../../src/format';
-import { spacing } from '../../src/theme';
+import { colors, spacing, type } from '../../src/theme';
 
 interface SavedProfile {
   profile: { id: string };
   accessToken: string;
 }
 
+const TOTAL_STEPS = 3;
+
+/** Samma mall som kreatörens onboarding: en fråga i taget. */
 export default function BusinessOnboarding() {
   const router = useRouter();
   const { replaceToken, refresh } = useAuth();
 
+  const [step, setStep] = useState(1);
   const [companyName, setCompanyName] = useState('');
   const [orgNumber, setOrgNumber] = useState('');
   const [city, setCity] = useState('');
@@ -38,17 +50,13 @@ export default function BusinessOnboarding() {
 
   const save = async () => {
     setError(null);
-    const digits = orgNumber.replace(/\D/g, '');
-    if (companyName.trim().length < 2) return setError('Ange restaurangens namn.');
-    if (digits.length !== 10) return setError('Organisationsnumret ska ha tio siffror.');
-    if (city.trim().length < 2) return setError('Ange stad.');
     if (categories.length === 0) return setError('Välj minst en kategori.');
 
     setSaving(true);
     try {
       const saved = await api.put<SavedProfile>('/me/business-profile', {
         companyName: companyName.trim(),
-        orgNumber: digits,
+        orgNumber: orgNumber.replace(/\D/g, ''),
         city: city.trim(),
         address: address.trim(),
         description: description.trim(),
@@ -64,65 +72,125 @@ export default function BusinessOnboarding() {
     }
   };
 
+  const next = () => {
+    setError(null);
+    if (step === 1) {
+      if (companyName.trim().length < 2) return setError('Ange restaurangens namn.');
+      if (orgNumber.replace(/\D/g, '').length !== 10) {
+        return setError('Organisationsnumret ska ha tio siffror.');
+      }
+    }
+    if (step === 2 && city.trim().length < 2) return setError('Ange stad.');
+    if (step === TOTAL_STEPS) return void save();
+    setStep((current) => current + 1);
+  };
+
   return (
-    <Screen scroll>
-      <Title>Om restaurangen</Title>
-      <Body muted>
-        Tre minuter nu, sedan kan du skapa ditt första samarbete. Uppgifterna används i avtalen.
-      </Body>
+    <ScrollScreen contentStyle={styles.content}>
+      <Header
+        title="Om restaurangen"
+        onBack={step > 1 ? () => setStep((current) => current - 1) : undefined}
+        right={
+          <Text style={styles.stepCounter}>
+            {step} / {TOTAL_STEPS}
+          </Text>
+        }
+      />
+      <Progress total={TOTAL_STEPS} current={step} />
 
-      <Card>
-        <Field
-          label="Restaurangens namn"
-          value={companyName}
-          onChangeText={setCompanyName}
-          placeholder="Restaurang Kajutan"
-        />
-        <Field
-          label="Organisationsnummer"
-          value={orgNumber}
-          onChangeText={setOrgNumber}
-          placeholder="556012-3456"
-          keyboardType="numeric"
-          hint="Står i avtalen mot influencern."
-        />
-        <Field label="Stad" value={city} onChangeText={setCity} placeholder="Göteborg" />
-        <Field
-          label="Adress"
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Kungsportsavenyen 12"
-        />
-        <Field
-          label="Beskriv stället"
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Vad serverar ni, och vilka kommer hit?"
-          multiline
-        />
-      </Card>
-
-      <Card>
-        <Heading>Kategori</Heading>
-        <Caption>Styr vilka kreatörer vi föreslår.</Caption>
-        <View style={styles.chips}>
-          {CATEGORIES.map((category) => (
-            <Chip
-              key={category}
-              label={CATEGORY_LABELS[category]}
-              selected={categories.includes(category)}
-              onPress={() => toggleCategory(category)}
+      {step === 1 ? (
+        <>
+          <Question
+            title="Vad heter stället?"
+            lead="Namnet och organisationsnumret står i avtalen mot kreatören."
+          />
+          <Card>
+            <Field
+              label="Restaurangens namn"
+              value={companyName}
+              onChangeText={setCompanyName}
+              placeholder="Restaurang Kajutan"
             />
-          ))}
-        </View>
-      </Card>
+            <Field
+              label="Organisationsnummer"
+              value={orgNumber}
+              onChangeText={setOrgNumber}
+              placeholder="556012-3456"
+              keyboardType="numeric"
+            />
+          </Card>
+        </>
+      ) : null}
 
-      {error ? <Body>{error}</Body> : null}
-      <Button label="Fortsätt" onPress={() => void save()} loading={saving} />
-    </Screen>
+      {step === 2 ? (
+        <>
+          <Question
+            title="Var ligger ni?"
+            lead="Kreatörer måste kunna besöka er, så vi matchar i första hand lokalt."
+          />
+          <Card>
+            <Field label="Stad" value={city} onChangeText={setCity} placeholder="Göteborg" />
+            <Field
+              label="Adress"
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Kungsportsavenyen 12"
+            />
+            <Field
+              label="Beskriv stället"
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Vad serverar ni, och vilka kommer hit?"
+              multiline
+            />
+          </Card>
+        </>
+      ) : null}
+
+      {step === 3 ? (
+        <>
+          <Question
+            title="Vad är ni för slags ställe?"
+            lead="Styr vilka kreatörer vi föreslår. Välj det som stämmer bäst."
+          />
+          <View style={styles.chipRow}>
+            {CATEGORIES.map((category) => (
+              <Chip
+                key={category}
+                label={CATEGORY_LABELS[category]}
+                selected={categories.includes(category)}
+                onPress={() => toggleCategory(category)}
+              />
+            ))}
+          </View>
+        </>
+      ) : null}
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Button
+        label={step === TOTAL_STEPS ? 'Klar – skapa ert första samarbete' : 'Fortsätt'}
+        onPress={next}
+        loading={saving}
+      />
+    </ScrollScreen>
+  );
+}
+
+function Question({ title, lead }: { title: string; lead: string }) {
+  return (
+    <View style={styles.question}>
+      <Text style={styles.questionTitle}>{title}</Text>
+      <Text style={styles.questionLead}>{lead}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  content: { paddingTop: 0 },
+  stepCounter: { ...type.label, color: colors.muted },
+  question: { gap: spacing.sm, paddingTop: spacing.sm },
+  questionTitle: { ...type.display, color: colors.text },
+  questionLead: { ...type.body, color: colors.muted },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  error: { ...type.secondary, color: colors.danger },
 });

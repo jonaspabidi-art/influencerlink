@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { api, ApiError } from './api';
-import { Body, Button, Caption, Card, Heading } from './components/ui';
-import { colors, spacing } from './theme';
+import { Button, Header, Screen } from './components/ui';
+import { colors, radius, spacing, type } from './theme';
 import type { BankIdStart, BankIdStatus } from './types';
 
 /** BankID:s QR-kod byts varje sekund; vi hämtar status lika ofta som den roterar. */
@@ -122,14 +122,18 @@ export function useBankId({ purpose, onComplete }: UseBankIdOptions) {
   return { phase, qrData, hintText, autoStartUrl, start, cancel };
 }
 
-/** Väntvyn med QR-kod och knapp för att öppna BankID på samma enhet. */
-export function BankIdPanel({
+/**
+ * Hela BankID-skärmen: QR-kod, statustext som byts under tiden, och de två
+ * knapparna längst ned. Används både vid inloggning och avtalssignering.
+ */
+export function BankIdScreen({
   phase,
   qrData,
   hintText,
   autoStartUrl,
   onCancel,
   onRetry,
+  title = 'Legitimera dig',
 }: {
   phase: BankIdPhase;
   qrData: string | null;
@@ -137,47 +141,97 @@ export function BankIdPanel({
   autoStartUrl: string | null;
   onCancel: () => void;
   onRetry: () => void;
+  title?: string;
 }) {
-  if (phase === 'failed') {
-    return (
-      <Card>
-        <Heading>Det gick inte</Heading>
-        <Body muted>{hintText || 'BankID svarade inte. Försök igen.'}</Body>
-        <Button label="Försök igen" onPress={onRetry} />
-      </Card>
-    );
-  }
+  const failed = phase === 'failed';
 
   return (
-    <Card>
-      <Heading>Legitimera med BankID</Heading>
-      <View style={styles.qrWrapper}>
-        {qrData ? (
-          <QRCode value={qrData} size={200} backgroundColor="#FFFFFF" color="#000000" />
-        ) : (
-          <View style={styles.qrPlaceholder} />
-        )}
+    <Screen>
+      <Header title={title} onBack={onCancel} />
+
+      <View style={styles.body}>
+        <View style={styles.qrFrame}>
+          {qrData && !failed ? (
+            <QRCode value={qrData} size={164} backgroundColor="transparent" color={colors.text} />
+          ) : (
+            <View style={styles.qrPlaceholder} />
+          )}
+        </View>
+
+        <View style={styles.copy}>
+          <Text style={styles.heading}>
+            {failed ? 'Det gick inte' : 'Skriv in din säkerhetskod'}
+          </Text>
+          <Text style={styles.explanation}>
+            {failed
+              ? hintText || 'BankID svarade inte. Försök igen.'
+              : 'Öppna BankID-appen och skanna koden. Vi hämtar bara namn och personnummer.'}
+          </Text>
+        </View>
+
+        {!failed ? (
+          <View style={styles.statusPill}>
+            <View style={styles.statusDot} />
+            <Text style={styles.statusText}>{hintText || 'Väntar på BankID …'}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.spacer} />
+
+        <View style={styles.actions}>
+          {failed ? (
+            <Button label="Försök igen" onPress={onRetry} />
+          ) : autoStartUrl ? (
+            <Button
+              label="Öppna BankID på denna enhet"
+              onPress={() => void Linking.openURL(autoStartUrl)}
+            />
+          ) : null}
+          <Button label="Avbryt" variant="secondary" onPress={onCancel} />
+        </View>
       </View>
-      <Body muted>{hintText || 'Öppna BankID-appen och skanna koden.'}</Body>
-      {autoStartUrl ? (
-        <Button
-          label="Öppna BankID på den här enheten"
-          icon="phone-portrait-outline"
-          onPress={() => void Linking.openURL(autoStartUrl)}
-        />
-      ) : null}
-      <Button label="Avbryt" variant="ghost" onPress={onCancel} />
-      <Caption>QR-koden byts automatiskt några gånger i sekunden.</Caption>
-    </Card>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  qrWrapper: {
-    alignSelf: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: spacing.md,
-    borderRadius: 12,
+  body: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
+    gap: 28,
   },
-  qrPlaceholder: { width: 200, height: 200, backgroundColor: colors.surfaceRaised },
+  qrFrame: {
+    width: 220,
+    height: 220,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+  },
+  qrPlaceholder: { width: 164, height: 164, backgroundColor: colors.raised },
+  copy: { alignItems: 'center', gap: spacing.sm },
+  heading: { fontFamily: type.amount.fontFamily, fontSize: 22, color: colors.text },
+  explanation: {
+    ...type.body,
+    color: colors.muted,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 9,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.chip,
+    backgroundColor: colors.raised,
+  },
+  statusDot: { width: 8, height: 8, borderRadius: radius.round, backgroundColor: colors.accent },
+  statusText: { ...type.secondary, color: colors.muted },
+  spacer: { flex: 1 },
+  actions: { width: '100%', gap: spacing.md, paddingBottom: spacing.xl },
 });

@@ -1,14 +1,30 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { Body, Button, Caption, Card, Heading, Loading, Screen, Title } from '../../src/components/ui';
-import { formatSek } from '../../src/format';
-import { colors, radius, spacing, typography } from '../../src/theme';
-import type { PayoutStatus } from '../../src/types';
-import { Text } from 'react-native';
+import { CheckIcon, LockIcon } from '../../src/components/icons';
+import {
+  Body,
+  Button,
+  Card,
+  Divider,
+  Header,
+  Label,
+  Loading,
+  ScrollScreen,
+} from '../../src/components/ui';
+import { formatDate, formatSek } from '../../src/format';
+import { colors, radius, spacing, type } from '../../src/theme';
+import type { Contract, PayoutStatus } from '../../src/types';
+
+/** Stegen i förklaringen av hur pengarna når kreatören. */
+const PAYOUT_STEPS = [
+  'Ni signerar avtalet med BankID.',
+  'Restaurangen betalar in arvodet. Beloppet ligger spärrat hos oss.',
+  'Du levererar, restaurangen godkänner och pengarna är hos dig inom 1–2 bankdagar.',
+];
 
 export default function Wallet() {
   const { user, signOut } = useAuth();
@@ -19,101 +35,163 @@ export default function Wallet() {
     queryFn: () => api.get<PayoutStatus>('/me/payouts/status'),
   });
 
+  const contracts = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => api.get<Contract[]>('/contracts'),
+  });
+
   const onboarding = useMutation({
     mutationFn: () => api.post<{ onboardingUrl: string }>('/me/payouts/onboarding'),
     onSuccess: (result) => {
-      void Linking.openURL(result.onboardingUrl);
+      if (result.onboardingUrl) void Linking.openURL(result.onboardingUrl);
+      void status.refetch();
     },
-    onError: (caught) => {
-      setError(caught instanceof ApiError ? caught.message : 'Kunde inte öppna Stripe.');
-    },
+    onError: (caught) =>
+      setError(caught instanceof ApiError ? caught.message : 'Kunde inte öppna Stripe.'),
   });
 
   if (status.isLoading) {
     return (
-      <Screen>
+      <ScrollScreen>
         <Loading />
-      </Screen>
+      </ScrollScreen>
     );
   }
 
   const data = status.data;
+  const pendingContracts = (contracts.data ?? []).filter(
+    (contract) => contract.paymentStatus === 'ESCROWED',
+  );
+  const completed = (contracts.data ?? []).filter((contract) => contract.status === 'COMPLETED');
 
   return (
-    <Screen scroll>
-      <Title>Plånbok</Title>
-
-      <View style={styles.amounts}>
-        <Amount label="På väg till dig" value={formatSek(data?.pendingPayout ?? 0)} />
-        <Amount label="Utbetalt totalt" value={formatSek(data?.paidOut ?? 0)} highlight />
-      </View>
+    <ScrollScreen contentStyle={styles.content}>
+      <Header title="Plånbok" large />
 
       <Card>
-        <Heading>Utbetalningskonto</Heading>
-        {data?.payoutsEnabled ? (
-          <Body muted>
-            Klart. Pengarna betalas ut automatiskt när restaurangen godkänt din leverans.
-          </Body>
-        ) : (
-          <>
-            <Body muted>
-              Koppla ditt bankkonto via Stripe för att kunna ta emot betalningar. Det tar någon
-              minut och du behöver ditt bankkontonummer.
-            </Body>
-            <Button
-              label={data?.connected ? 'Slutför hos Stripe' : 'Koppla utbetalningskonto'}
+        <View style={styles.heroBlock}>
+          <Text style={styles.secondary}>På väg till dig</Text>
+          <Text style={styles.heroAmount}>{formatSek(data?.pendingPayout ?? 0)}</Text>
+          <Text style={styles.secondary}>
+            {pendingContracts.length === 0
+              ? 'Inget spärrat just nu'
+              : `${pendingContracts.length} ${pendingContracts.length === 1 ? 'avtal' : 'avtal'}, spärrat tills leveransen godkänts`}
+          </Text>
+        </View>
+        <Divider />
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Utbetalt totalt</Text>
+          <Text style={styles.totalValue}>{formatSek(data?.paidOut ?? 0)}</Text>
+        </View>
+      </Card>
+
+      {data?.payoutsEnabled ? (
+        <Card>
+          <View style={styles.accountRow}>
+            <CheckIcon size={20} color={colors.positive} />
+            <View style={styles.accountText}>
+              <Text style={styles.accountTitle}>Utbetalningskontot är klart</Text>
+              <Text style={styles.secondary}>Pengarna går direkt till ditt konto.</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
               onPress={() => onboarding.mutate()}
-              loading={onboarding.isPending}
-            />
-          </>
-        )}
-        {error ? <Body>{error}</Body> : null}
+              hitSlop={8}
+            >
+              <Text style={styles.linkAction}>Ändra</Text>
+            </Pressable>
+          </View>
+        </Card>
+      ) : (
+        <Card tone="primary">
+          <Text style={styles.accountTitle}>Koppla ditt utbetalningskonto</Text>
+          <Body>
+            Vi behöver ditt bankkonto för att kunna betala ut. Det tar någon minut och sköts av
+            Stripe.
+          </Body>
+          <Button
+            label={data?.connected ? 'Slutför hos Stripe' : 'Koppla konto'}
+            onPress={() => onboarding.mutate()}
+            loading={onboarding.isPending}
+          />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+        </Card>
+      )}
+
+      <Card tone="raised">
+        <View style={styles.explainHeader}>
+          <LockIcon size={16} color={colors.positive} />
+          <Text style={styles.explainTitle}>Så får du dina pengar</Text>
+        </View>
+        {PAYOUT_STEPS.map((step, index) => (
+          <View key={step} style={styles.stepRow}>
+            <Text style={styles.stepNumber}>{String(index + 1).padStart(2, '0')}</Text>
+            <Text style={styles.stepText}>{step}</Text>
+          </View>
+        ))}
       </Card>
 
-      <Card>
-        <Heading>Så fungerar betalningen</Heading>
-        <Caption>
-          Restaurangen betalar in hela arvodet när avtalet signerats av båda parter. Pengarna hålls
-          kvar hos oss tills du levererat och restaurangen godkänt – därefter går de till ditt
-          konto. Plattformsavgiften är 12 % och dras vid utbetalningen.
-        </Caption>
-      </Card>
+      {completed.length > 0 ? (
+        <View style={styles.recent}>
+          <Label>SENASTE</Label>
+          {completed.slice(0, 5).map((contract) => (
+            <View key={contract.id} style={styles.recentRow}>
+              <View style={styles.recentText}>
+                <Text style={styles.recentName}>{contract.businessName}</Text>
+                <Text style={styles.secondary}>
+                  Utbetalt {contract.completedAt ? formatDate(contract.completedAt) : ''}
+                </Text>
+              </View>
+              <Text style={styles.recentAmount}>{formatSek(contract.payout)}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <Card>
-        <Heading>Konto</Heading>
-        <Body muted>
-          {user?.name}
-          {user?.personalNumberMask ? ` · ${user.personalNumberMask}` : ''}
-        </Body>
-        <Button label="Logga ut" variant="ghost" onPress={() => void signOut()} />
+        <Text style={styles.accountTitle}>{user?.name}</Text>
+        <Text style={styles.secondary}>{user?.personalNumberMask ?? ''}</Text>
+        <Button label="Logga ut" variant="secondary" onPress={() => void signOut()} />
       </Card>
 
       <DemoBanner />
-    </Screen>
-  );
-}
-
-function Amount({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <View style={styles.amountBox}>
-      <Text style={[styles.amountValue, highlight && styles.amountHighlight]}>{value}</Text>
-      <Text style={styles.amountLabel}>{label}</Text>
-    </View>
+    </ScrollScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  amounts: { flexDirection: 'row', gap: spacing.sm },
-  amountBox: {
-    flex: 1,
+  content: { paddingTop: 0 },
+  secondary: { ...type.secondary, color: colors.muted },
+  heroBlock: { gap: 2 },
+  heroAmount: { ...type.amountHero, color: colors.accent },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  totalLabel: { ...type.body, color: colors.muted },
+  totalValue: { fontFamily: type.amountSmall.fontFamily, fontSize: 20, color: colors.text },
+
+  accountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  accountText: { flex: 1, gap: 2 },
+  accountTitle: { ...type.listTitle, color: colors.text },
+  linkAction: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.primary },
+  error: { ...type.secondary, color: colors.danger },
+
+  explainHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  explainTitle: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.text },
+  stepRow: { flexDirection: 'row', gap: spacing.md },
+  stepNumber: { fontFamily: type.label.fontFamily, fontSize: 11, color: colors.muted, paddingTop: 3 },
+  stepText: { ...type.bodySmall, color: colors.muted, flex: 1 },
+
+  recent: { gap: spacing.sm },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: radius.control,
     padding: spacing.md,
-    gap: 2,
   },
-  amountValue: { ...typography.title, color: colors.text, fontSize: 22 },
-  amountHighlight: { color: colors.success },
-  amountLabel: { ...typography.caption, color: colors.textMuted },
+  recentText: { flex: 1 },
+  recentName: { ...type.listTitle, color: colors.text },
+  recentAmount: { fontFamily: type.rowTitle.fontFamily, fontSize: 15, color: colors.text },
 });

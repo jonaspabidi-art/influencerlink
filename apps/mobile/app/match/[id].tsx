@@ -1,24 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import {
   Body,
   Button,
-  Caption,
   Card,
   Field,
-  Heading,
+  Header,
   Loading,
   Screen,
 } from '../../src/components/ui';
 import { formatSek, kronorToOre, oreToKronor } from '../../src/format';
-import { colors, radius, spacing, typography } from '../../src/theme';
+import { colors, radius, spacing, type } from '../../src/theme';
 import type { Campaign, ChatMessage, Contract, Match } from '../../src/types';
 
-/** Meddelanden hämtas om regelbundet – enkelt och tillräckligt för ett fåtal rader. */
+/** Meddelanden hämtas om regelbundet – tillräckligt för ett fåtal rader. */
 const MESSAGE_POLL_MS = 5_000;
 const DEFAULT_DUE_DAYS = 14;
 
@@ -54,6 +53,7 @@ export default function MatchDetail() {
     onSuccess: () => {
       setDraft('');
       void queryClient.invalidateQueries({ queryKey: ['messages', id] });
+      void queryClient.invalidateQueries({ queryKey: ['matches'] });
     },
   });
 
@@ -72,9 +72,8 @@ export default function MatchDetail() {
       void queryClient.invalidateQueries({ queryKey: ['matches'] });
       router.push(`/contract/${contract.id}`);
     },
-    onError: (caught) => {
-      setError(caught instanceof ApiError ? caught.message : 'Kunde inte skapa avtalet.');
-    },
+    onError: (caught) =>
+      setError(caught instanceof ApiError ? caught.message : 'Kunde inte skapa avtalet.'),
   });
 
   if (matches.isLoading || !match) {
@@ -90,92 +89,103 @@ export default function MatchDetail() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Heading>{counterpart}</Heading>
-        <Caption>
-          {match.campaign.title} · {Math.round(match.matchScore)} % match
-        </Caption>
-        <Body muted>{match.matchReason}</Body>
-      </View>
+      <Header
+        title={counterpart}
+        subtitle={`${match.campaign.title} · ${Math.round(match.matchScore)} % match`}
+        onBack={() => router.back()}
+      />
 
-      {match.contractId ? (
-        <Button
-          label="Öppna avtalet"
-          icon="document-text-outline"
-          onPress={() => router.push(`/contract/${match.contractId}`)}
-        />
-      ) : isBusiness ? (
-        showContractForm ? (
-          <Card>
-            <Heading>Skicka avtal</Heading>
-            <Caption>
-              Avtalet skickas för signering med BankID. Ni betalar först när båda signerat, och
-              pengarna går vidare till kreatören när ni godkänt leveransen.
-            </Caption>
-            <Field
-              label="Arvode (kr)"
-              value={fee}
-              onChangeText={setFee}
-              keyboardType="numeric"
-              hint={
-                campaign.data
-                  ? `Kampanjens budget är ${formatSek(campaign.data.budgetPerCreator)}.`
-                  : undefined
-              }
-            />
-            {error ? <Body>{error}</Body> : null}
-            <Button
-              label="Skapa och skicka"
-              onPress={() => createContract.mutate()}
-              loading={createContract.isPending}
-            />
-            <Button label="Avbryt" variant="ghost" onPress={() => setShowContractForm(false)} />
-          </Card>
-        ) : (
+      <View style={styles.actionArea}>
+        {match.contractId ? (
           <Button
-            label="Skicka avtal"
-            onPress={() => {
-              setFee(String(oreToKronor(campaign.data?.budgetPerCreator ?? 0)));
-              setShowContractForm(true);
-            }}
+            label="Öppna avtalet"
+            onPress={() => router.push(`/contract/${match.contractId}`)}
           />
-        )
-      ) : (
-        <Card>
-          <Caption>
-            Restaurangen skickar avtalet när ni kommit överens. Du får signera med BankID innan
-            något blir bindande.
-          </Caption>
-        </Card>
-      )}
+        ) : isBusiness ? (
+          showContractForm ? (
+            <Card tone="primary">
+              <Text style={styles.actionTitle}>Skicka avtal</Text>
+              <Body>
+                Avtalet signeras med BankID av båda parter. Ni betalar in arvodet först när det är
+                signerat, och pengarna går till kreatören när ni godkänt leveransen.
+              </Body>
+              <Field
+                label="Arvode (kr)"
+                value={fee}
+                onChangeText={setFee}
+                keyboardType="numeric"
+                hint={
+                  campaign.data
+                    ? `Kampanjens budget är ${formatSek(campaign.data.budgetPerCreator)}.`
+                    : undefined
+                }
+              />
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+              <Button
+                label="Skapa och skicka"
+                onPress={() => createContract.mutate()}
+                loading={createContract.isPending}
+              />
+              <Button
+                label="Avbryt"
+                variant="secondary"
+                onPress={() => setShowContractForm(false)}
+              />
+            </Card>
+          ) : (
+            <Button
+              label="Skicka avtal"
+              onPress={() => {
+                setFee(String(oreToKronor(campaign.data?.budgetPerCreator ?? 0)));
+                setShowContractForm(true);
+              }}
+            />
+          )
+        ) : (
+          <Card tone="raised">
+            <Text style={styles.hint}>
+              Restaurangen skickar avtalet när ni kommit överens. Du signerar med BankID innan
+              något blir bindande.
+            </Text>
+          </Card>
+        )}
+      </View>
 
       <FlatList
         data={messages.data ?? []}
         keyExtractor={(message) => message.id}
         contentContainerStyle={styles.messages}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const mine = item.senderId === user?.id;
           return (
             <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
               {!mine ? <Text style={styles.sender}>{item.senderName}</Text> : null}
-              <Text style={styles.messageText}>{item.body}</Text>
+              <Text style={mine ? styles.messageMine : styles.messageTheirs}>{item.body}</Text>
             </View>
           );
         }}
         ListEmptyComponent={
-          <Caption>Skriv första meddelandet så kommer ni igång.</Caption>
+          <Text style={styles.hint}>Skriv första meddelandet så kommer ni igång.</Text>
         }
       />
 
       <View style={styles.composer}>
-        <View style={styles.composerField}>
-          <Field label="Meddelande" value={draft} onChangeText={setDraft} placeholder="Skriv här …" />
-        </View>
+        <TextInput
+          style={styles.composerInput}
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="Skriv ett meddelande …"
+          placeholderTextColor={colors.dim}
+          accessibilityLabel="Meddelande"
+          onSubmitEditing={() => draft.trim() && send.mutate(draft.trim())}
+        />
         <Button
           label="Skicka"
           onPress={() => draft.trim() && send.mutate(draft.trim())}
           loading={send.isPending}
           disabled={draft.trim().length === 0}
+          style={styles.sendButton}
         />
       </View>
     </Screen>
@@ -183,13 +193,42 @@ export default function MatchDetail() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingVertical: spacing.md, gap: 2 },
-  messages: { gap: spacing.sm, paddingVertical: spacing.md },
-  bubble: { maxWidth: '85%', borderRadius: radius.md, padding: spacing.sm },
+  actionArea: { paddingHorizontal: spacing.base, paddingBottom: spacing.md, gap: spacing.md },
+  actionTitle: { ...type.rowTitle, color: colors.text },
+  hint: { ...type.bodySmall, color: colors.muted },
+  error: { ...type.secondary, color: colors.danger },
+
+  messages: { gap: spacing.sm, paddingHorizontal: spacing.base, paddingBottom: spacing.md },
+  bubble: { maxWidth: '85%', borderRadius: radius.card, padding: spacing.md },
   bubbleMine: { alignSelf: 'flex-end', backgroundColor: colors.primary },
-  bubbleTheirs: { alignSelf: 'flex-start', backgroundColor: colors.surfaceRaised },
-  sender: { ...typography.caption, color: colors.textMuted, marginBottom: 2 },
-  messageText: { ...typography.body, color: colors.text },
-  composer: { paddingBottom: spacing.md, gap: spacing.sm },
-  composerField: {},
+  bubbleTheirs: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sender: { ...type.secondary, color: colors.muted, marginBottom: 2 },
+  messageMine: { ...type.bodySmall, color: colors.ink },
+  messageTheirs: { ...type.bodySmall, color: colors.text },
+
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.md,
+  },
+  composerInput: {
+    flex: 1,
+    height: 48,
+    backgroundColor: colors.surface,
+    borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    fontFamily: type.bodySmall.fontFamily,
+    fontSize: 15,
+    color: colors.text,
+  },
+  sendButton: { paddingHorizontal: spacing.base },
 });

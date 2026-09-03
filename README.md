@@ -27,6 +27,26 @@ slipper skriva in siffror själv.
 ett avtal, båda signerar med BankID, restaurangen betalar in arvodet till ett
 spärrat konto, influencern levererar och pengarna släpps vid godkännande.
 
+## Design
+
+Appen följer designen i `docs/design/HANDOFF.md` (prototypen ligger bredvid som
+`InfluencerLink.dc.html`). Ljust tema är valt; den mörka paletten finns kvar i
+`apps/mobile/src/theme.ts` och kan slås på genom att byta vilken palett
+`colors` pekar på.
+
+Tokens, typografi och komponenter ligger samlade:
+
+| Fil | Innehåll |
+| --- | --- |
+| `src/theme.ts` | Färger, avstånd, hörnradier, typografiskala |
+| `src/components/ui.tsx` | Knappar, kort, taggar, statusmärken, nyckeltalsrutor |
+| `src/components/icons.tsx` | Streckikoner, 24 × 24, stroke 1,75 |
+| `src/components/cards.tsx` | Kortleken åt båda hållen |
+
+Typsnittet är Instrument Sans. Vikt sätts via typsnittsfamiljen och inte med
+`fontWeight`, eftersom snitten laddas som separata filer och Android annars
+faller tillbaka på fel vikt.
+
 ## Matchningen
 
 Matchningen körs i två steg, och det andra steget är alltid valfritt:

@@ -3,15 +3,17 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import {
+  Avatar,
   Body,
   Button,
-  Caption,
   Card,
   Chip,
-  Heading,
+  Divider,
+  Header,
+  Label,
   Loading,
-  Screen,
-  Title,
+  ScrollScreen,
+  Tag,
 } from '../../src/components/ui';
 import {
   CATEGORY_LABELS,
@@ -21,7 +23,7 @@ import {
   formatDate,
   formatSek,
 } from '../../src/format';
-import { colors, radius, spacing, typography } from '../../src/theme';
+import { colors, spacing, type } from '../../src/theme';
 import type { Campaign } from '../../src/types';
 
 interface Application {
@@ -73,9 +75,9 @@ export default function CampaignDetail() {
 
   if (campaign.isLoading || !campaign.data) {
     return (
-      <Screen>
+      <ScrollScreen>
         <Loading />
-      </Screen>
+      </ScrollScreen>
     );
   }
 
@@ -83,15 +85,19 @@ export default function CampaignDetail() {
   const pending = (applications.data ?? []).filter((item) => item.status === 'PENDING');
 
   return (
-    <Screen scroll>
-      <Title>{data.title}</Title>
-      <Caption>
-        {data.city} · {data.slotsFilled}/{data.slots} platser · till {formatDate(data.endDate)}
-      </Caption>
+    <ScrollScreen contentStyle={styles.content}>
+      <Header title="Kampanj" onBack={() => router.back()} />
+
+      <View style={styles.titleBlock}>
+        <Text style={styles.title}>{data.title}</Text>
+        <Text style={styles.secondary}>
+          {data.city} · {data.slotsFilled} av {data.slots} platser · till {formatDate(data.endDate)}
+        </Text>
+      </View>
 
       <Card>
-        <Heading>Ersättning</Heading>
-        <Text style={styles.pay}>
+        <Label>ERSÄTTNING</Label>
+        <Text style={styles.amount}>
           {describeCompensation(
             data.compensationType,
             data.budgetPerCreator,
@@ -99,21 +105,22 @@ export default function CampaignDetail() {
             formatSek,
           )}
         </Text>
-        <Caption>Minst {data.minFollowers.toLocaleString('sv-SE')} följare.</Caption>
+        <Divider />
+        <Text style={styles.secondary}>
+          Minst {data.minFollowers.toLocaleString('sv-SE')} följare · {' '}
+          {data.platforms.map((platform) => PLATFORM_LABELS[platform]).join(', ')}
+        </Text>
       </Card>
 
       <Card>
-        <Heading>Brief</Heading>
-        <Body muted>{data.brief}</Body>
-        <View style={styles.chips}>
-          {data.categories.map((category) => (
-            <Chip key={category} label={CATEGORY_LABELS[category]} />
-          ))}
-          {data.platforms.map((platform) => (
-            <Chip key={platform} label={PLATFORM_LABELS[platform]} />
-          ))}
+        <Label>BRIEF</Label>
+        <Body>{data.brief}</Body>
+        <View style={styles.tagRow}>
           {data.deliverables.map((deliverable) => (
-            <Chip key={deliverable} label={DELIVERABLE_LABELS[deliverable]} />
+            <Tag key={deliverable} label={DELIVERABLE_LABELS[deliverable]} />
+          ))}
+          {data.categories.map((category) => (
+            <Tag key={category} label={CATEGORY_LABELS[category]} tone="outline" />
           ))}
         </View>
       </Card>
@@ -123,29 +130,37 @@ export default function CampaignDetail() {
       ) : null}
 
       <Card>
-        <Heading>Ansökningar</Heading>
-        {applications.isLoading ? <Caption>Hämtar …</Caption> : null}
+        <Label>ANSÖKNINGAR</Label>
+        {applications.isLoading ? <Text style={styles.secondary}>Hämtar …</Text> : null}
         {!applications.isLoading && pending.length === 0 ? (
-          <Caption>Inga obehandlade ansökningar just nu.</Caption>
+          <Text style={styles.secondary}>
+            Inga obehandlade ansökningar. Kreatörer kan både svepa och söka med en egen pitch.
+          </Text>
         ) : null}
         {pending.map((application) => (
           <View key={application.id} style={styles.application}>
-            <Text style={styles.applicant}>
-              {application.influencer.displayName} · {application.influencer.city}
-            </Text>
-            <Body muted>{application.pitch}</Body>
-            {application.proposedFee !== null ? (
-              <Caption>Föreslår {formatSek(application.proposedFee)}</Caption>
-            ) : null}
+            <View style={styles.applicantRow}>
+              <Avatar uri={application.influencer.avatarUrl} size={40} />
+              <View style={styles.applicantText}>
+                <Text style={styles.applicantName}>{application.influencer.displayName}</Text>
+                <Text style={styles.secondary}>{application.influencer.city}</Text>
+              </View>
+              {application.proposedFee !== null ? (
+                <Text style={styles.proposedFee}>{formatSek(application.proposedFee)}</Text>
+              ) : null}
+            </View>
+            <Body>{application.pitch}</Body>
             <View style={styles.applicationActions}>
               <Button
                 label="Tacka nej"
-                variant="ghost"
+                variant="secondary"
                 onPress={() => decide.mutate({ applicationId: application.id, accept: false })}
+                style={styles.applicationButton}
               />
               <Button
                 label="Matcha"
                 onPress={() => decide.mutate({ applicationId: application.id, accept: true })}
+                style={styles.applicationButton}
               />
             </View>
           </View>
@@ -153,8 +168,8 @@ export default function CampaignDetail() {
       </Card>
 
       <Card>
-        <Heading>Status</Heading>
-        <View style={styles.chips}>
+        <Label>STATUS</Label>
+        <View style={styles.tagRow}>
           {(['ACTIVE', 'PAUSED', 'CLOSED'] as const).map((status) => (
             <Chip
               key={status}
@@ -167,20 +182,28 @@ export default function CampaignDetail() {
           ))}
         </View>
       </Card>
-    </Screen>
+    </ScrollScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  pay: { ...typography.heading, color: colors.accent },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  content: { paddingTop: 0 },
+  titleBlock: { gap: 6 },
+  title: { fontFamily: type.cardTitle.fontFamily, fontSize: 23, lineHeight: 27.6, color: colors.text },
+  secondary: { ...type.secondary, color: colors.muted },
+  amount: { fontFamily: type.rowTitle.fontFamily, fontSize: 18, color: colors.accent },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+
   application: {
+    gap: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    gap: spacing.xs,
-    borderRadius: radius.sm,
+    paddingTop: spacing.md,
   },
-  applicant: { ...typography.label, color: colors.text, fontSize: 15 },
-  applicationActions: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'flex-end' },
+  applicantRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  applicantText: { flex: 1 },
+  applicantName: { ...type.listTitle, color: colors.text },
+  proposedFee: { fontFamily: type.rowTitle.fontFamily, fontSize: 15, color: colors.accent },
+  applicationActions: { flexDirection: 'row', gap: spacing.sm },
+  applicationButton: { flex: 1 },
 });

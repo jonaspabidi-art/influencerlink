@@ -1,27 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { InfluencerSwipeCard } from '../../src/components/cards';
+import { MatchScreen } from '../../src/components/MatchScreen';
 import { SwipeDeck, type SwipeDirection } from '../../src/components/SwipeDeck';
-import {
-  Body,
-  Button,
-  EmptyState,
-  ErrorState,
-  Heading,
-  Loading,
-  Screen,
-} from '../../src/components/ui';
-import { spacing } from '../../src/theme';
-import type { InfluencerCard, SwipeResult } from '../../src/types';
+import { Button, Card, ErrorState, Header, Loading, Screen } from '../../src/components/ui';
+import { colors, spacing, type } from '../../src/theme';
+import type { Campaign, InfluencerCard, SwipeResult } from '../../src/types';
 
 export default function Discover() {
   const { campaignId } = useLocalSearchParams<{ campaignId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [newMatch, setNewMatch] = useState<{ id: string; name: string } | null>(null);
+  const [newMatch, setNewMatch] = useState<{ id: string; card: InfluencerCard } | null>(null);
+
+  const campaign = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => api.get<Campaign>(`/campaigns/${campaignId}`),
+    enabled: Boolean(campaignId),
+  });
 
   const feed = useQuery({
     queryKey: ['feed', 'influencers', campaignId],
@@ -35,63 +34,92 @@ export default function Discover() {
     onSuccess: (result, variables) => {
       if (!result.match) return;
       const card = feed.data?.find((item) => item.influencer.id === variables.influencerId);
-      setNewMatch({ id: result.match.id, name: card?.influencer.displayName ?? 'Kreatören' });
+      if (card) setNewMatch({ id: result.match.id, card });
       void queryClient.invalidateQueries({ queryKey: ['matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['campaigns', 'mine'] });
     },
   });
+
+  if (newMatch) {
+    return (
+      <MatchScreen
+        eyebrow="NI MATCHADE"
+        headline={`${newMatch.card.influencer.displayName} vill jobba med er`}
+        summaryTitle={campaign.data?.title ?? 'Ert samarbete'}
+        amount={campaign.data?.budgetPerCreator ?? 0}
+        productValue={
+          campaign.data?.compensationType === 'FIXED' ? 0 : (campaign.data?.productValue ?? 0)
+        }
+        escrowNote="Ni betalar först när avtalet är signerat. Beloppet ligger spärrat tills ni godkänt leveransen."
+        primaryLabel={`Skriv till ${newMatch.card.influencer.displayName}`}
+        onPrimary={() => {
+          const matchId = newMatch.id;
+          setNewMatch(null);
+          router.push(`/match/${matchId}`);
+        }}
+        secondaryLabel="Fortsätt leta"
+        onSecondary={() => setNewMatch(null)}
+      />
+    );
+  }
 
   if (feed.isLoading) {
     return (
       <Screen>
-        <Loading label="Letar efter kreatörer …" />
+        <Loading />
       </Screen>
     );
   }
   if (feed.isError) {
     return (
       <Screen>
+        <Header title="Hitta influencers" onBack={() => router.back()} />
         <ErrorState message="Kunde inte hämta förslagen." onRetry={() => void feed.refetch()} />
       </Screen>
     );
   }
 
-  if (newMatch) {
+  const cards = feed.data ?? [];
+  const spotsLeft = campaign.data
+    ? Math.max(0, campaign.data.slots - campaign.data.slotsFilled)
+    : 0;
+
+  if (cards.length === 0) {
     return (
       <Screen>
-        <View style={styles.matchScreen}>
-          <Heading>Det är en matchning!</Heading>
-          <Body muted>
-            {newMatch.name} vill också jobba med er. Kom överens om upplägget och skicka ett avtal.
-          </Body>
-          <Button
-            label="Öppna matchningen"
-            onPress={() => {
-              const matchId = newMatch.id;
-              setNewMatch(null);
-              router.push(`/match/${matchId}`);
-            }}
-          />
-          <Button label="Fortsätt leta" variant="ghost" onPress={() => setNewMatch(null)} />
+        <Header
+          title="Hitta influencers"
+          onBack={() => router.back()}
+          subtitle={campaign.data?.title}
+        />
+        <View style={styles.emptyBody}>
+          <Card>
+            <Text style={styles.emptyTitle}>Du har sett alla som matchar</Text>
+            <Text style={styles.emptyText}>
+              Fler kreatörer dyker upp när de kopplar sina konton. Sänk följarkravet eller höj
+              budgeten för att se fler direkt.
+            </Text>
+            <Button
+              label="Justera kampanjen"
+              onPress={() => router.push(`/campaign/${campaignId}`)}
+            />
+          </Card>
         </View>
       </Screen>
     );
   }
 
-  const cards = feed.data ?? [];
-  if (cards.length === 0) {
-    return (
-      <Screen>
-        <EmptyState
-          icon="people-outline"
-          title="Inga fler förslag"
-          message="Du har gått igenom alla kreatörer som matchar kampanjens krav. Sänk följarkravet eller höj budgeten för att se fler."
-        />
-      </Screen>
-    );
-  }
-
   return (
-    <Screen style={styles.screen}>
+    <Screen>
+      <Header
+        title="Hitta influencers"
+        onBack={() => router.back()}
+        subtitle={
+          campaign.data
+            ? `${campaign.data.title} · ${spotsLeft} av ${campaign.data.slots} platser kvar`
+            : undefined
+        }
+      />
       <SwipeDeck
         items={cards}
         keyExtractor={(card) => card.influencer.id}
@@ -99,6 +127,7 @@ export default function Discover() {
         onSwipe={(card, direction) =>
           swipe.mutate({ influencerId: card.influencer.id, direction })
         }
+        trustText="Du betalar först när avtalet är signerat"
         onExhausted={() => void feed.refetch()}
       />
     </Screen>
@@ -106,6 +135,7 @@ export default function Discover() {
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingVertical: spacing.sm },
-  matchScreen: { flex: 1, justifyContent: 'center', gap: spacing.md, padding: spacing.md },
+  emptyBody: { flex: 1, paddingHorizontal: spacing.base },
+  emptyTitle: { ...type.sectionTitle, color: colors.text },
+  emptyText: { ...type.bodySmall, color: colors.muted },
 });

@@ -91,6 +91,55 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
     },
   );
 
+  /**
+   * Kampanjer influencern svajpat höger på men där restaurangen inte svarat
+   * ännu. Driver det tomma läget i decken: "du är i kö på tre kampanjer".
+   */
+  server.get(
+    '/feed/pending',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        response: {
+          200: z.array(
+            z.object({
+              campaignId: z.string(),
+              title: z.string(),
+              businessName: z.string(),
+              businessLogoUrl: z.string().nullable(),
+              budgetPerCreator: z.number().int(),
+              likedAt: z.string(),
+            }),
+          ),
+        },
+      },
+    },
+    async (request) => {
+      const influencerId = requireProfileId(request);
+      const swipes = await prisma.swipe.findMany({
+        where: {
+          influencerId,
+          actor: 'INFLUENCER',
+          direction: 'LIKE',
+          // Har en matchning uppstått är kampanjen inte längre "i kö".
+          campaign: { matches: { none: { influencerId } }, status: 'ACTIVE' },
+        },
+        include: { campaign: { include: { business: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      });
+
+      return swipes.map((swipe) => ({
+        campaignId: swipe.campaignId,
+        title: swipe.campaign.title,
+        businessName: swipe.campaign.business.companyName,
+        businessLogoUrl: swipe.campaign.business.logoUrl,
+        budgetPerCreator: swipe.campaign.budgetPerCreator,
+        likedAt: swipe.createdAt.toISOString(),
+      }));
+    },
+  );
+
   /** Restaurangens deck: influencers att swipa på för en viss kampanj. */
   server.get(
     '/feed/influencers',

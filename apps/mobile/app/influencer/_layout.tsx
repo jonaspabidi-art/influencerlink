@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { useAuth } from '../../src/auth';
-import { colors } from '../../src/theme';
+import { ChatIcon, DeckIcon, DocIcon, WalletIcon } from '../../src/components/icons';
+import { colors, type } from '../../src/theme';
 
 export default function InfluencerTabs() {
   const { user, loading } = useAuth();
@@ -12,41 +12,46 @@ export default function InfluencerTabs() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.text,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        headerShown: false,
+        sceneStyle: { backgroundColor: colors.bg },
+        tabBarStyle: {
+          backgroundColor: colors.bg,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 76,
+          paddingTop: 8,
+        },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarLabelStyle: { ...type.tab, marginTop: 2 },
       }}
     >
       <Tabs.Screen
         name="swipe"
         options={{
           title: 'Upptäck',
-          tabBarIcon: ({ color, size }) => <Ionicons name="albums" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <DeckIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="matches"
         options={{
           title: 'Matchningar',
-          tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <ChatIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="contracts"
         options={{
           title: 'Avtal',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <DocIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
           title: 'Plånbok',
-          tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <WalletIcon size={21} color={color} />,
         }}
       />
     </Tabs>

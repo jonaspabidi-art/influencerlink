@@ -1,203 +1,257 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { Category, DeliverableKind, Platform } from '@influencerlink/shared';
+import { StyleSheet, Text, View } from 'react-native';
+import type { Category, Platform } from '@influencerlink/shared';
 import {
   CATEGORY_LABELS,
   DELIVERABLE_LABELS,
-  PLATFORM_LABELS,
   describeCompensation,
   formatDate,
   formatFollowers,
   formatPercent,
   formatSek,
 } from '../format';
-import { colors, radius, spacing, typography } from '../theme';
+import { colors, radius, spacing, type } from '../theme';
 import type { CampaignCard, InfluencerCard } from '../types';
-import { Chip, ScoreBadge } from './ui';
+import { SparkIcon } from './icons';
+import { Avatar, Logo, MatchPill, Photo, StatBox, Tag } from './ui';
 
-const PLATFORM_ICONS: Record<Platform, keyof typeof Ionicons.glyphMap> = {
-  TIKTOK: 'musical-notes',
-  INSTAGRAM: 'logo-instagram',
-  YOUTUBE: 'logo-youtube',
+/** Förkortningar i plattformsrutorna längst ned på korten. */
+const PLATFORM_SHORT: Record<Platform, string> = {
+  TIKTOK: 'TT',
+  INSTAGRAM: 'IG',
+  YOUTUBE: 'YT',
 };
 
-/** Kampanjkortet som influencern swipar på. */
+const ALL_PLATFORMS: Platform[] = ['TIKTOK', 'INSTAGRAM', 'YOUTUBE'];
+
+/**
+ * Kampanjkortet i influencerns kortlek.
+ *
+ * Kompositionen är det viktigaste i designen: bildytan har `flex: 1` och all
+ * text är intrinsisk. Kort brief ger större bild i stället för ett hål i mitten.
+ */
 export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
   const { campaign } = card;
   const spotsLeft = Math.max(0, campaign.slots - campaign.slotsFilled);
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        {campaign.businessLogoUrl ? (
-          <Image source={{ uri: campaign.businessLogoUrl }} style={styles.logo} />
-        ) : (
-          <View style={[styles.logo, styles.logoFallback]}>
-            <Ionicons name="restaurant" size={22} color={colors.accent} />
+      <Photo uri={campaign.businessLogoUrl} style={styles.photo}>
+        <View style={styles.pillSlot}>
+          <MatchPill
+            score={card.score}
+            icon={card.aiReviewed ? <SparkIcon size={13} color={colors.accent} /> : undefined}
+          />
+        </View>
+        <View style={styles.photoFooter}>
+          <Logo uri={campaign.businessLogoUrl} />
+          <View style={styles.photoFooterText}>
+            <Text style={styles.name}>{campaign.businessName}</Text>
+            <Text style={styles.secondary}>
+              {campaign.city} · {spotsLeft} {spotsLeft === 1 ? 'ledig plats' : 'lediga platser'}
+            </Text>
           </View>
-        )}
-        <View style={styles.headerText}>
-          <Text style={styles.businessName}>{campaign.businessName}</Text>
-          <Text style={styles.location}>
-            {campaign.city} · {spotsLeft} {spotsLeft === 1 ? 'plats kvar' : 'platser kvar'}
+        </View>
+      </Photo>
+
+      <View style={styles.body}>
+        <Text style={styles.title}>{campaign.title}</Text>
+
+        <View style={styles.amountRow}>
+          <Text style={styles.amount}>
+            {campaign.compensationType === 'PRODUCT'
+              ? 'Besök på huset'
+              : formatSek(campaign.budgetPerCreator)}
+          </Text>
+          {campaign.compensationType !== 'FIXED' ? (
+            <Text style={styles.amountSuffix}>+ besök ({formatSek(campaign.productValue)})</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.reasonRow}>
+          <View style={styles.dot} />
+          <Text style={styles.reason} numberOfLines={2}>
+            {card.reason}
           </Text>
         </View>
-        <ScoreBadge score={card.score} aiReviewed={card.aiReviewed} />
-      </View>
 
-      <Text style={styles.title}>{campaign.title}</Text>
-
-      <View style={styles.payRow}>
-        <Ionicons name="wallet-outline" size={18} color={colors.accent} />
-        <Text style={styles.pay}>
-          {describeCompensation(
-            campaign.compensationType,
-            campaign.budgetPerCreator,
-            campaign.productValue,
-            formatSek,
-          )}
+        <Text style={styles.brief} numberOfLines={4}>
+          {campaign.brief}
         </Text>
-      </View>
 
-      <View style={styles.reasonBox}>
-        {card.aiReviewed ? <Ionicons name="sparkles" size={14} color={colors.accent} /> : null}
-        <Text style={styles.reason}>{card.reason}</Text>
-      </View>
-
-      <ScrollView style={styles.brief} contentContainerStyle={styles.briefContent}>
-        <Text style={styles.briefText}>{campaign.brief}</Text>
-      </ScrollView>
-
-      <View style={styles.chipRow}>
-        {campaign.deliverables.map((deliverable: DeliverableKind) => (
-          <Chip key={deliverable} label={DELIVERABLE_LABELS[deliverable]} />
-        ))}
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.platformRow}>
-          {campaign.platforms.map((platform: Platform) => (
-            <Ionicons
-              key={platform}
-              name={PLATFORM_ICONS[platform]}
-              size={18}
-              color={colors.textMuted}
-            />
+        <View style={styles.tagRow}>
+          {campaign.deliverables.slice(0, 3).map((deliverable) => (
+            <Tag key={deliverable} label={DELIVERABLE_LABELS[deliverable]} />
           ))}
         </View>
-        <Text style={styles.footerText}>Ansök senast {formatDate(campaign.endDate)}</Text>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <PlatformRow active={campaign.platforms} />
+        <Text style={styles.secondary}>Sista ansökan {formatDate(campaign.endDate)}</Text>
       </View>
     </View>
   );
 }
 
-/** Influencerkortet som restaurangen swipar på. */
+/** Kreatörskortet i restaurangens kortlek. Samma mekanik, andra innehåll. */
 export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
   const { influencer } = card;
+  const niches = influencer.categories
+    .map((category) => CATEGORY_LABELS[category as Category] ?? category)
+    .slice(0, 2)
+    .join(', ');
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        {influencer.avatarUrl ? (
-          <Image source={{ uri: influencer.avatarUrl }} style={styles.logo} />
-        ) : (
-          <View style={[styles.logo, styles.logoFallback]}>
-            <Ionicons name="person" size={22} color={colors.accent} />
-          </View>
-        )}
-        <View style={styles.headerText}>
-          <Text style={styles.businessName}>{influencer.displayName}</Text>
-          <Text style={styles.location}>{influencer.city}</Text>
+      <Photo uri={influencer.avatarUrl} style={styles.photo}>
+        <View style={styles.pillSlot}>
+          <MatchPill
+            score={card.score}
+            icon={card.aiReviewed ? <SparkIcon size={13} color={colors.accent} /> : undefined}
+          />
         </View>
-        <ScoreBadge score={card.score} aiReviewed={card.aiReviewed} />
-      </View>
-
-      <View style={styles.statRow}>
-        <Stat label="Följare" value={formatFollowers(influencer.followers)} />
-        <Stat label="Snittvisningar" value={formatFollowers(influencer.avgViews)} />
-        <Stat label="Engagemang" value={formatPercent(influencer.engagementRate)} />
-      </View>
-
-      <View style={styles.reasonBox}>
-        {card.aiReviewed ? <Ionicons name="sparkles" size={14} color={colors.accent} /> : null}
-        <Text style={styles.reason}>{card.reason}</Text>
-      </View>
-
-      <ScrollView style={styles.brief} contentContainerStyle={styles.briefContent}>
-        <Text style={styles.briefText}>{influencer.bio}</Text>
-      </ScrollView>
-
-      <View style={styles.chipRow}>
-        {influencer.categories.map((category) => (
-          <Chip key={category} label={CATEGORY_LABELS[category as Category] ?? category} />
-        ))}
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.platformRow}>
-          {influencer.platforms.map((platform) => (
-            <Text key={platform} style={styles.footerText}>
-              {PLATFORM_LABELS[platform as Platform] ?? platform}
+        <View style={styles.photoFooter}>
+          <Avatar uri={influencer.avatarUrl} />
+          <View style={styles.photoFooterText}>
+            <Text style={styles.nameLarge}>{influencer.displayName}</Text>
+            <Text style={styles.secondary}>
+              {influencer.city}
+              {niches ? ` · ${niches}` : ''}
             </Text>
+          </View>
+        </View>
+      </Photo>
+
+      <View style={styles.body}>
+        <View style={styles.statRow}>
+          <StatBox label="FÖLJARE" value={formatFollowers(influencer.followers)} />
+          <StatBox label="SNITTVISN." value={formatFollowers(influencer.avgViews)} />
+          <StatBox
+            label="ENGAGEMANG"
+            value={formatPercent(influencer.engagementRate)}
+            tone="positive"
+          />
+        </View>
+
+        <View style={styles.reasonRow}>
+          {card.aiReviewed ? (
+            <SparkIcon size={13} color={colors.accent} />
+          ) : (
+            <View style={styles.dot} />
+          )}
+          <Text style={card.aiReviewed ? styles.reasonAi : styles.reason} numberOfLines={2}>
+            {card.reason}
+          </Text>
+        </View>
+
+        <Text style={styles.brief} numberOfLines={3}>
+          {influencer.bio}
+        </Text>
+
+        <View style={styles.tagRow}>
+          {influencer.categories.slice(0, 3).map((category) => (
+            <Tag key={category} label={CATEGORY_LABELS[category as Category] ?? category} />
           ))}
         </View>
-        <Text style={styles.footerText}>Riktpris {formatSek(influencer.priceTarget)}</Text>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <PlatformRow active={influencer.platforms as Platform[]} />
+        <Text style={styles.footerPrice}>
+          Riktpris <Text style={styles.footerPriceValue}>{formatSek(influencer.priceTarget)}</Text>
+        </Text>
       </View>
     </View>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+/** Plattformsrutor: aktiva i full opacitet, övriga dämpade. */
+function PlatformRow({ active }: { active: Platform[] }) {
   return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={styles.platformRow}>
+      {ALL_PLATFORMS.filter((platform) => active.includes(platform)).map((platform) => (
+        <View key={platform} style={styles.platformBox}>
+          <Text style={styles.platformLabel}>{PLATFORM_SHORT[platform]}</Text>
+        </View>
+      ))}
+      {ALL_PLATFORMS.filter((platform) => !active.includes(platform)).map((platform) => (
+        <View key={platform} style={styles.platformBox}>
+          <Text style={[styles.platformLabel, styles.platformLabelMuted]}>
+            {PLATFORM_SHORT[platform]}
+          </Text>
+        </View>
+      ))}
     </View>
+  );
+}
+
+/** Används av swipe-decken när kompensationen ska visas i en rad. */
+export function compensationLine(card: CampaignCard): string {
+  return describeCompensation(
+    card.campaign.compensationType,
+    card.campaign.budgetPerCreator,
+    card.campaign.productValue,
+    formatSek,
   );
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, padding: spacing.md, gap: spacing.sm },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  headerText: { flex: 1 },
-  logo: { width: 44, height: 44, borderRadius: radius.sm, backgroundColor: colors.surfaceRaised },
-  logoFallback: { alignItems: 'center', justifyContent: 'center' },
-  businessName: { ...typography.label, color: colors.text, fontSize: 15 },
-  location: { ...typography.caption, color: colors.textMuted },
-  title: { ...typography.title, color: colors.text, fontSize: 24 },
-  payRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  pay: { ...typography.heading, color: colors.accent, fontSize: 17 },
-  reasonBox: {
+  card: { flex: 1 },
+
+  // Bildytan flexar, texten är intrinsisk – därför inget hål vid kort brief.
+  photo: { flex: 1, minHeight: 168 },
+  pillSlot: { position: 'absolute', top: 14, right: 14 },
+  photoFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 14,
+    backgroundColor: colors.bg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: radius.sm,
-    padding: spacing.sm,
+    gap: spacing.md,
   },
-  reason: { ...typography.caption, color: colors.text, flex: 1, lineHeight: 17 },
-  brief: { flex: 1 },
-  briefContent: { paddingVertical: spacing.xs },
-  briefText: { ...typography.body, color: colors.textMuted, lineHeight: 21 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  footer: {
+  photoFooterText: { flex: 1, gap: 2 },
+  name: { ...type.rowTitle, color: colors.text },
+  nameLarge: { fontFamily: type.rowTitle.fontFamily, fontSize: 18, color: colors.text },
+  secondary: { ...type.secondary, color: colors.muted },
+
+  body: { padding: spacing.base, gap: spacing.md },
+  title: { ...type.cardTitle, color: colors.text },
+  amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  amount: { ...type.amount, color: colors.accent },
+  amountSuffix: { ...type.bodySmall, color: colors.muted },
+
+  reasonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dot: { width: 7, height: 7, borderRadius: radius.round, backgroundColor: colors.positive },
+  reason: { ...type.secondary, color: colors.positive, flex: 1 },
+  reasonAi: { ...type.secondary, color: colors.accent, flex: 1 },
+
+  brief: { ...type.bodySmall, color: colors.text, opacity: 0.82 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  statRow: { flexDirection: 'row', gap: spacing.sm },
+
+  cardFooter: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
   },
-  platformRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
-  footerText: { ...typography.caption, color: colors.textMuted },
-  statRow: { flexDirection: 'row', gap: spacing.sm },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: radius.sm,
-    padding: spacing.sm,
+  platformRow: { flexDirection: 'row', gap: 6 },
+  platformBox: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.tag,
+    backgroundColor: colors.raised,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  statValue: { ...typography.heading, color: colors.text, fontSize: 17 },
-  statLabel: { ...typography.caption, color: colors.textMuted },
+  platformLabel: { fontFamily: type.rowTitle.fontFamily, fontSize: 10, color: colors.text },
+  platformLabelMuted: { color: colors.dim },
+  footerPrice: { ...type.secondary, color: colors.muted },
+  footerPriceValue: { fontFamily: type.listTitle.fontFamily, color: colors.text },
 });

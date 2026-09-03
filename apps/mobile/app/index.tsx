@@ -12,7 +12,7 @@ export default function Index() {
   if (loading) {
     return (
       <Screen>
-        <Loading label="Startar …" />
+        <Loading />
       </Screen>
     );
   }

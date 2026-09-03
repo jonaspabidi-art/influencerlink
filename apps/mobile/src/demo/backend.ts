@@ -728,6 +728,32 @@ route('GET', '/feed/campaigns', () => {
   }));
 });
 
+route('GET', '/feed/pending', () => {
+  const influencerId = requireProfileId(currentUser());
+  return state.swipes
+    .filter(
+      (swipe) =>
+        swipe.influencerId === influencerId &&
+        swipe.actor === 'INFLUENCER' &&
+        swipe.direction === 'LIKE' &&
+        !state.matches.some(
+          (match) => match.campaignId === swipe.campaignId && match.influencerId === influencerId,
+        ),
+    )
+    .map((swipe) => {
+      const campaign = campaignById(swipe.campaignId);
+      const business = businessById(campaign.businessId);
+      return {
+        campaignId: campaign.id,
+        title: campaign.title,
+        businessName: business.companyName,
+        businessLogoUrl: business.logoUrl,
+        budgetPerCreator: campaign.budgetPerCreator,
+        likedAt: new Date().toISOString(),
+      };
+    });
+});
+
 route('GET', '/feed/influencers', ({ query }) => {
   const campaign = campaignById(query.get('campaignId') ?? '');
   const candidate = toCampaignCandidate(campaign);

@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { BankIdPanel, useBankId } from '../src/bankid';
-import { DemoBanner } from '../src/components/DemoBanner';
-import { Body, Button, Caption, Card, Heading, Screen, Title } from '../src/components/ui';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BankIdScreen, useBankId } from '../src/bankid';
 import { useAuth } from '../src/auth';
-import { colors, radius, spacing } from '../src/theme';
+import { DemoBanner } from '../src/components/DemoBanner';
+import { DeckIcon, GridIcon, LockIcon } from '../src/components/icons';
+import { Button, IconBox, Photo, Screen } from '../src/components/ui';
+import { colors, radius, spacing, type } from '../src/theme';
 import type { BankIdStatus } from '../src/types';
 
 type Role = 'INFLUENCER' | 'BUSINESS';
@@ -25,9 +26,7 @@ export default function Login() {
         );
         return;
       }
-      router.replace(
-        status.user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe',
-      );
+      router.replace(status.user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe');
     },
     [router, signIn],
   );
@@ -49,69 +48,114 @@ export default function Login() {
 
   if (bankId.phase !== 'idle') {
     return (
-      <Screen scroll>
-        <Title>Logga in</Title>
-        <BankIdPanel
-          phase={bankId.phase}
-          qrData={bankId.qrData}
-          hintText={bankId.hintText}
-          autoStartUrl={bankId.autoStartUrl}
-          onCancel={() => void bankId.cancel()}
-          onRetry={() => role && beginLogin(role)}
-        />
-      </Screen>
+      <BankIdScreen
+        phase={bankId.phase}
+        qrData={bankId.qrData}
+        hintText={bankId.hintText}
+        autoStartUrl={bankId.autoStartUrl}
+        onCancel={() => void bankId.cancel()}
+        onRetry={() => role && beginLogin(role)}
+      />
     );
   }
 
   return (
-    <Screen scroll>
-      <View style={styles.hero}>
-        <Title>InfluencerLink</Title>
-        <Body muted>
-          Restauranger och kreatörer som hittar varandra. Swipa, kom överens, signera med BankID –
-          och få betalt när jobbet är gjort.
-        </Body>
+    <Screen style={styles.screen}>
+      <Photo style={styles.hero} />
+
+      <View style={styles.intro}>
+        <Text style={styles.title}>Restauranger och kreatörer, ihop.</Text>
+        <Text style={styles.lead}>
+          Hitta ett samarbete, signera med BankID och låt pengarna ligga spärrade tills jobbet är
+          godkänt.
+        </Text>
       </View>
 
-      <Card>
-        <Heading>Jag är influencer</Heading>
-        <Body muted>
-          Koppla TikTok, Instagram eller YouTube och swipa bland samarbeten nära dig.
-        </Body>
-        <Button label="Logga in med BankID" onPress={() => beginLogin('INFLUENCER')} />
-      </Card>
-
-      <Card>
-        <Heading>Jag driver en restaurang</Heading>
-        <Body muted>
-          Beskriv vad du vill ha med några rader – vi föreslår kampanjen och matchar dig med rätt
-          kreatörer.
-        </Body>
-        <Button
-          label="Logga in med BankID"
+      <View style={styles.roles}>
+        <RoleCard
+          icon={<DeckIcon size={21} color={colors.primary} />}
+          iconTone="tint"
+          title="Jag är influencer"
+          subtitle="Svep bland betalda uppdrag"
+          variant="primary"
+          onPress={() => beginLogin('INFLUENCER')}
+        />
+        <RoleCard
+          icon={<GridIcon size={21} color={colors.text} />}
+          iconTone="raised"
+          title="Jag driver en restaurang"
+          subtitle="Lägg upp ett samarbete på 2 minuter"
           variant="secondary"
           onPress={() => beginLogin('BUSINESS')}
         />
-      </Card>
+      </View>
+
+      <View style={styles.footnote}>
+        <LockIcon size={14} color={colors.positive} />
+        <Text style={styles.footnoteText}>Plattformsavgift 12 %. Inga avgifter innan avtal.</Text>
+      </View>
 
       <DemoBanner />
-
-      <View style={styles.legal}>
-        <Caption>
-          Vi använder BankID för att veta vem du är. Ditt personnummer sparas aldrig i klartext.
-        </Caption>
-      </View>
     </Screen>
   );
 }
 
+function RoleCard({
+  icon,
+  iconTone,
+  title,
+  subtitle,
+  variant,
+  onPress,
+}: {
+  icon: React.ReactNode;
+  iconTone: 'tint' | 'raised';
+  title: string;
+  subtitle: string;
+  variant: 'primary' | 'secondary';
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={({ pressed }) => [styles.roleCard, pressed && styles.pressed]}
+    >
+      <View style={styles.roleHeader}>
+        <IconBox tone={iconTone}>{icon}</IconBox>
+        <View style={styles.roleText}>
+          <Text style={styles.roleTitle}>{title}</Text>
+          <Text style={styles.roleSubtitle}>{subtitle}</Text>
+        </View>
+      </View>
+      <Button label="Fortsätt med BankID" variant={variant} compact onPress={onPress} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  hero: {
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.md,
+  screen: { padding: spacing.xl, gap: spacing.xl },
+  hero: { flex: 1, minHeight: 120, borderRadius: radius.card },
+  intro: { gap: 10 },
+  title: { fontFamily: type.displayLarge.fontFamily, fontSize: 32, lineHeight: 35.2, letterSpacing: -0.64, color: colors.text },
+  lead: { ...type.body, lineHeight: 23.25, color: colors.muted },
+
+  roles: { gap: spacing.md },
+  roleCard: {
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: 18,
+    gap: 14,
   },
-  legal: { paddingVertical: spacing.md },
+  pressed: { opacity: 0.9 },
+  roleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  roleText: { flex: 1, gap: 2 },
+  roleTitle: { ...type.rowTitle, color: colors.text },
+  roleSubtitle: { ...type.secondary, color: colors.muted },
+
+  footnote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  footnoteText: { ...type.secondary, color: colors.muted },
 });
