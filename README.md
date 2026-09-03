@@ -111,6 +111,23 @@ Lägg upp `apps/mobile/dist` på Netlify, Vercel eller Cloudflare Pages och öpp
 adressen i mobilen. Se `docs/DEPLOY.md` för hela vägen: demoläge → Supabase →
 hostat API.
 
+### På din egen mobil, utan att lägga upp något
+
+Datorn och telefonen på samma wifi. Serva den byggda mappen på nätverket:
+
+```bash
+npx serve apps/mobile/dist -l 4180
+ipconfig getifaddr en0        # macOS – din adress på nätverket
+hostname -I | awk '{print $1}'  # Linux
+```
+
+Öppna `http://<adressen>:4180` i telefonens webbläsare. I Safari: Dela → Lägg
+till på hemskärmen, så startar den i helskärm utan adressfält.
+
+Alternativet är Expo Go: `npm run dev:mobile` och skanna QR-koden. Då får du
+riktiga gester och haptik i stället för webbversionens, men appen måste byggas
+om varje gång du vill se den utan datorn i närheten.
+
 ## Kom igång
 
 Kräver Node 22 och Docker.
@@ -131,9 +148,14 @@ npm run dev:api          # http://localhost:3000
 npm run dev:mobile       # Expo, öppna i Expo Go eller en simulator
 ```
 
-Appen hittar API:et automatiskt via Metro-värden, så en fysisk telefon i samma
-nät fungerar utan konfiguration. Vill du peka någon annanstans, ändra
-`extra.apiUrl` i `apps/mobile/app.json`.
+Utan `EXPO_PUBLIC_API_URL` eller `extra.apiUrl` i `apps/mobile/app.json` kör
+appen i demoläge. Peka den mot ditt lokala API genom att starta Expo med
+adressen till datorn på nätverket, inte `localhost` — telefonen når inte din
+dators localhost:
+
+```bash
+EXPO_PUBLIC_API_URL=http://192.168.1.42:3000 npm run dev:mobile
+```
 
 För att testa hela flödet utan BankID-certifikat: sätt `ENABLE_DEV_LOGIN=true`
 och `BANKID_MODE=mock`. Simulatorn svarar `complete` på andra statusanropet.
@@ -142,7 +164,7 @@ och `BANKID_MODE=mock`. Simulatorn svarar `complete` på andra statusanropet.
 
 ```bash
 npm run typecheck   # alla tre paketen
-npm test            # 88 enhetstester i apps/api
+npm test            # 95 enhetstester i apps/api
 ```
 
 Testerna täcker avgiftsberäkning, matchningspoäng och behörighetsfilter,
