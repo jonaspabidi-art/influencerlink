@@ -1,0 +1,480 @@
+// Datamodell för InfluencerLink.
+// Alla belopp lagras i öre (Int) för att undvika flyttalsfel.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  INFLUENCER
+  BUSINESS
+  ADMIN
+}
+
+enum Platform {
+  TIKTOK
+  INSTAGRAM
+  YOUTUBE
+}
+
+enum Category {
+  RESTAURANG
+  CAFE
+  BAR
+  STREET_FOOD
+  FINE_DINING
+  BAGERI
+  VEGETARISKT
+  MAT_OCH_DRYCK
+  LIVSSTIL
+  RESA
+  FAMILJ
+  TRANING
+  NOJE
+}
+
+enum CompensationType {
+  FIXED
+  PRODUCT
+  HYBRID
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum SwipeDirection {
+  LIKE
+  PASS
+}
+
+enum SwipeActor {
+  INFLUENCER
+  BUSINESS
+}
+
+enum MatchStatus {
+  NEW
+  IN_CONVERSATION
+  CONTRACTED
+  DECLINED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  PARTIALLY_SIGNED
+  ACTIVE
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  ESCROWED
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum DeliverableKind {
+  TIKTOK_VIDEO
+  INSTAGRAM_REEL
+  INSTAGRAM_POST
+  INSTAGRAM_STORY
+  YOUTUBE_SHORT
+  YOUTUBE_VIDEO
+}
+
+enum BankIdPurpose {
+  LOGIN
+  SIGN
+}
+
+enum BankIdStatus {
+  PENDING
+  COMPLETE
+  FAILED
+}
+
+model User {
+  id   String @id @default(cuid())
+  role Role
+
+  /// Personnumret lagras aldrig i klartext – bara en HMAC för uppslag.
+  personalNumberHash String? @unique
+  /// Maskerat personnummer för visning, t.ex. "19900101-****".
+  personalNumberMask String?
+  name               String
+  email              String? @unique
+  phone              String?
+
+  bankIdVerifiedAt DateTime?
+  onboardingComplete Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  influencerProfile InfluencerProfile?
+  businessProfile   BusinessProfile?
+  bankIdSessions    BankIdSession[]
+  signatures        Signature[]
+  messages          Message[]
+  auditEvents       AuditEvent[]
+}
+
+model InfluencerProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName String
+  bio         String     @default("")
+  city        String
+  avatarUrl   String?
+  categories  Category[]
+
+  /// Lägsta arvode influencern accepterar, i öre.
+  priceMin    Int @default(0)
+  /// Riktpris för ett standarduppdrag, i öre.
+  priceTarget Int @default(0)
+
+  /// Stripe Connect-konto som utbetalningar går till.
+  stripeAccountId String? @unique
+  payoutsEnabled  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  socialAccounts SocialAccount[]
+  swipes         Swipe[]
+  matches        Match[]
+  applications   Application[]
+  contracts      Contract[]
+
+  @@index([city])
+}
+
+model SocialAccount {
+  id          String            @id @default(cuid())
+  influencerId String
+  influencer  InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  platform   Platform
+  handle     String
+  externalId String?
+
+  followers      Int   @default(0)
+  avgViews       Int   @default(0)
+  /// Engagemang som andel, t.ex. 0.045 för 4,5 %.
+  engagementRate Float @default(0)
+
+  verified Boolean @default(false)
+  /// Krypterad OAuth-token. Läses aldrig ut via API:et.
+  accessTokenEnc String?
+  refreshTokenEnc String?
+  tokenExpiresAt DateTime?
+  lastSyncedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([influencerId, platform])
+}
+
+model BusinessProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyName String
+  orgNumber   String     @unique
+  city        String
+  address     String     @default("")
+  description String     @default("")
+  logoUrl     String?
+  categories  Category[]
+
+  stripeCustomerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns Campaign[]
+
+  @@index([city])
+}
+
+model Campaign {
+  id         String          @id @default(cuid())
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  title            String
+  brief            String
+  categories       Category[]
+  platforms        Platform[]
+  deliverables     DeliverableKind[]
+  compensationType CompensationType
+  /// Kontant ersättning per kreatör, i öre.
+  budgetPerCreator Int
+  /// Värdet på mat eller upplevelse som ingår, i öre.
+  productValue     Int               @default(0)
+  slots            Int               @default(1)
+  city             String
+  minFollowers     Int               @default(0)
+  startDate        DateTime
+  endDate          DateTime
+  status           CampaignStatus    @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  swipes       Swipe[]
+  matches      Match[]
+  applications Application[]
+  contracts    Contract[]
+
+  @@index([status, city])
+}
+
+/// En swipe per part och kampanj-/influencerpar. Ömsesidig LIKE skapar en Match.
+model Swipe {
+  id String @id @default(cuid())
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  actor     SwipeActor
+  direction SwipeDirection
+  createdAt DateTime       @default(now())
+
+  @@unique([campaignId, influencerId, actor])
+  @@index([influencerId, actor])
+}
+
+model Match {
+  id String @id @default(cuid())
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  status MatchStatus @default(NEW)
+  /// Poäng 0–100 från matchningsmotorn när matchen skapades.
+  matchScore  Float  @default(0)
+  matchReason String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  Message[]
+  contracts Contract[]
+
+  @@unique([campaignId, influencerId])
+}
+
+model Application {
+  id String @id @default(cuid())
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  pitch       String
+  /// Influencerns egna prisförslag, i öre. Null = kampanjens budget gäller.
+  proposedFee Int?
+  status      ApplicationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, influencerId])
+}
+
+model Message {
+  id String @id @default(cuid())
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([matchId, createdAt])
+}
+
+model Contract {
+  id String @id @default(cuid())
+
+  matchId String?
+  match   Match?  @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  /// Avtalat arvode brutto, i öre.
+  fee            Int
+  /// Plattformsavgift i baspunkter vid tecknandet, sparas för spårbarhet.
+  platformFeeBps Int               @default(1200)
+  deliverables   DeliverableKind[]
+  dueDate        DateTime
+  reviewDays     Int               @default(7)
+  /// Fullständig avtalstext i markdown, fryst när kontraktet skickas.
+  terms          String
+  status         ContractStatus    @default(DRAFT)
+
+  signedByInfluencerAt DateTime?
+  signedByBusinessAt   DateTime?
+  deliveredAt          DateTime?
+  completedAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  signatures Signature[]
+  payment    Payment?
+  delivery   Delivery?
+
+  @@index([status])
+}
+
+/// Bevis på BankID-signering. Sparas oföränderligt för revision.
+model Signature {
+  id String @id @default(cuid())
+
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bankIdOrderRef String
+  /// Base64-kodad XML-signatur från BankID.
+  signatureBlob  String
+  /// Base64-kodat OCSP-svar som tidsstämplar signaturen.
+  ocspResponse   String
+  /// SHA-256 av avtalstexten som faktiskt signerades.
+  termsHash      String
+  ipAddress      String?
+  signedAt       DateTime @default(now())
+
+  @@unique([contractId, userId])
+}
+
+model Delivery {
+  id String @id @default(cuid())
+
+  contractId String   @unique
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  urls        String[]
+  note        String   @default("")
+  submittedAt DateTime @default(now())
+  approvedAt  DateTime?
+  /// Sätts när restaurangen inte hunnit svara inom reviewDays.
+  autoApproved Boolean @default(false)
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  contractId String   @unique
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  /// Bruttobelopp restaurangen debiteras, i öre.
+  amount      Int
+  platformFee Int
+  /// Nettobelopp till influencern, i öre.
+  payout      Int
+  currency    String @default("sek")
+
+  stripePaymentIntentId String?       @unique
+  stripeTransferId      String?
+  status                PaymentStatus @default(PENDING)
+
+  escrowedAt DateTime?
+  releasedAt DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BankIdSession {
+  id String @id @default(cuid())
+
+  orderRef       String        @unique
+  autoStartToken String
+  /// Hemlighet som QR-koden roteras med, se BankID:s animerade QR.
+  qrStartToken   String
+  qrStartSecret  String
+  purpose        BankIdPurpose
+  status         BankIdStatus  @default(PENDING)
+  hintCode       String?
+  /// Kontotyp som ska skapas om personen loggar in för första gången.
+  requestedRole  Role?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Kontraktet som signeras när purpose är SIGN.
+  contractId String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status, startedAt])
+}
+
+/// Spårbarhetslogg för händelser med juridisk eller ekonomisk innebörd.
+model AuditEvent {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+/// Idempotensnycklar så att Stripe-webhooks aldrig bokförs två gånger.
+model ProcessedWebhook {
+  id          String   @id
+  source      String
+  processedAt DateTime @default(now())
+}

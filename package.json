@@ -1,0 +1,24 @@
+{
+  "name": "influencerlink",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Matchningsplattform för restauranger och influencers – swipe, kampanjer, kontrakt, BankID och Stripe-utbetalningar.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build -w @influencerlink/shared && npm run build -w @influencerlink/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @influencerlink/api",
+    "lint": "npm run typecheck",
+    "dev:api": "npm run dev -w @influencerlink/api",
+    "dev:mobile": "npm run start -w @influencerlink/mobile",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "npm run db:migrate -w @influencerlink/api",
+    "db:seed": "npm run db:seed -w @influencerlink/api"
+  }
+}
