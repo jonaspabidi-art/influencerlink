@@ -1,0 +1,19 @@
+# Netlify bygger webbappen direkt från repot, så den kan läggas upp utan
+# att något behöver köras lokalt.
+#
+# Sätt EXPO_PUBLIC_API_URL i Netlifys gränssnitt till adressen där API:et
+# ligger. Utan den kör appen i demoläge mot sin inbyggda backend.
+
+[build]
+  command = "npm install && npm run build -w @influencerlink/shared && npm run export:web -w @influencerlink/mobile"
+  publish = "apps/mobile/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# expo-router sköter vägarna i klienten, så allt ska serveras som index.html.
+# Utan detta ger en direktlänk till en undersida 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
