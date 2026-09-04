@@ -57,8 +57,12 @@ DATABASE_URL="..." DIRECT_URL="..." npx prisma migrate deploy
 DATABASE_URL="..." DIRECT_URL="..." PERSONAL_NUMBER_HMAC_KEY="..." npm run db:seed
 ```
 
-Har du inga migrationer ännu (första gången) kör `npx prisma migrate dev --name init`
-mot en lokal databas först, och checka in filerna under `apps/api/prisma/migrations`.
+Migrationerna ligger i `apps/api/prisma/migrations` och är verifierade mot
+PostgreSQL 16 – 17 tabeller, alla enums och index. Du behöver alltså inte köra
+`migrate dev` först, bara `migrate deploy` mot Supabase.
+
+Ändrar du schemat senare: kör `npx prisma migrate dev --name <vad-du-gjorde>`
+mot en lokal databas och checka in filen som skapas.
 
 Att veta om Supabases gratisnivå: projektet pausas efter en veckas inaktivitet
 och måste väckas manuellt i deras gränssnitt. För en app som testas då och då
