@@ -1,12 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { api, ApiError } from './api';
+import { api, ApiError, API_BASE_URL } from './api';
 import { Button, Header, Screen } from './components/ui';
 import { colors, radius, spacing, type } from './theme';
 import type { BankIdStart, BankIdStatus } from './types';
 
 /** BankID:s QR-kod byts varje sekund; vi hämtar status lika ofta som den roterar. */
+/**
+ * Ett anrop som aldrig når fram ger bara "Failed to fetch" i webbläsaren.
+ * Utan adressen i texten går det inte att se om appen pekar rätt, om det är
+ * CORS, eller om den blockerats för att adressen är http på en https-sida.
+ */
+function describeFailure(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) return error.message;
+  if (API_BASE_URL === null) return 'Appen kör i demoläge utan API-adress.';
+  const detail = error instanceof Error ? error.message : String(error);
+  return `${fallback}\n\nNådde inte ${API_BASE_URL}\n${detail}`;
+}
+
 const POLL_INTERVAL_MS = 1200;
 
 export type BankIdPhase = 'idle' | 'starting' | 'pending' | 'complete' | 'failed';
@@ -79,9 +91,7 @@ export function useBankId({ purpose, onComplete }: UseBankIdOptions) {
       stopPolling();
       orderRef.current = null;
       setPhase('failed');
-      setHintText(
-        error instanceof ApiError ? error.message : 'Kunde inte nå servern. Kontrollera nätet.',
-      );
+      setHintText(describeFailure(error, 'Kunde inte nå servern.'));
     }
   }, [onComplete, stopPolling]);
 
@@ -103,9 +113,7 @@ export function useBankId({ purpose, onComplete }: UseBankIdOptions) {
       } catch (error) {
         if (!mounted.current) return;
         setPhase('failed');
-        setHintText(
-          error instanceof ApiError ? error.message : 'Kunde inte starta BankID. Försök igen.',
-        );
+        setHintText(describeFailure(error, 'Kunde inte starta BankID.'));
       }
     },
     [poll, purpose],
