@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import {
@@ -11,6 +11,7 @@ import {
   Field,
   Header,
   Loading,
+  Rating,
   Screen,
 } from '../../src/components/ui';
 import { formatSek, kronorToOre, oreToKronor } from '../../src/format';
@@ -94,6 +95,29 @@ export default function MatchDetail() {
         subtitle={`${match.campaign.title} · ${Math.round(match.matchScore)} % match`}
         onBack={() => router.back()}
       />
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Omdömen om ${counterpart}`}
+        onPress={() =>
+          router.push({
+            pathname: '/reviews/[type]/[id]',
+            params: {
+              type: isBusiness ? 'influencer' : 'business',
+              id: isBusiness ? match.influencer.id : match.campaign.businessId,
+              name: counterpart,
+            },
+          })
+        }
+        style={({ pressed }) => [styles.reviewLink, pressed && styles.pressed]}
+      >
+        <Rating
+          summary={match.counterpartRating}
+          size={13}
+          emptyLabel="Inga omdömen än"
+        />
+        <Text style={styles.reviewLinkLabel}>Läs omdömen</Text>
+      </Pressable>
 
       <View style={styles.actionArea}>
         {match.contractId ? (
@@ -193,6 +217,22 @@ export default function MatchDetail() {
 }
 
 const styles = StyleSheet.create({
+  reviewLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+  },
+  reviewLinkLabel: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.primary },
+  pressed: { opacity: 0.9 },
   actionArea: { paddingHorizontal: spacing.base, paddingBottom: spacing.md, gap: spacing.md },
   actionTitle: { ...type.rowTitle, color: colors.text },
   hint: { ...type.bodySmall, color: colors.muted },

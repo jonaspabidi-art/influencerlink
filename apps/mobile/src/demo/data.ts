@@ -313,3 +313,76 @@ export const DEMO_APPLICATIONS = [
     createdAt: daysFromNow(-1),
   },
 ];
+
+export interface DemoReview {
+  id: string;
+  contractId: string;
+  campaignTitle: string;
+  /** Vem som skrev. Motsatt part är den som blir bedömd. */
+  authorRole: 'INFLUENCER' | 'BUSINESS';
+  authorName: string;
+  influencerId: string;
+  businessId: string;
+  scores: { communication: number; asDescribed: number; again: number };
+  comment: string;
+  createdAt: string;
+  publishedAt: string | null;
+  visibleAt: string;
+}
+
+/**
+ * Omdömen från samarbeten som redan är avslutade och utbetalda. Utan dem står
+ * varje profil på noll och betygen syns aldrig i kortleken.
+ *
+ * Alla är publicerade: båda parter hann skriva innan fönstret gick ut.
+ */
+export const DEMO_REVIEWS: DemoReview[] = [
+  review('rev_1', 'ctr_h1', 'Helgbrunch i Linné', 'BUSINESS', 'Ali Rahimi', 'inf_anna', 'biz_solrosen', [5, 5, 5],
+    'Kom i tid, filmade utan att störa gästerna och la upp samma kväll. Vi märkte det direkt på lördagen efter.', -40),
+  review('rev_2', 'ctr_h2', 'Ny kvällsmeny', 'BUSINESS', 'Petra Sandell', 'inf_anna', 'biz_kajutan', [5, 4, 5],
+    'Bra kontakt hela vägen. Filmen blev något kortare än vi tänkt oss, men den gjorde jobbet.', -22),
+  review('rev_3', 'ctr_h1', 'Helgbrunch i Linné', 'INFLUENCER', 'Anna Karlsson', 'inf_anna', 'biz_solrosen', [5, 5, 5],
+    'Tydlig brief och allt var förberett när jag kom. Pengarna låg spärrade från start, det gör stor skillnad.', -40),
+  review('rev_4', 'ctr_h3', 'Smakmeny i höst', 'BUSINESS', 'Petra Sandell', 'inf_erik', 'biz_kajutan', [4, 5, 5],
+    'Kunnig och grundlig. Tog längre tid än vi räknat med, men resultatet var värt det.', -33),
+  review('rev_5', 'ctr_h3', 'Smakmeny i höst', 'INFLUENCER', 'Erik Lindberg', 'inf_erik', 'biz_kajutan', [4, 4, 4],
+    'Bra mat och trevligt bemötande. Briefen ändrades under tiden, vilket kostade en extra inspelningsdag.', -33),
+  review('rev_6', 'ctr_h4', 'Morgonbröd', 'BUSINESS', 'Ali Rahimi', 'inf_sara', 'biz_solrosen', [5, 5, 5],
+    'Sara känner våra gäster bättre än vi gör. Tredje gången vi jobbar ihop och det blir bättre varje gång.', -15),
+  review('rev_7', 'ctr_h4', 'Morgonbröd', 'INFLUENCER', 'Sara Nyström', 'inf_sara', 'biz_solrosen', [5, 5, 5],
+    'Enklaste samarbetet jag gjort. Snabba svar och betalningen kom fram samma dag som de godkände.', -15),
+  review('rev_8', 'ctr_h5', 'Lunch på Avenyn', 'BUSINESS', 'Petra Sandell', 'inf_johan', 'biz_kajutan', [3, 4, 3],
+    'Innehållet blev bra men det var svårt att få tag på honom under veckan före. Deadline höll knappt.', -11),
+  review('rev_9', 'ctr_h6', 'Fikapaus', 'BUSINESS', 'Ali Rahimi', 'inf_maja', 'biz_solrosen', [5, 4, 5],
+    'Väldigt lätt att jobba med. Vi bad om en story till och det fixade hon utan diskussion.', -8),
+];
+
+/** Kortform så att listan ovan går att läsa som en tabell. */
+function review(
+  id: string,
+  contractId: string,
+  campaignTitle: string,
+  authorRole: 'INFLUENCER' | 'BUSINESS',
+  authorName: string,
+  influencerId: string,
+  businessId: string,
+  [communication, asDescribed, again]: [number, number, number],
+  comment: string,
+  daysAgo: number,
+): DemoReview {
+  const createdAt = daysFromNow(daysAgo);
+  return {
+    id,
+    contractId,
+    campaignTitle,
+    authorRole,
+    authorName,
+    influencerId,
+    businessId,
+    scores: { communication, asDescribed, again },
+    comment,
+    createdAt,
+    publishedAt: createdAt,
+    visibleAt: createdAt,
+  };
+}

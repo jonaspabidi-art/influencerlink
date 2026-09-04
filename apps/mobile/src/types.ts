@@ -6,8 +6,12 @@ import type {
   MatchStatus,
   PaymentStatus,
   Platform,
+  RatingSummary,
+  ReviewScores,
   Role,
 } from '@influencerlink/shared';
+
+export type { RatingSummary, ReviewScores };
 
 export interface SessionUser {
   id: string;
@@ -44,6 +48,8 @@ export interface CampaignCard {
   score: number;
   reason: string;
   aiReviewed: boolean;
+  /** Restaurangens betyg. count 0 = inga omdömen än. */
+  rating: RatingSummary;
   campaign: Campaign;
 }
 
@@ -51,6 +57,8 @@ export interface InfluencerCard {
   score: number;
   reason: string;
   aiReviewed: boolean;
+  /** Kreatörens betyg. count 0 = inga omdömen än. */
+  rating: RatingSummary;
   influencer: {
     id: string;
     displayName: string;
@@ -72,10 +80,18 @@ export interface Match {
   matchScore: number;
   matchReason: string;
   createdAt: string;
-  campaign: { id: string; title: string; businessName: string; budgetPerCreator: number; city: string };
+  campaign: {
+    id: string;
+    title: string;
+    businessId: string;
+    businessName: string;
+    budgetPerCreator: number;
+    city: string;
+  };
   influencer: { id: string; displayName: string; avatarUrl: string | null; city: string };
   contractId: string | null;
   lastMessage: string | null;
+  counterpartRating: RatingSummary;
 }
 
 export interface ChatMessage {
@@ -90,6 +106,7 @@ export interface Contract {
   id: string;
   campaignId: string;
   campaignTitle: string;
+  businessId: string;
   businessName: string;
   influencerId: string;
   influencerName: string;
@@ -150,4 +167,42 @@ export interface PendingLike {
   businessLogoUrl: string | null;
   budgetPerCreator: number;
   likedAt: string;
+}
+
+export interface Review {
+  id: string;
+  contractId: string;
+  campaignTitle: string;
+  /** Vem omdömet handlar om, inte vem som skrev det. */
+  subject: 'INFLUENCER' | 'BUSINESS';
+  authorName: string;
+  rating: number;
+  scores: ReviewScores;
+  comment: string;
+  createdAt: string;
+  publishedAt: string | null;
+}
+
+/** Omdömesläget för ett avtal, sett från den inloggade parten. */
+export interface ReviewState {
+  canReview: boolean;
+  reason: string | null;
+  daysLeft: number;
+  mine: Review | null;
+  theirs: Review | null;
+  /** Motparten har skrivit, men omdömena är fortfarande blinda. */
+  theirsPending: boolean;
+}
+
+export interface ProfileReviews {
+  summary: RatingSummary;
+  reviews: Review[];
+}
+
+export interface PendingReview {
+  contractId: string;
+  campaignTitle: string;
+  counterpartName: string;
+  completedAt: string;
+  daysLeft: number;
 }

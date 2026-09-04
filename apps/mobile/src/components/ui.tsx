@@ -13,8 +13,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { HEIGHTS, colors, radius, spacing, type } from '../theme';
-import { CheckIcon, ChevronLeftIcon, LockIcon } from './icons';
+import { formatRating, type RatingSummary } from '@influencerlink/shared';
+import { HEIGHTS, HIT_SLOP, colors, radius, spacing, type } from '../theme';
+import { CheckIcon, ChevronLeftIcon, LockIcon, StarIcon } from './icons';
 
 // --- Ytor -------------------------------------------------------------------
 
@@ -414,6 +415,108 @@ export function TrustBar({ text }: { text: string }) {
   );
 }
 
+// --- Betyg ------------------------------------------------------------------
+
+/** Fem stjärnor, halvfyllda när medelbetyget hamnar mitt emellan. */
+export function Stars({ value, size = 14 }: { value: number; size?: number }) {
+  return (
+    <View style={styles.stars}>
+      {[0, 1, 2, 3, 4].map((index) => {
+        const filled = value - index;
+        return (
+          <StarIcon
+            key={index}
+            size={size}
+            variant={filled >= 0.75 ? 'full' : filled >= 0.25 ? 'half' : 'empty'}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * Betyget som det visas på kort och i listor. Utan omdömen visas ingenting –
+ * en tom stjärnrad läser som betyget noll, och en ny profil är inte dålig.
+ */
+export function Rating({
+  summary,
+  size = 13,
+  showCount = true,
+  emptyLabel,
+}: {
+  summary: RatingSummary;
+  size?: number;
+  showCount?: boolean;
+  /** Text när det inte finns några omdömen. Utelämnad = visa inget alls. */
+  emptyLabel?: string;
+}) {
+  if (summary.count === 0) {
+    return emptyLabel ? <Text style={styles.ratingEmpty}>{emptyLabel}</Text> : null;
+  }
+  return (
+    <View
+      style={styles.ratingRow}
+      accessibilityLabel={`Betyg ${formatRating(summary.average)} av 5, ${summary.count} omdömen`}
+    >
+      <Stars value={summary.average} size={size} />
+      <Text style={[styles.ratingValue, { fontSize: size }]}>{formatRating(summary.average)}</Text>
+      {showCount ? <Text style={styles.ratingCount}>({summary.count})</Text> : null}
+    </View>
+  );
+}
+
+/** Stjärnrad att trycka på. Varje stjärna har full träffyta enligt handoffen. */
+export function RatingInput({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+}) {
+  return (
+    <View style={styles.ratingInput}>
+      {[1, 2, 3, 4, 5].map((score) => (
+        <Pressable
+          key={score}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: value === score }}
+          accessibilityLabel={`${label}: ${score} av 5`}
+          hitSlop={HIT_SLOP}
+          onPress={() => onChange(score)}
+          style={({ pressed }) => [styles.ratingStar, pressed && styles.pressed]}
+        >
+          <StarIcon size={30} variant={score <= value ? 'full' : 'empty'} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+/** Fördelningen på en profil: fem staplar, fem stjärnor överst. */
+export function RatingBars({ summary }: { summary: RatingSummary }) {
+  const max = Math.max(1, ...summary.distribution);
+  return (
+    <View style={styles.ratingBars}>
+      {[5, 4, 3, 2, 1].map((step) => {
+        const count = summary.distribution[step - 1] ?? 0;
+        return (
+          <View key={step} style={styles.ratingBarRow}>
+            <Text style={styles.ratingBarLabel}>{step}</Text>
+            <View style={styles.ratingBarTrack}>
+              <View style={[styles.ratingBarFill, { flex: count / max }]} />
+              <View style={{ flex: 1 - count / max }} />
+            </View>
+            <Text style={styles.ratingBarCount}>{count}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 // --- Bilder -----------------------------------------------------------------
 
 /**
@@ -713,6 +816,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
+
+  stars: { flexDirection: 'row', gap: 1 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  ratingValue: { fontFamily: type.listTitle.fontFamily, color: colors.text },
+  ratingCount: { ...type.secondary, fontSize: 12, color: colors.muted },
+  ratingEmpty: { ...type.secondary, fontSize: 12, color: colors.dim },
+  ratingInput: { flexDirection: 'row', gap: spacing.sm },
+  ratingStar: { padding: 6 },
+  ratingBars: { gap: 6 },
+  ratingBarRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  ratingBarLabel: { ...type.secondary, color: colors.muted, width: 10 },
+  ratingBarTrack: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.raised,
+    overflow: 'hidden',
+  },
+  ratingBarFill: { backgroundColor: colors.accent },
+  ratingBarCount: { ...type.secondary, color: colors.muted, width: 22, textAlign: 'right' },
 
   photo: { backgroundColor: colors.photo, overflow: 'hidden' },
   logo: {

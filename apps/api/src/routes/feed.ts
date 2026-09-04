@@ -1,4 +1,4 @@
-import { problemSchema } from '@influencerlink/shared';
+import { emptyRatingSummary, problemSchema, ratingSummarySchema } from '@influencerlink/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import {
   toCampaignCandidate,
   toInfluencerCandidate,
 } from '../services/feed.js';
+import { ratingsFor } from '../services/reviews.js';
 import { publicCampaignSchema, toPublicCampaign } from './campaigns.js';
 
 /** Kort i swipe-decken: kortet plus varför det visas. */
@@ -18,6 +19,8 @@ const scoredSchema = z.object({
   score: z.number(),
   reason: z.string(),
   aiReviewed: z.boolean(),
+  /** Motpartens betyg. count 0 betyder att ingen hunnit lämna omdöme än. */
+  rating: ratingSummarySchema,
 });
 
 const influencerCardSchema = scoredSchema.extend({
@@ -73,6 +76,11 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
         include: { business: true, contracts: { select: { status: true } } },
       });
       const byId = new Map(campaigns.map((campaign) => [campaign.id, campaign]));
+      const ratings = await ratingsFor(
+        prisma,
+        'BUSINESS',
+        campaigns.map((campaign) => campaign.businessId),
+      );
 
       return ranked
         .slice(0, request.query.limit)
@@ -84,6 +92,7 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
               score: entry.finalScore,
               reason: entry.reason,
               aiReviewed: entry.aiReviewed,
+              rating: ratings.get(campaign.businessId) ?? emptyRatingSummary(),
               campaign: toPublicCampaign(campaign),
             },
           ];
@@ -171,6 +180,11 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
         where: { id: { in: top.map((entry) => entry.influencer.id) } },
       });
       const byId = new Map(profiles.map((profile) => [profile.id, profile]));
+      const ratings = await ratingsFor(
+        prisma,
+        'INFLUENCER',
+        profiles.map((profile) => profile.id),
+      );
 
       return top.flatMap((entry) => {
         const profile = byId.get(entry.influencer.id);
@@ -180,6 +194,7 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
             score: entry.finalScore,
             reason: entry.reason,
             aiReviewed: entry.aiReviewed,
+            rating: ratings.get(profile.id) ?? emptyRatingSummary(),
             influencer: {
               id: profile.id,
               displayName: profile.displayName,

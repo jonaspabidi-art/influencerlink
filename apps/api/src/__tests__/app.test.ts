@@ -117,6 +117,35 @@ describe('HTTP-lagret', () => {
     expect(response.statusCode).toBe(404);
   });
 
+  it('avvisar betyg utanför skalan innan databasen rörs', async () => {
+    const token = app.jwt.sign({ sub: 'user-1', role: 'BUSINESS', pid: 'biz-1' });
+    const response = await app.inject({
+      method: 'POST',
+      url: '/contracts/ctr-1/reviews',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { scores: { communication: 0, asDescribed: 6, again: 3 }, comment: '' },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ error: 'validation_error' });
+  });
+
+  it('kräver färdig profil innan ett omdöme kan lämnas', async () => {
+    // Utan pid är onboardingen inte klar, och då finns ingen part att vara.
+    const token = app.jwt.sign({ sub: 'user-1', role: 'BUSINESS' });
+    const response = await app.inject({
+      method: 'POST',
+      url: '/contracts/ctr-1/reviews',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { scores: { communication: 5, asDescribed: 5, again: 5 }, comment: '' },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('kräver inloggning för att läsa en profils omdömen', async () => {
+    const response = await app.inject({ method: 'GET', url: '/influencers/inf-1/reviews' });
+    expect(response.statusCode).toBe(401);
+  });
+
   it('svarar 400 på Stripe-webhooken utan signatur', async () => {
     const response = await app.inject({
       method: 'POST',

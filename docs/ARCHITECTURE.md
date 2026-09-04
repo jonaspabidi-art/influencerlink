@@ -25,7 +25,10 @@ Kärnan är `Campaign` × `InfluencerProfile`. Runt det paret hänger:
   `(campaignId, influencerId)`, vilket gör att två samtidiga högersvep inte kan
   ge två matchningar.
 - **`Application`** – influencerns pitch. Räknas som ett högersvep.
-- **`Contract`** → `Signature`, `Delivery`, `Payment`.
+- **`Contract`** → `Signature`, `Delivery`, `Payment`, `Review`.
+- **`Review`** – ett omdöme per part och avtal, unik på
+  `(contractId, authorRole)`. Både `influencerId` och `businessId` sparas på
+  raden så att betyg kan summeras utan att gå via avtalet och kampanjen.
 
 `AuditEvent` loggar allt med juridisk eller ekonomisk innebörd, och
 `ProcessedWebhook` gör Stripes omsändningar idempotenta.
@@ -51,6 +54,28 @@ escrow till restaurangen.
 Avtalstexten fryses när kontraktet skapas. `renderContractTerms` är avsiktligt
 deterministisk – samma indata ger byte för byte samma text – eftersom det är
 den strängen som hashas och signeras med BankID.
+
+## Omdömen
+
+Ett omdöme får bara skrivas av en part i ett avtal som nått `COMPLETED`, och
+bara en gång. Reglerna ligger i `packages/shared/src/reviews.ts` och används av
+både API och demobackend.
+
+Publiceringen är dubbelblind och avgörs av två fält:
+
+- `publishedAt` sätts på båda raderna i samma stund som den andra parten
+  skriver sitt.
+- `visibleAt` är avtalets `completedAt` plus fjorton dagar, och släpper fram ett
+  ensamt omdöme när motparten aldrig svarade.
+
+Ett omdöme räknas som publicerat om något av dem slagit in. Villkoret finns på
+ett enda ställe – `publishedWhere` i `apps/api/src/services/reviews.ts` – så att
+ingen fråga råkar läcka ett blint omdöme. Samma fjortondagarsfönster är sista
+dag att skriva, vilket hindrar att någon väntar ut publiceringen och svarar på
+ett omdöme de redan läst.
+
+Medelbetyg hämtas med `ratingsFor`, som summerar en hel kortlek i en fråga i
+stället för en per kort.
 
 ## Betalflödet
 

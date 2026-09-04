@@ -5,7 +5,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
-import { CheckIcon, LockIcon } from '../../src/components/icons';
+import { CheckIcon, LockIcon, StarIcon } from '../../src/components/icons';
+import { ReviewCard } from '../../src/components/ReviewList';
 import {
   Body,
   Button,
@@ -22,7 +23,7 @@ import {
 } from '../../src/components/ui';
 import { DELIVERABLE_LABELS, formatDate, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
-import type { Contract } from '../../src/types';
+import type { Contract, ReviewState } from '../../src/types';
 
 const STATUS_LABELS: Record<Contract['status'], string> = {
   DRAFT: 'Utkast',
@@ -61,10 +62,17 @@ export default function ContractDetail() {
     enabled: Boolean(id),
   });
 
+  const reviewState = useQuery({
+    queryKey: ['contract-reviews', id],
+    queryFn: () => api.get<ReviewState>(`/contracts/${id}/reviews`),
+    enabled: Boolean(id) && contract.data?.status === 'COMPLETED',
+  });
+
   const reload = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['contract', id] });
     void queryClient.invalidateQueries({ queryKey: ['contracts'] });
     void queryClient.invalidateQueries({ queryKey: ['payouts'] });
+    void queryClient.invalidateQueries({ queryKey: ['contract-reviews', id] });
   }, [id, queryClient]);
 
   const bankId = useBankId({
@@ -159,6 +167,24 @@ export default function ContractDetail() {
         </Card>
       ) : null}
 
+      {data.status === 'COMPLETED' && reviewState.data ? (
+        <ReviewSection
+          state={reviewState.data}
+          counterpart={counterpart}
+          onWrite={() => router.push(`/contract/${data.id}/review`)}
+          onReadProfile={() =>
+            router.push({
+              pathname: '/reviews/[type]/[id]',
+              params: {
+                type: isBusiness ? 'influencer' : 'business',
+                id: isBusiness ? data.influencerId : data.businessId,
+                name: counterpart,
+              },
+            })
+          }
+        />
+      ) : null}
+
       <Card>
         <DetailRow label="Arvode" value={formatSek(data.fee)} />
         <DetailRow label="Plattformsavgift 12 %" value={`−${formatSek(data.platformFee)}`} />
@@ -247,6 +273,64 @@ export default function ContractDetail() {
       </View>
     </ScrollScreen>
   );
+}
+
+/**
+ * Omdömesläget efter ett avslutat samarbete: skriv, vänta, eller läs det
+ * motparten skrev. Bara ett av lägena i taget – det är alltid ett av dem.
+ */
+function ReviewSection({
+  state,
+  counterpart,
+  onWrite,
+  onReadProfile,
+}: {
+  state: ReviewState;
+  counterpart: string;
+  onWrite: () => void;
+  onReadProfile: () => void;
+}) {
+  if (state.canReview) {
+    return (
+      <Card tone="primary">
+        <View style={styles.reviewHead}>
+          <StarIcon size={18} />
+          <Text style={styles.actionTitle}>Hur gick det?</Text>
+        </View>
+        <Body>
+          Ni ser varandras omdömen först när båda skrivit. Du har {state.daysLeft} dagar på dig.
+        </Body>
+        <Button label="Lämna omdöme" onPress={onWrite} />
+      </Card>
+    );
+  }
+
+  if (state.mine && state.theirs) {
+    return (
+      <View style={styles.reviewBlock}>
+        <Label>{`OMDÖME FRÅN ${counterpart.toUpperCase()}`}</Label>
+        <ReviewCard review={state.theirs} showBreakdown />
+        <Pressable accessibilityRole="button" onPress={onReadProfile} hitSlop={8}>
+          <Text style={styles.termsLink}>Se alla omdömen</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (state.mine) {
+    return (
+      <Card>
+        <Text style={styles.actionTitle}>Ditt omdöme är inskickat</Text>
+        <Body>
+          {state.theirsPending
+            ? `${counterpart} har också skrivit. Omdömena släpps fram inom kort.`
+            : `Det syns när ${counterpart} också skrivit, eller om ${state.daysLeft} dagar.`}
+        </Body>
+      </Card>
+    );
+  }
+
+  return null;
 }
 
 /** Kortet med den enda åtgärd som är aktuell just nu. */
@@ -433,6 +517,8 @@ const styles = StyleSheet.create({
   error: { ...type.secondary, color: colors.danger },
 
   payoutCard: { gap: 4 },
+  reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  reviewBlock: { gap: spacing.sm },
   payoutAmount: { ...type.amountLarge, color: colors.positive },
 
   signatureRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

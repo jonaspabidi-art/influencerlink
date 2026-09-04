@@ -5,7 +5,7 @@ import { api } from '../api';
 import { formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { Match } from '../types';
-import { Avatar, Button, ErrorState, Header, Loading, Logo, Screen } from './ui';
+import { Avatar, Button, ErrorState, Header, Loading, Logo, Rating, Screen } from './ui';
 
 /** Matchningslistan. Samma komponent för båda rollerna, olika motpart. */
 export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
@@ -77,9 +77,15 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
               <Text style={styles.title}>
                 {role === 'INFLUENCER' ? item.campaign.businessName : item.influencer.displayName}
               </Text>
-              <Text style={styles.secondary} numberOfLines={1}>
-                {item.campaign.title}
-              </Text>
+              <View style={styles.metaRow}>
+                <Rating summary={item.counterpartRating} size={11} showCount={false} />
+                {item.counterpartRating.count > 0 ? (
+                  <Text style={styles.secondary}>·</Text>
+                ) : null}
+                <Text style={styles.meta} numberOfLines={1}>
+                  {item.campaign.title}
+                </Text>
+              </View>
               <Text style={styles.lastMessage} numberOfLines={1}>
                 {item.lastMessage ?? item.matchReason}
               </Text>
@@ -106,6 +112,8 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.9 },
   rowText: { flex: 1, gap: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  meta: { ...type.secondary, color: colors.muted, flexShrink: 1 },
   title: { ...type.listTitle, fontSize: 16, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },
   lastMessage: { ...type.secondary, color: colors.dim },

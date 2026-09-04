@@ -1,9 +1,11 @@
 import {
   applicationInputSchema,
   applicationStatusSchema,
+  emptyRatingSummary,
   matchStatusSchema,
   messageInputSchema,
   problemSchema,
+  ratingSummarySchema,
 } from '@influencerlink/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
@@ -12,6 +14,7 @@ import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { recordSwipe } from '../services/matching.js';
+import { ratingsFor } from '../services/reviews.js';
 
 const matchSchema = z.object({
   id: z.string(),
@@ -22,6 +25,7 @@ const matchSchema = z.object({
   campaign: z.object({
     id: z.string(),
     title: z.string(),
+    businessId: z.string(),
     businessName: z.string(),
     budgetPerCreator: z.number().int(),
     city: z.string(),
@@ -34,6 +38,8 @@ const matchSchema = z.object({
   }),
   contractId: z.string().nullable(),
   lastMessage: z.string().nullable(),
+  /** Motpartens betyg – restaurangens för influencern, och tvärtom. */
+  counterpartRating: ratingSummarySchema,
 });
 
 const messageSchema = z.object({
@@ -70,6 +76,15 @@ export async function matchRoutes(app: FastifyInstance, services: Services): Pro
         orderBy: { updatedAt: 'desc' },
       });
 
+      const counterpartIsInfluencer = request.user.role === 'BUSINESS';
+      const ratings = await ratingsFor(
+        prisma,
+        counterpartIsInfluencer ? 'INFLUENCER' : 'BUSINESS',
+        matches.map((match) =>
+          counterpartIsInfluencer ? match.influencerId : match.campaign.businessId,
+        ),
+      );
+
       return matches.map((match) => ({
         id: match.id,
         status: match.status,
@@ -79,6 +94,7 @@ export async function matchRoutes(app: FastifyInstance, services: Services): Pro
         campaign: {
           id: match.campaign.id,
           title: match.campaign.title,
+          businessId: match.campaign.businessId,
           businessName: match.campaign.business.companyName,
           budgetPerCreator: match.campaign.budgetPerCreator,
           city: match.campaign.city,
@@ -91,6 +107,10 @@ export async function matchRoutes(app: FastifyInstance, services: Services): Pro
         },
         contractId: match.contracts[0]?.id ?? null,
         lastMessage: match.messages[0]?.body ?? null,
+        counterpartRating:
+          ratings.get(
+            counterpartIsInfluencer ? match.influencerId : match.campaign.businessId,
+          ) ?? emptyRatingSummary(),
       }));
     },
   );

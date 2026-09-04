@@ -4,7 +4,8 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../api';
 import { formatDate, formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
-import type { Contract } from '../types';
+import type { Contract, PendingReview } from '../types';
+import { StarIcon } from './icons';
 import { Button, ErrorState, Header, Loading, Screen } from './ui';
 
 /** Statusetiketter i den ordning avtalet faktiskt rör sig. */
@@ -33,6 +34,10 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   const contracts = useQuery({
     queryKey: ['contracts'],
     queryFn: () => api.get<Contract[]>('/contracts'),
+  });
+  const pendingReviews = useQuery({
+    queryKey: ['reviews-pending'],
+    queryFn: () => api.get<PendingReview[]>('/reviews/pending'),
   });
 
   if (contracts.isLoading) {
@@ -86,6 +91,11 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
         keyExtractor={(contract) => contract.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          pendingReviews.data && pendingReviews.data.length > 0 ? (
+            <ReviewPrompt items={pendingReviews.data} />
+          ) : null
+        }
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
@@ -112,6 +122,40 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   );
 }
 
+/**
+ * Omdömen skrivs inte av sig själva. Den här raden är enda stället där den
+ * som är klar med ett samarbete blir påmind, och den försvinner när fönstret
+ * gått ut.
+ */
+function ReviewPrompt({ items }: { items: PendingReview[] }) {
+  const router = useRouter();
+  const first = items[0]!;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => router.push(`/contract/${first.contractId}/review`)}
+      style={({ pressed }) => [styles.prompt, pressed && styles.pressed]}
+    >
+      <View style={styles.promptIcon}>
+        <StarIcon size={20} />
+      </View>
+      <View style={styles.promptText}>
+        <Text style={styles.promptTitle}>
+          {items.length === 1
+            ? `Lämna omdöme om ${first.counterpartName}`
+            : `${items.length} omdömen att lämna`}
+        </Text>
+        <Text style={styles.secondary}>
+          {items.length === 1
+            ? `${first.campaignTitle} · ${first.daysLeft} dagar kvar`
+            : `Det första gäller ${first.campaignTitle}, ${first.daysLeft} dagar kvar`}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export { STATUS_LABELS as CONTRACT_STATUS_LABELS };
 
 const styles = StyleSheet.create({
@@ -132,6 +176,28 @@ const styles = StyleSheet.create({
   secondary: { ...type.secondary, color: colors.muted },
   status: { fontFamily: type.listTitle.fontFamily, fontSize: 13 },
   amount: { fontFamily: type.rowTitle.fontFamily, fontSize: 16, color: colors.text },
+
+  prompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.tint,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    padding: spacing.base,
+    marginBottom: 10,
+  },
+  promptIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.control,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promptText: { flex: 1, gap: 2 },
+  promptTitle: { ...type.listTitle, fontSize: 15, color: colors.text },
 
   emptyBody: { flex: 1, paddingHorizontal: spacing.base },
   emptyCard: {

@@ -12,7 +12,7 @@ import {
 import { colors, radius, spacing, type } from '../theme';
 import type { CampaignCard, InfluencerCard } from '../types';
 import { SparkIcon } from './icons';
-import { Avatar, Logo, MatchPill, Photo, StatBox, Tag } from './ui';
+import { Avatar, Logo, MatchPill, Photo, Rating, StatBox, Tag } from './ui';
 
 /** Förkortningar i plattformsrutorna längst ned på korten. */
 const PLATFORM_SHORT: Record<Platform, string> = {
@@ -46,9 +46,13 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
           <Logo uri={campaign.businessLogoUrl} />
           <View style={styles.photoFooterText}>
             <Text style={styles.name}>{campaign.businessName}</Text>
-            <Text style={styles.secondary}>
-              {campaign.city} · {spotsLeft} {spotsLeft === 1 ? 'ledig plats' : 'lediga platser'}
-            </Text>
+            <View style={styles.metaRow}>
+              <Rating summary={card.rating} size={12} />
+              {card.rating.count > 0 ? <Text style={styles.secondary}>·</Text> : null}
+              <Text style={styles.meta} numberOfLines={1}>
+                {campaign.city} · {spotsLeft} {spotsLeft === 1 ? 'ledig plats' : 'lediga platser'}
+              </Text>
+            </View>
           </View>
         </View>
       </Photo>
@@ -114,10 +118,14 @@ export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
           <Avatar uri={influencer.avatarUrl} />
           <View style={styles.photoFooterText}>
             <Text style={styles.nameLarge}>{influencer.displayName}</Text>
-            <Text style={styles.secondary}>
-              {influencer.city}
-              {niches ? ` · ${niches}` : ''}
-            </Text>
+            <View style={styles.metaRow}>
+              <Rating summary={card.rating} size={12} />
+              {card.rating.count > 0 ? <Text style={styles.secondary}>·</Text> : null}
+              <Text style={styles.meta} numberOfLines={1}>
+                {influencer.city}
+                {niches ? ` · ${niches}` : ''}
+              </Text>
+            </View>
           </View>
         </View>
       </Photo>
@@ -213,6 +221,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   photoFooterText: { flex: 1, gap: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  meta: { ...type.secondary, color: colors.muted, flexShrink: 1 },
   name: { ...type.rowTitle, color: colors.text },
   nameLarge: { fontFamily: type.rowTitle.fontFamily, fontSize: 18, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },

@@ -3,6 +3,7 @@
  * kopplade konton, tre kampanjer och ett samarbete som redan hunnit bli
  * matchning. Kör med `npm run db:seed -w @influencerlink/api`.
  */
+import { overallRating, renderContractTerms, reviewDeadline, splitFee } from '@influencerlink/shared';
 import { PrismaClient, type Category, type Platform } from '@prisma/client';
 import { createHmac } from 'node:crypto';
 
@@ -147,6 +148,7 @@ async function main(): Promise<void> {
   console.log('Rensar tidigare demodata …');
   // Ordningen spelar roll: barn före föräldrar.
   await prisma.auditEvent.deleteMany();
+  await prisma.review.deleteMany();
   await prisma.processedWebhook.deleteMany();
   await prisma.bankIdSession.deleteMany();
   await prisma.payment.deleteMany();
@@ -314,9 +316,148 @@ async function main(): Promise<void> {
     },
   });
 
+  console.log('Skapar ett avslutat samarbete med omdömen …');
+  await seedCompletedCollaboration({
+    business: solrosen,
+    influencer: influencerProfiles[1]!,
+  });
+
   console.log(
     `Klart: ${influencerProfiles.length} influencers, ${businessProfiles.length} restauranger, 3 kampanjer.`,
   );
+}
+
+/**
+ * Ett samarbete som redan gått hela vägen till utbetalning, med omdömen från
+ * båda parter. Utan det syns aldrig betygen i kortleken efter en seed.
+ */
+async function seedCompletedCollaboration(input: {
+  business: { id: string; companyName: string; orgNumber: string; userId: string };
+  influencer: { id: string; displayName: string; userId: string };
+}): Promise<void> {
+  const { business, influencer } = input;
+  const completedAt = new Date(Date.now() - 5 * 86_400_000);
+  const dueDate = new Date(Date.now() - 12 * 86_400_000);
+  const fee = kr(3_500);
+
+  const campaign = await prisma.campaign.create({
+    data: {
+      businessId: business.id,
+      title: 'Fredagsfika med kanelbullar',
+      brief:
+        'Vi bakade extra inför fredagen och ville visa det. En kortare film från disken och en story när bullarna kommer ut ur ugnen.',
+      categories: ['BAGERI', 'CAFE'],
+      platforms: ['INSTAGRAM'],
+      deliverables: ['INSTAGRAM_REEL'],
+      compensationType: 'FIXED',
+      budgetPerCreator: fee,
+      slots: 1,
+      city: 'Göteborg',
+      minFollowers: 3_000,
+      startDate: new Date(Date.now() - 30 * 86_400_000),
+      endDate: dueDate,
+      status: 'CLOSED',
+    },
+  });
+
+  await prisma.swipe.createMany({
+    data: [
+      { campaignId: campaign.id, influencerId: influencer.id, actor: 'INFLUENCER', direction: 'LIKE' },
+      { campaignId: campaign.id, influencerId: influencer.id, actor: 'BUSINESS', direction: 'LIKE' },
+    ],
+  });
+  const match = await prisma.match.create({
+    data: {
+      campaignId: campaign.id,
+      influencerId: influencer.id,
+      matchScore: 88,
+      matchReason: 'Finns på plats i Göteborg och gör mat i samma stil',
+      status: 'CONTRACTED',
+    },
+  });
+
+  const contract = await prisma.contract.create({
+    data: {
+      matchId: match.id,
+      campaignId: campaign.id,
+      influencerId: influencer.id,
+      fee,
+      deliverables: ['INSTAGRAM_REEL'],
+      dueDate,
+      status: 'COMPLETED',
+      signedByInfluencerAt: new Date(Date.now() - 20 * 86_400_000),
+      signedByBusinessAt: new Date(Date.now() - 20 * 86_400_000),
+      deliveredAt: new Date(Date.now() - 7 * 86_400_000),
+      completedAt,
+      terms: renderContractTerms({
+        contractId: 'seed-fredagsfika',
+        businessName: business.companyName,
+        businessOrgNumber: business.orgNumber,
+        influencerName: influencer.displayName,
+        influencerPersonalNumberMask: '19900101-****',
+        campaignTitle: campaign.title,
+        campaignBrief: campaign.brief,
+        deliverables: ['INSTAGRAM_REEL'],
+        fee,
+        platformFeeBps: 1200,
+        dueDate,
+        reviewDays: 7,
+        extraTerms: '',
+      }),
+    },
+  });
+
+  const breakdown = splitFee(fee, 1200);
+  await prisma.payment.create({
+    data: {
+      contractId: contract.id,
+      amount: breakdown.gross,
+      platformFee: breakdown.platformFee,
+      payout: breakdown.net,
+      status: 'RELEASED',
+      escrowedAt: new Date(Date.now() - 18 * 86_400_000),
+      releasedAt: completedAt,
+    },
+  });
+
+  // Båda skrev, alltså är omdömena publicerade.
+  const publishedAt = new Date(completedAt.getTime() + 86_400_000);
+  const visibleAt = reviewDeadline(completedAt);
+  const fromBusiness = { communication: 5, asDescribed: 5, again: 4 };
+  const fromInfluencer = { communication: 4, asDescribed: 5, again: 5 };
+
+  await prisma.review.createMany({
+    data: [
+      {
+        contractId: contract.id,
+        authorRole: 'BUSINESS',
+        authorId: business.userId,
+        influencerId: influencer.id,
+        businessId: business.id,
+        rating: overallRating(fromBusiness),
+        ...fromBusiness,
+        comment:
+          'Kom när vi kom överens om, förstod direkt vad vi ville visa och filmen låg uppe samma kväll. Vi fick fler bordsbokningar dagen efter.',
+        createdAt: publishedAt,
+        publishedAt,
+        visibleAt,
+      },
+      {
+        contractId: contract.id,
+        authorRole: 'INFLUENCER',
+        authorId: influencer.userId,
+        influencerId: influencer.id,
+        businessId: business.id,
+        rating: overallRating(fromInfluencer),
+        ...fromInfluencer,
+        comment:
+          'Tydlig brief och de hade förberett allt när jag kom. Betalningen låg spärrad från början, så jag behövde aldrig fundera på om pengarna skulle komma.',
+        createdAt: publishedAt,
+        publishedAt,
+        visibleAt,
+      },
+    ],
+  });
 }
 
 main()

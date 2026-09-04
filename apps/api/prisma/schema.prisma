@@ -140,6 +140,7 @@ model User {
   signatures        Signature[]
   messages          Message[]
   auditEvents       AuditEvent[]
+  reviews           Review[]
 }
 
 model InfluencerProfile {
@@ -170,6 +171,7 @@ model InfluencerProfile {
   matches        Match[]
   applications   Application[]
   contracts      Contract[]
+  reviews        Review[]
 
   @@index([city])
 }
@@ -220,6 +222,7 @@ model BusinessProfile {
   updatedAt DateTime @updatedAt
 
   campaigns Campaign[]
+  reviews   Review[]
 
   @@index([city])
 }
@@ -367,6 +370,7 @@ model Contract {
   signatures Signature[]
   payment    Payment?
   delivery   Delivery?
+  reviews    Review[]
 
   @@index([status])
 }
@@ -457,6 +461,47 @@ model BankIdSession {
   completedAt DateTime?
 
   @@index([status, startedAt])
+}
+
+/// Omdöme efter ett avslutat samarbete.
+///
+/// Dubbelblint: `publishedAt` sätts när båda parter lämnat sitt omdöme.
+/// `visibleAt` är avtalets slutdatum plus fönstret, och släpper fram ett
+/// ensamt omdöme när motparten aldrig svarade. Ingen av delarna går att
+/// ändra i efterhand – ett publicerat omdöme står kvar.
+model Review {
+  id String @id @default(cuid())
+
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  /// Vilken part som skrev. Motsatsen är den som blir bedömd.
+  authorRole Role
+  authorId   String
+  author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// Båda profilerna sparas så att betyg kan summeras utan att gå via avtalet.
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  /// Helhetsbetyget, uträknat ur delbetygen. Sparas för att kunna sorteras på.
+  rating        Float
+  communication Int
+  asDescribed   Int
+  again         Int
+  comment       String @default("")
+
+  createdAt   DateTime  @default(now())
+  publishedAt DateTime?
+  visibleAt   DateTime
+
+  /// En part skriver ett omdöme per avtal.
+  @@unique([contractId, authorRole])
+  @@index([influencerId, publishedAt])
+  @@index([businessId, publishedAt])
 }
 
 /// Spårbarhetslogg för händelser med juridisk eller ekonomisk innebörd.

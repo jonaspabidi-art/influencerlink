@@ -1,24 +1,34 @@
 import {
   checkEligibility,
+  checkReviewEligibility,
+  daysLeftToReview,
+  emptyRatingSummary,
+  overallRating,
   rankCampaigns,
   rankInfluencers,
   renderContractTerms,
+  reviewDeadline,
   splitFee,
+  summarizeRatings,
   type CampaignCandidate,
   type Category,
   type DeliverableKind,
   type InfluencerCandidate,
   type Platform,
+  type RatingSummary,
+  type ReviewScores,
 } from '@influencerlink/shared';
 import {
   DEMO_APPLICATIONS,
   DEMO_BUSINESSES,
   DEMO_CAMPAIGNS,
   DEMO_INFLUENCERS,
+  DEMO_REVIEWS,
   DEMO_USERS,
   type DemoBusiness,
   type DemoCampaign,
   type DemoInfluencer,
+  type DemoReview,
   type DemoUser,
 } from './data';
 
@@ -118,6 +128,7 @@ interface State {
   messages: Message[];
   applications: Application[];
   contracts: Contract[];
+  reviews: DemoReview[];
   orders: BankIdOrder[];
   sessionUserId: string | null;
 }
@@ -133,10 +144,29 @@ const STORAGE_KEY = 'influencerlink.demo';
  * en omladdning av sidan. På native finns ingen localStorage och tillståndet
  * lever bara i minnet – appen laddas sällan om där.
  */
+const STATE_ARRAYS = [
+  'users',
+  'influencers',
+  'businesses',
+  'campaigns',
+  'swipes',
+  'matches',
+  'messages',
+  'applications',
+  'contracts',
+  'reviews',
+  'orders',
+] as const;
+
 function loadPersisted(): State | null {
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as State) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<State>;
+    // Sparat läge från en äldre version av appen saknar fält som tillkommit
+    // sedan dess. Då är det bättre att börja om än att köra vidare halvtomt.
+    if (STATE_ARRAYS.some((key) => !Array.isArray(parsed[key]))) return null;
+    return parsed as State;
   } catch {
     return null;
   }
@@ -167,6 +197,7 @@ function freshState(): State {
     messages: [],
     applications: DEMO_APPLICATIONS.map((application) => ({ ...application })),
     contracts: [],
+    reviews: DEMO_REVIEWS.map((item) => ({ ...item, scores: { ...item.scores } })),
     orders: [],
     sessionUserId: null,
   };
@@ -283,6 +314,7 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
     id: contract.id,
     campaignId: contract.campaignId,
     campaignTitle: campaign.title,
+    businessId: business.id,
     businessName: business.companyName,
     influencerId: contract.influencerId,
     influencerName: influencer.displayName,
@@ -301,6 +333,40 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
     paymentStatus: contract.paymentStatus,
     awaitingMySignature:
       mine === null && (contract.status === 'SENT' || contract.status === 'PARTIALLY_SIGNED'),
+  };
+}
+
+/** Publicerat = båda skrev, eller fönstret gick ut och det ensamma släpptes fram. */
+function isPublished(review: DemoReview, now = Date.now()): boolean {
+  return review.publishedAt !== null || new Date(review.visibleAt).getTime() <= now;
+}
+
+/** Betyget för en profil, räknat på publicerade omdömen från motparten. */
+function ratingFor(subject: 'INFLUENCER' | 'BUSINESS', profileId: string): RatingSummary {
+  const authorRole = subject === 'INFLUENCER' ? 'BUSINESS' : 'INFLUENCER';
+  const ratings = state.reviews
+    .filter(
+      (review) =>
+        review.authorRole === authorRole &&
+        isPublished(review) &&
+        (subject === 'INFLUENCER' ? review.influencerId : review.businessId) === profileId,
+    )
+    .map((review) => overallRating(review.scores));
+  return ratings.length ? summarizeRatings(ratings) : emptyRatingSummary();
+}
+
+function publicReview(review: DemoReview) {
+  return {
+    id: review.id,
+    contractId: review.contractId,
+    campaignTitle: review.campaignTitle,
+    subject: review.authorRole === 'BUSINESS' ? ('INFLUENCER' as const) : ('BUSINESS' as const),
+    authorName: review.authorName,
+    rating: overallRating(review.scores),
+    scores: review.scores,
+    comment: review.comment,
+    createdAt: review.createdAt,
+    publishedAt: review.publishedAt,
   };
 }
 
@@ -357,7 +423,7 @@ function recordSwipe(input: Swipe): Match | null {
   return match;
 }
 
-function publicMatch(match: Match) {
+function publicMatch(match: Match, viewerRole: 'INFLUENCER' | 'BUSINESS') {
   const campaign = campaignById(match.campaignId);
   const business = businessById(campaign.businessId);
   const influencer = influencerById(match.influencerId);
@@ -373,6 +439,7 @@ function publicMatch(match: Match) {
     campaign: {
       id: campaign.id,
       title: campaign.title,
+      businessId: business.id,
       businessName: business.companyName,
       budgetPerCreator: campaign.budgetPerCreator,
       city: campaign.city,
@@ -385,6 +452,10 @@ function publicMatch(match: Match) {
     },
     contractId: contract?.id ?? null,
     lastMessage: messages[messages.length - 1]?.body ?? null,
+    counterpartRating:
+      viewerRole === 'BUSINESS'
+        ? ratingFor('INFLUENCER', influencer.id)
+        : ratingFor('BUSINESS', business.id),
   };
 }
 
@@ -720,12 +791,16 @@ route('GET', '/feed/campaigns', () => {
       checkEligibility(toCampaignCandidate(campaign), candidate).eligible,
   );
 
-  return rankCampaigns(candidate, available.map(toCampaignCandidate)).map((entry) => ({
-    score: entry.score.total,
-    reason: entry.score.reasons[0] ?? 'Passar din nisch och räckvidd',
-    aiReviewed: false,
-    campaign: publicCampaign(campaignById(entry.campaign.id)),
-  }));
+  return rankCampaigns(candidate, available.map(toCampaignCandidate)).map((entry) => {
+    const campaign = campaignById(entry.campaign.id);
+    return {
+      score: entry.score.total,
+      reason: entry.score.reasons[0] ?? 'Passar din nisch och räckvidd',
+      aiReviewed: false,
+      rating: ratingFor('BUSINESS', campaign.businessId),
+      campaign: publicCampaign(campaign),
+    };
+  });
 });
 
 route('GET', '/feed/pending', () => {
@@ -776,6 +851,7 @@ route('GET', '/feed/influencers', ({ query }) => {
       score: entry.score.total,
       reason: entry.score.reasons[0] ?? 'Matchar kampanjens krav',
       aiReviewed: false,
+      rating: ratingFor('INFLUENCER', profile.id),
       influencer: {
         id: profile.id,
         displayName: profile.displayName,
@@ -831,7 +907,7 @@ route('GET', '/matches', () => {
         ? match.influencerId === profileId
         : campaignById(match.campaignId).businessId === profileId,
     )
-    .map(publicMatch);
+    .map((match) => publicMatch(match, user.role));
 });
 
 route('GET', '/matches/:id/messages', ({ params }) =>
@@ -960,6 +1036,146 @@ route('POST', '/contracts/:id/approve', ({ params }) => {
   contract.paymentStatus = 'RELEASED';
   return { status: contract.status, payout: splitFee(contract.fee, contract.platformFeeBps).net };
 });
+
+// Omdömen ---------------------------------------------------------------------
+
+route('GET', '/contracts/:id/reviews', ({ params }) => {
+  const user = currentUser();
+  const contract = contractById(params[0]!);
+  assertContractParty(contract, user);
+
+  const mine = state.reviews.find(
+    (review) => review.contractId === contract.id && review.authorRole === user.role,
+  );
+  const theirs = state.reviews.find(
+    (review) => review.contractId === contract.id && review.authorRole !== user.role,
+  );
+  const theirsVisible = theirs !== undefined && isPublished(theirs);
+
+  const eligibility = checkReviewEligibility({
+    status: contract.status,
+    completedAt: contract.completedAt ? new Date(contract.completedAt) : null,
+    alreadyReviewed: mine !== undefined,
+  });
+
+  return {
+    canReview: eligibility.allowed,
+    reason: eligibility.reason ?? null,
+    daysLeft: contract.completedAt ? daysLeftToReview(new Date(contract.completedAt)) : 0,
+    mine: mine ? publicReview(mine) : null,
+    theirs: theirsVisible && theirs ? publicReview(theirs) : null,
+    theirsPending: theirs !== undefined && !theirsVisible,
+  };
+});
+
+route('POST', '/contracts/:id/reviews', ({ params, body }) => {
+  const user = currentUser();
+  const contract = contractById(params[0]!);
+  assertContractParty(contract, user);
+
+  const already = state.reviews.some(
+    (review) => review.contractId === contract.id && review.authorRole === user.role,
+  );
+  const eligibility = checkReviewEligibility({
+    status: contract.status,
+    completedAt: contract.completedAt ? new Date(contract.completedAt) : null,
+    alreadyReviewed: already,
+  });
+  if (!eligibility.allowed) {
+    throw new DemoError(400, 'bad_request', eligibility.reason ?? 'Omdömet går inte att lämna.');
+  }
+
+  const scores = body.scores as ReviewScores;
+  const campaign = campaignById(contract.campaignId);
+  const completedAt = new Date(contract.completedAt as string);
+  const now = new Date().toISOString();
+  const counterpart = state.reviews.find(
+    (review) => review.contractId === contract.id && review.authorRole !== user.role,
+  );
+
+  const review: DemoReview = {
+    id: nextId('rev'),
+    contractId: contract.id,
+    campaignTitle: campaign.title,
+    authorRole: user.role,
+    authorName: user.name,
+    influencerId: contract.influencerId,
+    businessId: campaign.businessId,
+    scores,
+    comment: String(body.comment ?? ''),
+    createdAt: now,
+    // Har motparten redan skrivit blir båda synliga i samma stund.
+    publishedAt: counterpart ? now : null,
+    visibleAt: reviewDeadline(completedAt).toISOString(),
+  };
+  state.reviews.push(review);
+  if (counterpart) counterpart.publishedAt = now;
+
+  return publicReview(review);
+});
+
+route('GET', '/influencers/:id/reviews', ({ params }) => profileReviews('INFLUENCER', params[0]!));
+route('GET', '/businesses/:id/reviews', ({ params }) => profileReviews('BUSINESS', params[0]!));
+
+route('GET', '/reviews/pending', () => {
+  const user = currentUser();
+  const profileId = requireProfileId(user);
+  return state.contracts
+    .filter((contract) => {
+      if (contract.status !== 'COMPLETED' || !contract.completedAt) return false;
+      const mine = campaignById(contract.campaignId);
+      const isParty =
+        user.role === 'INFLUENCER'
+          ? contract.influencerId === profileId
+          : mine.businessId === profileId;
+      const written = state.reviews.some(
+        (review) => review.contractId === contract.id && review.authorRole === user.role,
+      );
+      return isParty && !written && daysLeftToReview(new Date(contract.completedAt)) > 0;
+    })
+    .map((contract) => {
+      const campaign = campaignById(contract.campaignId);
+      return {
+        contractId: contract.id,
+        campaignTitle: campaign.title,
+        counterpartName:
+          user.role === 'INFLUENCER'
+            ? businessById(campaign.businessId).companyName
+            : influencerById(contract.influencerId).displayName,
+        completedAt: contract.completedAt as string,
+        daysLeft: daysLeftToReview(new Date(contract.completedAt as string)),
+      };
+    });
+});
+
+function profileReviews(subject: 'INFLUENCER' | 'BUSINESS', profileId: string) {
+  const authorRole = subject === 'INFLUENCER' ? 'BUSINESS' : 'INFLUENCER';
+  const reviews = state.reviews
+    .filter(
+      (review) =>
+        review.authorRole === authorRole &&
+        isPublished(review) &&
+        (subject === 'INFLUENCER' ? review.influencerId : review.businessId) === profileId,
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  return {
+    summary: reviews.length
+      ? summarizeRatings(reviews.map((review) => overallRating(review.scores)))
+      : emptyRatingSummary(),
+    reviews: reviews.map(publicReview),
+  };
+}
+
+/** Kastar om den inloggade inte var part i avtalet. */
+function assertContractParty(contract: Contract, user: DemoUser): void {
+  const profileId = requireProfileId(user);
+  const isParty =
+    user.role === 'INFLUENCER'
+      ? contract.influencerId === profileId
+      : campaignById(contract.campaignId).businessId === profileId;
+  if (!isParty) throw new DemoError(403, 'forbidden', 'Du var inte part i det här samarbetet.');
+}
 
 function contractById(id: string): Contract {
   const contract = state.contracts.find((item) => item.id === id);

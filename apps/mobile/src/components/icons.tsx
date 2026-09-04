@@ -1,5 +1,6 @@
+import { useId } from 'react';
 import type { ColorValue } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, Path, Rect } from 'react-native-svg';
 import { colors } from '../theme';
 
 /**
@@ -129,6 +130,42 @@ export const PencilIcon = (props: IconProps) => (
     <Path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z" />
   </Icon>
 );
+
+/**
+ * Stjärna för betyg. Den enda ikonen med fyllning – ett omdöme på 4,8 måste gå
+ * att läsa av utan att räkna konturer, och tomma stjärnor bredvid fyllda är
+ * hela poängen med formen.
+ */
+export function StarIcon({
+  size = 14,
+  variant = 'full',
+  color = colors.accent,
+}: IconProps & { variant?: 'full' | 'half' | 'empty' }) {
+  // Egen id per instans, annars klipper alla halva stjärnor mot samma maskering.
+  const clipId = `star-${useId().replace(/:/g, '')}`;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {variant === 'half' ? (
+        <Defs>
+          <ClipPath id={clipId}>
+            <Rect x="0" y="0" width="12" height="24" />
+          </ClipPath>
+        </Defs>
+      ) : null}
+      <Path
+        d={STAR_PATH}
+        fill={variant === 'full' ? color : 'none'}
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+      {variant === 'half' ? <Path d={STAR_PATH} fill={color} clipPath={`url(#${clipId})`} /> : null}
+    </Svg>
+  );
+}
+
+const STAR_PATH =
+  'M12 3.6l2.63 5.33 5.87.85-4.25 4.14 1 5.85L12 17.01l-5.25 2.76 1-5.85-4.25-4.14 5.87-.85z';
 
 export const PlusIcon = (props: IconProps) => (
   <Icon {...props}>

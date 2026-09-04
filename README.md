@@ -27,6 +27,30 @@ slipper skriva in siffror själv.
 ett avtal, båda signerar med BankID, restaurangen betalar in arvodet till ett
 spärrat konto, influencern levererar och pengarna släpps vid godkännande.
 
+**När samarbetet är klart** betygsätter parterna varandra. Se Omdömen nedan.
+
+## Omdömen
+
+Efter ett avtal som nått `COMPLETED` får båda parter lämna ett omdöme om den
+andra: tre delbetyg på en femgradig skala – kommunikation, om leveransen
+motsvarade överenskommelsen, och om de skulle samarbeta igen – plus en frivillig
+kommentar. Helhetsbetyget räknas fram som medelvärdet av delbetygen, så ingen
+kan sätta fem i helhet efter tre tvåor.
+
+Två regler bär funktionen och ligger i `packages/shared/src/reviews.ts`, så att
+API och app inte kan tolka dem olika:
+
+1. **Omdömen kräver ett avslutat avtal.** Varje omdöme är knutet till en
+   betalning som gått igenom. Det går inte att fejka och inte att köpa.
+2. **Omdömena är dubbelblinda.** Ingen ser motpartens förrän båda lämnat sitt,
+   eller tills fönstret på fjorton dagar gått ut. Utan den regeln blir alla
+   betyg femmor, eftersom ingen vågar sätta trea på någon som fortfarande kan
+   sätta trea tillbaka. Fönstret är också sista dag att skriva – annars skulle
+   någon kunna vänta ut publiceringen och svara på ett omdöme de redan läst.
+
+Betygen visas på svepkorten, i matchningslistan och på en egen profilsida med
+fördelningen per stjärnsteg. Ett skickat omdöme går inte att ändra.
+
 ## Design
 
 Appen följer designen i `docs/design/HANDOFF.md` (prototypen ligger bredvid som
@@ -164,11 +188,12 @@ och `BANKID_MODE=mock`. Simulatorn svarar `complete` på andra statusanropet.
 
 ```bash
 npm run typecheck   # alla tre paketen
-npm test            # 95 enhetstester i apps/api
+npm test            # 120 enhetstester i apps/api
 ```
 
 Testerna täcker avgiftsberäkning, matchningspoäng och behörighetsfilter,
-avtalstextens determinism (viktigt: texten hashas och signeras), BankID:s
+avtalstextens determinism (viktigt: texten hashas och signeras), omdömenas
+betygsräkning och blinda fönster, BankID:s
 tillståndsmaskin och QR-rotation, AI-lagrets fallback när modellen är otillgänglig,
 samt HTTP-lagrets roll- och valideringskontroller.
 

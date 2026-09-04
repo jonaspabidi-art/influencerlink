@@ -14,6 +14,7 @@ import {
   ROLES,
   SWIPE_DIRECTIONS,
 } from './domain.js';
+import { MAX_RATING, MIN_RATING, REVIEW_CRITERIA } from './reviews.js';
 
 export const roleSchema = z.enum(ROLES);
 export const platformSchema = z.enum(PLATFORMS);
@@ -252,6 +253,47 @@ export const paymentSchema = z.object({
   status: paymentStatusSchema,
   escrowedAt: z.string().datetime().nullable(),
   releasedAt: z.string().datetime().nullable(),
+});
+
+// ---------------------------------------------------------------------------
+// Omdömen
+// ---------------------------------------------------------------------------
+
+const scoreSchema = z.number().int().min(MIN_RATING).max(MAX_RATING);
+
+export const reviewScoresSchema = z.object(
+  Object.fromEntries(REVIEW_CRITERIA.map((criterion) => [criterion, scoreSchema])) as Record<
+    (typeof REVIEW_CRITERIA)[number],
+    typeof scoreSchema
+  >,
+);
+
+export const reviewInputSchema = z.object({
+  scores: reviewScoresSchema,
+  /** Frivillig, men det är texten motparten faktiskt läser. */
+  comment: z.string().max(1000).default(''),
+});
+export type ReviewInput = z.infer<typeof reviewInputSchema>;
+
+export const ratingSummarySchema = z.object({
+  average: z.number(),
+  count: z.number().int().min(0),
+  distribution: z.array(z.number().int().min(0)).length(5),
+});
+
+export const reviewSchema = z.object({
+  id: cuidSchema,
+  contractId: cuidSchema,
+  campaignTitle: z.string(),
+  /** Vem som blir bedömd: INFLUENCER eller BUSINESS. */
+  subject: z.enum(['INFLUENCER', 'BUSINESS']),
+  authorName: z.string(),
+  rating: z.number(),
+  scores: reviewScoresSchema,
+  comment: z.string(),
+  createdAt: z.string().datetime(),
+  /** Null så länge omdömet fortfarande är blint. */
+  publishedAt: z.string().datetime().nullable(),
 });
 
 export const problemSchema = z.object({
