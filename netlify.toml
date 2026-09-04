@@ -5,6 +5,10 @@
 # ligger. Utan den kör appen i demoläge mot sin inbyggda backend.
 
 [build]
+  # Byggkommandot måste köras från repots rot, eftersom det är där
+  # npm-workspacen ligger. Anges här så att fältet i Netlifys gränssnitt
+  # inte kan peka någon annanstans.
+  base = "/"
   command = "npm install && npm run build -w @influencerlink/shared && npm run export:web -w @influencerlink/mobile"
   publish = "apps/mobile/dist"
 
