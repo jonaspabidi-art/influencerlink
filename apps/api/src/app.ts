@@ -43,6 +43,10 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
   await app.register(cors, {
     origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
     credentials: true,
+    // Måste anges explicit. Standarden är bara GET, HEAD och POST, vilket får
+    // webbläsaren att blockera profilsparandet (PUT) redan i preflight.
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['authorization', 'content-type'],
   });
   await app.register(rateLimit, {
     max: 300,

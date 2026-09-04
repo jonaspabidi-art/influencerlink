@@ -105,8 +105,24 @@ någon som redan loggat in.
 Peka sedan webbappen på API:et vid bygget:
 
 ```bash
-EXPO_PUBLIC_API_URL=https://ditt-api.onrender.com npm run export:web -w @influencerlink/mobile
+EXPO_PUBLIC_API_URL=https://ditt-api.up.railway.app npm run export:web -w @influencerlink/mobile
 ```
+
+Adressen bakas in i bundlen vid bygget. Metro cachar den, så `export:web`
+rensar `.expo` först – annars kan ett tidigare demolägesbygge ligga kvar och
+appen fortsätter tyst mot demobackenden trots att variabeln är satt.
+
+Kontrollera efteråt att adressen faktiskt kom med:
+
+```bash
+grep -o 'https://ditt-api[^"]*' apps/mobile/dist/_expo/static/js/web/*.js | head -1
+```
+
+Syns ingen träff kör appen i demoläge, och då visas demobannern överst i appen.
+
+`CORS_ORIGINS` måste innehålla exakt den adress webbappen ligger på, med
+protokoll och utan avslutande snedstreck. Stämmer den inte blockerar
+webbläsaren anropen och appen ser ut att hänga sig vid inloggningen.
 
 `/health` svarar med vilka integrationer som körs simulerat, så det går att se
 utifrån att en miljö inte är skarp.

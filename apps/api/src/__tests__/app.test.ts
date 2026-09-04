@@ -146,6 +146,22 @@ describe('HTTP-lagret', () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it('tillåter PUT i preflight, annars går profilen inte att spara från webben', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/me/influencer-profile',
+      headers: {
+        origin: 'http://localhost:8081',
+        'access-control-request-method': 'PUT',
+        'access-control-request-headers': 'authorization,content-type',
+      },
+    });
+    const allowed = String(response.headers['access-control-allow-methods'] ?? '');
+    for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+      expect(allowed).toContain(method);
+    }
+  });
+
   it('svarar 400 på Stripe-webhooken utan signatur', async () => {
     const response = await app.inject({
       method: 'POST',
