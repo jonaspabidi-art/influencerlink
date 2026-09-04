@@ -180,15 +180,13 @@ export default function NewCampaign() {
 
   if (step === 1) {
     return (
-      <Screen style={styles.step1}>
+      <ScrollScreen contentStyle={styles.step1Content}>
         <Header
           title="Nytt samarbete"
           onBack={() => router.back()}
           right={<Text style={styles.stepCounter}>1 / 2</Text>}
         />
-        <View style={styles.progressWrap}>
-          <Progress total={2} current={1} />
-        </View>
+        <Progress total={2} current={1} />
 
         <View style={styles.step1Body}>
           <View style={styles.intro}>
@@ -243,7 +241,7 @@ export default function NewCampaign() {
             <Button label="Fyll i själv" variant="secondary" onPress={() => setStep(2)} />
           </View>
         </View>
-      </Screen>
+      </ScrollScreen>
     );
   }
 
@@ -398,19 +396,17 @@ export default function NewCampaign() {
 }
 
 const styles = StyleSheet.create({
-  step1: { gap: 0 },
+  step1Content: { paddingTop: 0, flexGrow: 1 },
   content: { paddingTop: 0 },
-  progressWrap: { paddingHorizontal: spacing.base },
   stepCounter: { ...type.label, color: colors.muted },
 
-  step1Body: { flex: 1, padding: spacing.base, gap: spacing.base },
+  step1Body: { flexGrow: 1, gap: spacing.base },
   intro: { gap: spacing.sm },
   stepTitle: { fontFamily: type.display.fontFamily, fontSize: 27, lineHeight: 31, letterSpacing: -0.54, color: colors.text },
   lead: { ...type.body, color: colors.muted },
 
   note: {
-    flex: 1,
-    minHeight: 140,
+    minHeight: 150,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,

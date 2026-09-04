@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,15 +25,35 @@ export function Screen({
   children,
   style,
   edges = ['top', 'bottom'],
+  avoidKeyboard = false,
 }: {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   edges?: Array<'top' | 'bottom'>;
+  /** För skärmar med textfält längst ned, t.ex. chatten. */
+  avoidKeyboard?: boolean;
 }) {
+  const body = <View style={[styles.screenBody, style]}>{children}</View>;
   return (
     <SafeAreaView style={styles.screen} edges={edges}>
-      <View style={[styles.screenBody, style]}>{children}</View>
+      {avoidKeyboard ? <KeyboardAvoider>{body}</KeyboardAvoider> : body}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Tangentbordet täcker annars fälten längst ned på en telefon. iOS behöver
+ * padding, Android hanterar det själv via windowSoftInputMode och ska inte
+ * få dubbel kompensation.
+ */
+function KeyboardAvoider({ children }: { children: ReactNode }) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.screenBody}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      {children}
+    </KeyboardAvoidingView>
   );
 }
 
@@ -47,13 +69,16 @@ export function ScrollScreen({
 }) {
   return (
     <SafeAreaView style={styles.screen} edges={edges}>
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, contentStyle]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {children}
-      </ScrollView>
+      <KeyboardAvoider>
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoider>
     </SafeAreaView>
   );
 }

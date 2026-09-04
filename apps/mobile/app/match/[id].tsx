@@ -89,7 +89,7 @@ export default function MatchDetail() {
   const counterpart = isBusiness ? match.influencer.displayName : match.campaign.businessName;
 
   return (
-    <Screen>
+    <Screen avoidKeyboard>
       <Header
         title={counterpart}
         subtitle={`${match.campaign.title} · ${Math.round(match.matchScore)} % match`}

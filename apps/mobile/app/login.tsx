@@ -5,7 +5,7 @@ import { api, ApiError, setAccessToken } from '../src/api';
 import { useAuth } from '../src/auth';
 import { DemoBanner } from '../src/components/DemoBanner';
 import { DeckIcon, GridIcon, LockIcon } from '../src/components/icons';
-import { Button, Field, IconBox, Photo, Screen, Segmented } from '../src/components/ui';
+import { Button, Field, IconBox, Photo, ScrollScreen, Segmented } from '../src/components/ui';
 import { colors, radius, spacing, type } from '../src/theme';
 import type { DemoAccount, SessionUser } from '../src/types';
 import { useQuery } from '@tanstack/react-query';
@@ -107,7 +107,7 @@ export default function Login() {
   );
 
   return (
-    <Screen style={styles.screen}>
+    <ScrollScreen contentStyle={styles.screen}>
       <Photo style={styles.hero} />
 
       <View style={styles.intro}>
@@ -211,7 +211,7 @@ export default function Login() {
       </View>
 
       <DemoBanner />
-    </Screen>
+    </ScrollScreen>
   );
 }
 
@@ -254,7 +254,8 @@ function RoleCard({
 
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, gap: spacing.lg },
-  hero: { flex: 1, minHeight: 90, borderRadius: radius.card },
+  // Fast höjd: inuti en scrollvy finns ingen kvarvarande yta att flexa mot.
+  hero: { height: 120, borderRadius: radius.card },
   intro: { gap: 8 },
   title: { ...type.display, color: colors.text },
   lead: { ...type.bodySmall, color: colors.muted },
