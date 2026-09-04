@@ -129,6 +129,7 @@ interface State {
   applications: Application[];
   contracts: Contract[];
   reviews: DemoReview[];
+  accounts: DemoAccountRecord[];
   orders: BankIdOrder[];
   sessionUserId: string | null;
 }
@@ -155,6 +156,7 @@ const STATE_ARRAYS = [
   'applications',
   'contracts',
   'reviews',
+  'accounts',
   'orders',
 ] as const;
 
@@ -198,6 +200,7 @@ function freshState(): State {
     applications: DEMO_APPLICATIONS.map((application) => ({ ...application })),
     contracts: [],
     reviews: DEMO_REVIEWS.map((item) => ({ ...item, scores: { ...item.scores } })),
+    accounts: [],
     orders: [],
     sessionUserId: null,
   };
@@ -548,6 +551,94 @@ route('POST', '/auth/bankid/:orderRef/cancel', ({ params }) => {
   if (order) order.cancelled = true;
   return { cancelled: true };
 });
+
+/** Konton skapade i demoläget. Lösenordet sparas i klartext – det är en demo. */
+interface DemoAccountRecord {
+  userId: string;
+  email: string;
+  password: string;
+}
+
+route('POST', '/auth/register', ({ body }) => {
+  const email = String(body.email ?? '').trim().toLowerCase();
+  if (state.accounts.some((account) => account.email === email)) {
+    throw new DemoError(409, 'conflict', 'Det finns redan ett konto med den adressen.');
+  }
+
+  const user: DemoUser = {
+    id: nextId('usr'),
+    name: String(body.name ?? '').trim(),
+    role: body.role === 'BUSINESS' ? 'BUSINESS' : 'INFLUENCER',
+    personalNumberMask: '',
+    onboardingComplete: false,
+    profileId: null,
+  };
+  state.users.push(user);
+  state.accounts.push({ userId: user.id, email, password: String(body.password ?? '') });
+  state.sessionUserId = user.id;
+
+  return { accessToken: `demo-token-${user.id}`, user: publicUser(user) };
+});
+
+route('POST', '/auth/login', ({ body }) => {
+  const email = String(body.email ?? '').trim().toLowerCase();
+  const account = state.accounts.find(
+    (item) => item.email === email && item.password === String(body.password ?? ''),
+  );
+  if (!account) {
+    throw new DemoError(401, 'unauthorized', 'Fel e-postadress eller lösenord.');
+  }
+  const user = state.users.find((item) => item.id === account.userId);
+  if (!user) throw new DemoError(401, 'unauthorized', 'Fel e-postadress eller lösenord.');
+
+  state.sessionUserId = user.id;
+  return { accessToken: `demo-token-${user.id}`, user: publicUser(user) };
+});
+
+route('GET', '/auth/demo-accounts', () =>
+  state.users.map((user) => {
+    const influencer = state.influencers.find((item) => item.id === user.profileId);
+    const business = state.businesses.find((item) => item.id === user.profileId);
+    const parts: string[] = [];
+    if (influencer) {
+      parts.push(influencer.city);
+      const matches = state.matches.filter((m) => m.influencerId === influencer.id).length;
+      if (matches > 0) parts.push(`${matches} ${matches === 1 ? 'matchning' : 'matchningar'}`);
+    } else if (business) {
+      parts.push(business.city);
+      const campaigns = state.campaigns.filter((c) => c.businessId === business.id).length;
+      if (campaigns > 0) parts.push(`${campaigns} ${campaigns === 1 ? 'kampanj' : 'kampanjer'}`);
+    } else {
+      parts.push('profilen inte klar');
+    }
+    return {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      displayName: influencer?.displayName ?? business?.companyName ?? user.name,
+      onboardingComplete: user.onboardingComplete,
+      summary: parts.join(' · '),
+    };
+  }),
+);
+
+route('POST', '/auth/demo-login', ({ body }) => {
+  const user = state.users.find((item) => item.id === String(body.userId ?? ''));
+  if (!user) throw new DemoError(404, 'not_found', 'Kontot hittades inte.');
+  state.sessionUserId = user.id;
+  return { accessToken: `demo-token-${user.id}` };
+});
+
+function publicUser(user: DemoUser) {
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    onboardingComplete: user.onboardingComplete,
+    personalNumberMask: user.personalNumberMask,
+    profileId: user.profileId,
+  };
+}
 
 route('GET', '/auth/me', () => {
   const user = currentUser();

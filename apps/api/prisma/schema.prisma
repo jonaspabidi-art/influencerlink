@@ -126,6 +126,8 @@ model User {
   personalNumberMask String?
   name               String
   email              String? @unique
+  /// scrypt-hash med slumpat salt. Null för konton som bara finns via BankID.
+  passwordHash       String?
   phone              String?
 
   bankIdVerifiedAt DateTime?

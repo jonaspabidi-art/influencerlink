@@ -206,3 +206,13 @@ export interface PendingReview {
   completedAt: string;
   daysLeft: number;
 }
+
+/** Testkonto i väljaren på inloggningen. Finns bara när BankID är simulerat. */
+export interface DemoAccount {
+  id: string;
+  name: string;
+  role: 'INFLUENCER' | 'BUSINESS';
+  displayName: string;
+  onboardingComplete: boolean;
+  summary: string;
+}

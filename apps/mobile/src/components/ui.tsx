@@ -585,6 +585,7 @@ export function Field({
   placeholder,
   multiline = false,
   keyboardType = 'default',
+  secure = false,
   hint,
 }: {
   label: string;
@@ -592,7 +593,9 @@ export function Field({
   onChangeText: (value: string) => void;
   placeholder?: string;
   multiline?: boolean;
-  keyboardType?: 'default' | 'numeric';
+  keyboardType?: 'default' | 'numeric' | 'email';
+  /** Döljer texten och stänger av autokorrigering, för lösenord. */
+  secure?: boolean;
   hint?: string;
 }) {
   return (
@@ -605,7 +608,10 @@ export function Field({
         placeholder={placeholder}
         placeholderTextColor={colors.dim}
         multiline={multiline}
-        keyboardType={keyboardType}
+        keyboardType={keyboardType === 'email' ? 'email-address' : keyboardType}
+        autoCapitalize={keyboardType === 'email' || secure ? 'none' : 'sentences'}
+        autoCorrect={!secure}
+        secureTextEntry={secure}
         accessibilityLabel={label}
       />
       {hint ? <Text style={styles.secondary}>{hint}</Text> : null}

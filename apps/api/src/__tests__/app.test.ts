@@ -173,3 +173,33 @@ describe('HTTP-lagret', () => {
     expect([400, 503]).toContain(response.statusCode);
   });
 });
+
+describe('lösenordshashning', () => {
+  it('ger olika hash för samma lösenord, alltså slumpat salt', async () => {
+    const { hashPassword } = await import('../lib/password.js');
+    const a = await hashPassword('hemligt-lösenord');
+    const b = await hashPassword('hemligt-lösenord');
+    expect(a).not.toBe(b);
+  });
+
+  it('accepterar rätt lösenord och avvisar fel', async () => {
+    const { hashPassword, verifyPassword } = await import('../lib/password.js');
+    const stored = await hashPassword('hemligt-lösenord');
+    expect(await verifyPassword('hemligt-lösenord', stored)).toBe(true);
+    expect(await verifyPassword('Hemligt-lösenord', stored)).toBe(false);
+    expect(await verifyPassword('', stored)).toBe(false);
+  });
+
+  it('lagrar aldrig lösenordet i klartext', async () => {
+    const { hashPassword } = await import('../lib/password.js');
+    const stored = await hashPassword('hemligt-lösenord');
+    expect(stored).not.toContain('hemligt-lösenord');
+    expect(stored.startsWith('scrypt$')).toBe(true);
+  });
+
+  it('avvisar trasiga hashar utan att kasta', async () => {
+    const { verifyPassword } = await import('../lib/password.js');
+    expect(await verifyPassword('x', 'inte-en-hash')).toBe(false);
+    expect(await verifyPassword('x', '')).toBe(false);
+  });
+});

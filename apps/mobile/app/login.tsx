@@ -1,63 +1,110 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { BankIdScreen, useBankId } from '../src/bankid';
+import { api, ApiError, setAccessToken } from '../src/api';
 import { useAuth } from '../src/auth';
 import { DemoBanner } from '../src/components/DemoBanner';
 import { DeckIcon, GridIcon, LockIcon } from '../src/components/icons';
-import { Button, IconBox, Photo, Screen } from '../src/components/ui';
+import { Button, Field, IconBox, Photo, Screen, Segmented } from '../src/components/ui';
 import { colors, radius, spacing, type } from '../src/theme';
-import type { BankIdStatus } from '../src/types';
+import type { DemoAccount, SessionUser } from '../src/types';
+import { useQuery } from '@tanstack/react-query';
 
 type Role = 'INFLUENCER' | 'BUSINESS';
+type Mode = 'login' | 'register';
 
+interface SessionResponse {
+  accessToken: string;
+  user: SessionUser;
+}
+
+/**
+ * Inloggning med e-post och lösenord.
+ *
+ * BankID sitter kvar där det juridiskt behövs – på avtalssigneringen – men
+ * att kräva legitimering bara för att titta på appen stänger ute för många.
+ */
 export default function Login() {
   const router = useRouter();
   const { signIn } = useAuth();
-  const [role, setRole] = useState<Role | null>(null);
 
-  const handleComplete = useCallback(
-    async (status: BankIdStatus) => {
-      if (!status.accessToken || !status.user) return;
-      await signIn(status.accessToken, status.user);
-      if (!status.user.onboardingComplete) {
+  const [mode, setMode] = useState<Mode>('login');
+  const [role, setRole] = useState<Role>('INFLUENCER');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Finns bara när BankID är simulerat. I skarp drift svarar den 404 och
+  // väljaren visas inte alls.
+  const demoAccounts = useQuery({
+    queryKey: ['demo-accounts'],
+    queryFn: () => api.get<DemoAccount[]>('/auth/demo-accounts'),
+    retry: false,
+  });
+
+  const enter = useCallback(
+    async (session: SessionResponse) => {
+      await signIn(session.accessToken, session.user);
+      if (!session.user.onboardingComplete) {
         router.replace(
-          status.user.role === 'BUSINESS' ? '/onboarding/business' : '/onboarding/influencer',
+          session.user.role === 'BUSINESS' ? '/onboarding/business' : '/onboarding/influencer',
         );
         return;
       }
-      router.replace(status.user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe');
+      router.replace(
+        session.user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe',
+      );
     },
     [router, signIn],
   );
 
-  const bankId = useBankId({
-    purpose: 'LOGIN',
-    onComplete: (status) => {
-      void handleComplete(status);
-    },
-  });
+  const submit = useCallback(async () => {
+    setError(null);
+    if (mode === 'register' && name.trim().length < 2) return setError('Skriv ditt namn.');
+    if (!email.includes('@')) return setError('Ange en giltig e-postadress.');
+    if (password.length < 8) return setError('Lösenordet behöver minst 8 tecken.');
 
-  const beginLogin = useCallback(
-    (selected: Role) => {
-      setRole(selected);
-      void bankId.start({ role: selected });
+    setBusy(true);
+    try {
+      const session =
+        mode === 'register'
+          ? await api.post<SessionResponse>('/auth/register', {
+              email: email.trim(),
+              password,
+              name: name.trim(),
+              role,
+            })
+          : await api.post<SessionResponse>('/auth/login', { email: email.trim(), password });
+      await enter(session);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Något gick fel. Försök igen.');
+    } finally {
+      setBusy(false);
+    }
+  }, [email, enter, mode, name, password, role]);
+
+  const useDemoAccount = useCallback(
+    async (account: DemoAccount) => {
+      setError(null);
+      setBusy(true);
+      try {
+        const { accessToken } = await api.post<{ accessToken: string }>('/auth/demo-login', {
+          userId: account.id,
+        });
+        // Tokenen måste gälla innan /auth/me hämtas.
+        setAccessToken(accessToken);
+        const user = await api.get<SessionUser>('/auth/me');
+        await enter({ accessToken, user });
+      } catch (caught) {
+        setError(caught instanceof ApiError ? caught.message : 'Kunde inte byta konto.');
+      } finally {
+        setBusy(false);
+      }
     },
-    [bankId],
+    [enter],
   );
-
-  if (bankId.phase !== 'idle') {
-    return (
-      <BankIdScreen
-        phase={bankId.phase}
-        qrData={bankId.qrData}
-        hintText={bankId.hintText}
-        autoStartUrl={bankId.autoStartUrl}
-        onCancel={() => void bankId.cancel()}
-        onRetry={() => role && beginLogin(role)}
-      />
-    );
-  }
 
   return (
     <Screen style={styles.screen}>
@@ -71,24 +118,92 @@ export default function Login() {
         </Text>
       </View>
 
-      <View style={styles.roles}>
-        <RoleCard
-          icon={<DeckIcon size={21} color={colors.primary} />}
-          iconTone="tint"
-          title="Jag är influencer"
-          subtitle="Svep bland betalda uppdrag"
-          variant="primary"
-          onPress={() => beginLogin('INFLUENCER')}
+      <Segmented
+        value={mode}
+        onChange={(next) => {
+          setMode(next);
+          setError(null);
+        }}
+        options={[
+          { value: 'login', label: 'Logga in' },
+          { value: 'register', label: 'Skapa konto' },
+        ]}
+      />
+
+      <View style={styles.form}>
+        {mode === 'register' ? (
+          <>
+            <View style={styles.roles}>
+              <RoleCard
+                icon={<DeckIcon size={21} color={colors.primary} />}
+                iconTone="tint"
+                title="Jag är influencer"
+                subtitle="Svep bland betalda uppdrag"
+                selected={role === 'INFLUENCER'}
+                onPress={() => setRole('INFLUENCER')}
+              />
+              <RoleCard
+                icon={<GridIcon size={21} color={colors.text} />}
+                iconTone="raised"
+                title="Jag driver en restaurang"
+                subtitle="Lägg upp ett samarbete på 2 minuter"
+                selected={role === 'BUSINESS'}
+                onPress={() => setRole('BUSINESS')}
+              />
+            </View>
+            <Field label="Namn" value={name} onChangeText={setName} placeholder="Anna Karlsson" />
+          </>
+        ) : null}
+
+        <Field
+          label="E-post"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="du@exempel.se"
+          keyboardType="email"
         />
-        <RoleCard
-          icon={<GridIcon size={21} color={colors.text} />}
-          iconTone="raised"
-          title="Jag driver en restaurang"
-          subtitle="Lägg upp ett samarbete på 2 minuter"
-          variant="secondary"
-          onPress={() => beginLogin('BUSINESS')}
+        <Field
+          label="Lösenord"
+          value={password}
+          onChangeText={setPassword}
+          placeholder={mode === 'register' ? 'Minst 8 tecken' : ''}
+          secure
+        />
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Button
+          label={mode === 'register' ? 'Skapa konto' : 'Logga in'}
+          onPress={() => void submit()}
+          loading={busy}
         />
       </View>
+
+      {demoAccounts.data && demoAccounts.data.length > 0 ? (
+        <View style={styles.demoBlock}>
+          <Text style={styles.demoTitle}>Testkonton</Text>
+          <Text style={styles.demoLead}>
+            Finns bara så länge BankID är simulerat. Logga in direkt för att prova appen med
+            färdigt innehåll.
+          </Text>
+          {demoAccounts.data.map((account) => (
+            <Pressable
+              key={account.id}
+              accessibilityRole="button"
+              onPress={() => void useDemoAccount(account)}
+              disabled={busy}
+              style={({ pressed }) => [styles.demoRow, pressed && styles.pressed]}
+            >
+              <View style={styles.demoText}>
+                <Text style={styles.demoName}>{account.displayName}</Text>
+                <Text style={styles.demoSummary}>
+                  {account.role === 'BUSINESS' ? 'Restaurang' : 'Kreatör'} · {account.summary}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.footnote}>
         <LockIcon size={14} color={colors.positive} />
@@ -100,62 +215,85 @@ export default function Login() {
   );
 }
 
+/** Rollval vid registrering. Vald roll får primärfärgad kant. */
 function RoleCard({
   icon,
   iconTone,
   title,
   subtitle,
-  variant,
+  selected,
   onPress,
 }: {
   icon: React.ReactNode;
   iconTone: 'tint' | 'raised';
   title: string;
   subtitle: string;
-  variant: 'primary' | 'secondary';
+  selected: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
       accessibilityLabel={title}
       onPress={onPress}
-      style={({ pressed }) => [styles.roleCard, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.roleCard,
+        selected && styles.roleCardSelected,
+        pressed && styles.pressed,
+      ]}
     >
-      <View style={styles.roleHeader}>
-        <IconBox tone={iconTone}>{icon}</IconBox>
-        <View style={styles.roleText}>
-          <Text style={styles.roleTitle}>{title}</Text>
-          <Text style={styles.roleSubtitle}>{subtitle}</Text>
-        </View>
+      <IconBox tone={iconTone}>{icon}</IconBox>
+      <View style={styles.roleText}>
+        <Text style={styles.roleTitle}>{title}</Text>
+        <Text style={styles.roleSubtitle}>{subtitle}</Text>
       </View>
-      <Button label="Fortsätt med BankID" variant={variant} compact onPress={onPress} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.xl },
-  hero: { flex: 1, minHeight: 120, borderRadius: radius.card },
-  intro: { gap: 10 },
-  title: { fontFamily: type.displayLarge.fontFamily, fontSize: 32, lineHeight: 35.2, letterSpacing: -0.64, color: colors.text },
-  lead: { ...type.body, lineHeight: 23.25, color: colors.muted },
+  screen: { padding: spacing.xl, gap: spacing.lg },
+  hero: { flex: 1, minHeight: 90, borderRadius: radius.card },
+  intro: { gap: 8 },
+  title: { ...type.display, color: colors.text },
+  lead: { ...type.bodySmall, color: colors.muted },
 
-  roles: { gap: spacing.md },
+  form: { gap: spacing.md },
+  error: { ...type.secondary, color: colors.danger },
+
+  roles: { gap: spacing.sm },
   roleCard: {
-    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.card,
-    padding: 18,
-    gap: 14,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
   },
-  pressed: { opacity: 0.9 },
-  roleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  roleCardSelected: { borderColor: colors.primary, backgroundColor: colors.tint },
   roleText: { flex: 1, gap: 2 },
-  roleTitle: { ...type.rowTitle, color: colors.text },
+  roleTitle: { ...type.listTitle, fontSize: 15, color: colors.text },
   roleSubtitle: { ...type.secondary, color: colors.muted },
+  pressed: { opacity: 0.9 },
 
-  footnote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  demoBlock: { gap: spacing.sm },
+  demoTitle: { ...type.listTitle, fontSize: 15, color: colors.text },
+  demoLead: { ...type.secondary, color: colors.muted },
+  demoRow: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.control,
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  demoText: { gap: 2 },
+  demoName: { ...type.listTitle, fontSize: 15, color: colors.text },
+  demoSummary: { ...type.secondary, color: colors.muted },
+
+  footnote: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   footnoteText: { ...type.secondary, color: colors.muted },
 });

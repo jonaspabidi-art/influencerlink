@@ -87,6 +87,21 @@ Flödet bryts aldrig av att AI:n är otillgänglig.
 Innan poängsättningen filtreras hårda krav bort helt: för få följare, fel
 plattform, eller budget under influencerns lägstapris.
 
+## Konto och inloggning
+
+Konto skapas med e-post och lösenord. Lösenorden hashas med scrypt ur nodes
+egen kryptomodul – slumpat salt per lösenord, tidskonstant jämförelse, och
+formatet bär med sig sina parametrar så att de går att byta senare utan att
+gamla hashar blir oläsbara.
+
+BankID sitter kvar där det juridiskt behövs: **avtalssigneringen**. Att kräva
+legitimering redan vid registreringen stänger ute alla som bara vill titta på
+appen, och tillför ingenting förrän det finns ett avtal att binda.
+
+När `BANKID_MODE=mock` visar inloggningen dessutom en väljare med de konton
+som redan finns i databasen, så att en testmiljö går att klicka igenom med
+färdigt innehåll. Slutpunkterna bakom den svarar 404 i skarp drift.
+
 ## BankID
 
 `apps/api/src/services/bankid/` implementerar BankID:s REST-API v6 över ömsesidig

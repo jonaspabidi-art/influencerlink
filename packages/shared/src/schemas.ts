@@ -296,6 +296,36 @@ export const reviewSchema = z.object({
   publishedAt: z.string().datetime().nullable(),
 });
 
+// ---------------------------------------------------------------------------
+// Konto med e-post och lösenord
+// ---------------------------------------------------------------------------
+
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email('Ange en giltig e-postadress');
+
+/** Åtta tecken är golvet. Längd skyddar bättre än teckenkrav. */
+export const passwordSchema = z
+  .string()
+  .min(8, 'Lösenordet behöver minst 8 tecken')
+  .max(200);
+
+export const registerInputSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  name: z.string().trim().min(2, 'Skriv ditt namn'),
+  role: z.enum(['INFLUENCER', 'BUSINESS']),
+});
+export type RegisterInput = z.infer<typeof registerInputSchema>;
+
+export const loginInputSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, 'Fyll i lösenordet'),
+});
+export type LoginInput = z.infer<typeof loginInputSchema>;
+
 export const problemSchema = z.object({
   error: z.string(),
   message: z.string(),
