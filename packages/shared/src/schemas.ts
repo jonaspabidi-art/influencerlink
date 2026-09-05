@@ -14,6 +14,7 @@ import {
   ROLES,
   SWIPE_DIRECTIONS,
 } from './domain.js';
+import { DRAFT_STATUSES, VIDEO_MIME_TYPES } from './drafts.js';
 import { mediaUrlSchema } from './media.js';
 import { MAX_RATING, MIN_RATING, REVIEW_CRITERIA } from './reviews.js';
 
@@ -192,6 +193,63 @@ export const businessProfileInputSchema = z.object({
   logoUrl: mediaUrlSchema.nullish(),
 });
 export type BusinessProfileInput = z.infer<typeof businessProfileInputSchema>;
+
+// ---------------------------------------------------------------------------
+// Videoutkast
+// ---------------------------------------------------------------------------
+
+export const draftStatusSchema = z.enum(DRAFT_STATUSES);
+
+/** Steg ett: appen ber om en adress att ladda upp till. */
+export const draftUploadRequestSchema = z.object({
+  contentType: z.enum(VIDEO_MIME_TYPES),
+  fileName: z.string().max(200).default(''),
+  sizeBytes: z.number().int().positive(),
+});
+export type DraftUploadRequest = z.infer<typeof draftUploadRequestSchema>;
+
+export const draftUploadTargetSchema = z.object({
+  uploadUrl: z.string(),
+  /** Skickas tillbaka när filen ligger uppe. */
+  storagePath: z.string(),
+});
+
+/** Steg två: filen ligger uppe, spara raden. */
+export const draftSubmitSchema = z.object({
+  storagePath: z.string().min(1).max(500),
+  contentType: z.enum(VIDEO_MIME_TYPES),
+  fileName: z.string().max(200).default(''),
+  sizeBytes: z.number().int().min(0).default(0),
+  note: z.string().max(600).default(''),
+});
+export type DraftSubmit = z.infer<typeof draftSubmitSchema>;
+
+export const draftReviewSchema = z.object({
+  approve: z.boolean(),
+  /** Krävs när restaurangen ber om en ändring – annars vet ingen vad. */
+  note: z.string().max(600).default(''),
+});
+export type DraftReview = z.infer<typeof draftReviewSchema>;
+
+export const draftSchema = z.object({
+  id: cuidSchema,
+  version: z.number().int(),
+  status: draftStatusSchema,
+  fileName: z.string(),
+  contentType: z.string(),
+  sizeBytes: z.number().int(),
+  note: z.string(),
+  reviewNote: z.string(),
+  submittedAt: z.string().datetime(),
+  reviewedAt: z.string().datetime().nullable(),
+  autoApproved: z.boolean(),
+  /** Signerad adress som slutar gälla. Null när lagringen inte svarar. */
+  playbackUrl: z.string().nullable(),
+  /** Dagar kvar för restaurangen att svara. */
+  daysLeftToReview: z.number().int(),
+  /** Klart att publicera: godkänt, eller tiden ute utan svar. */
+  cleared: z.boolean(),
+});
 
 // ---------------------------------------------------------------------------
 // Kampanjer

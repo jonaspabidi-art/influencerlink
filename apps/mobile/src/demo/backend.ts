@@ -701,6 +701,18 @@ route('GET', '/me/influencer-profile/tiktok/videos', () => {
   );
 });
 
+// Demoläget har ingen fillagring. Listan är tom och uppladdningen förklarar
+// varför i stället för att fela tyst.
+route('GET', '/contracts/:id/drafts', () => []);
+
+route('POST', '/contracts/:id/drafts/upload-url', () => {
+  throw new DemoError(
+    503,
+    'service_unavailable',
+    'Uppladdning av utkast fungerar inte i demoläget.',
+  );
+});
+
 route('POST', '/me/influencer-profile/socials/tiktok/authorize', () => {
   throw new DemoError(
     503,

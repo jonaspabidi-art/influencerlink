@@ -34,6 +34,14 @@ const envSchema = z.object({
   STRIPE_CONNECT_REFRESH_URL: z.string().default('pacta://stripe/refresh'),
 
   /**
+   * Supabase Storage för videoutkast. Utan dem är uppladdningen avstängd och
+   * slutpunkten förklarar varför i stället för att fela.
+   */
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_VIDEO_BUCKET: z.string().default('drafts'),
+
+  /**
    * TikTok Login Kit. Finns bara när appen är godkänd i utvecklarportalen.
    * Utan dem kopplas TikTok som förut, med siffror märkta som ogranskade.
    */

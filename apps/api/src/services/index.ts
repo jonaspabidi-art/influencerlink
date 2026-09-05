@@ -5,6 +5,7 @@ import { createBankIdClient, type BankIdClient } from './bankid/index.js';
 import { createPaymentProvider, type PaymentProvider } from './payments/index.js';
 import { HttpOembedProvider, type OembedProvider } from './oembed.js';
 import { DemoSocialProvider, type SocialProvider } from './social/index.js';
+import { createStorageProvider, type StorageProvider } from './storage.js';
 
 /**
  * Alla externa beroenden samlade på ett ställe. Routes tar emot den här
@@ -19,6 +20,8 @@ export interface Services {
   ai: AiService;
   social: SocialProvider;
   oembed: OembedProvider;
+  /** Null tills Supabase Storage är konfigurerat. */
+  storage: StorageProvider | null;
 }
 
 export function createServices(
@@ -34,6 +37,7 @@ export function createServices(
     ai: new AiService(config),
     social: new DemoSocialProvider(),
     oembed: new HttpOembedProvider(),
+    storage: createStorageProvider(config),
     ...overrides,
   };
 }

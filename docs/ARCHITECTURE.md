@@ -114,6 +114,29 @@ TikTok-klienten ligger i `services/social/tiktok.ts` och beskrivs i
 `lib/oauthstate.ts` och inte med sessionstokenen: ett state som gick att
 verifiera som en session vore en inloggning på vift.
 
+## Videoutkast
+
+Kreatören lämnar filmen för godkännande innan den publiceras. Restaurangen ser
+vad som ska ut, och får samtidigt filen – det är den nyttjanderätten i avtalets
+§5 vilar på. Utan filen är rätten att återanvända materialet bara en mening.
+
+`Draft` har en version per inlämning. En begärd ändring stänger den versionen
+och kreatören laddar upp nästa; ett godkänt utkast byts aldrig ut i tysthet.
+Tystnad räknas som ja efter granskningsfönstret, samma antal dagar som gäller
+för leveransen, så att ett upptaget kök aldrig blockerar kreatören.
+`isDraftCleared` i `packages/shared/src/drafts.ts` är regeln, och
+`POST /contracts/:id/delivery` vägrar utan ett klart utkast.
+
+Filmer ligger i Supabase Storage, inte i databasen som bilderna: en halv minut
+i 1080p är tiotals megabyte. Filen passerar aldrig vår server – appen får en
+signerad adress och laddar upp direkt, och uppspelning sker mot en signerad
+adress som slutar gälla efter en timme. Sökvägen börjar med avtalets id och
+kontrolleras vid inlämning, så ingen kan peka på någon annans uppladdning.
+
+Utan `SUPABASE_URL` och `SUPABASE_SERVICE_ROLE_KEY` är uppladdningen avstängd,
+och då hoppas kravet på utkast över i leveransen – annars hade avtal fastnat i
+en miljö där steget inte går att utföra.
+
 ## Bilder
 
 Profilbilder, logotyper och kampanjbilder laddas upp med `POST /media` och

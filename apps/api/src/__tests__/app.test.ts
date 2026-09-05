@@ -48,6 +48,7 @@ const services: Services = {
   ai: new AiService(config),
   social: new DemoSocialProvider(),
   oembed: new StubOembedProvider(),
+  storage: null,
 };
 
 describe('HTTP-lagret', () => {

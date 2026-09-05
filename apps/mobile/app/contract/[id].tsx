@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
+import { DraftReview } from '../../src/components/DraftReview';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
 import { CheckIcon, LockIcon, StarIcon } from '../../src/components/icons';
@@ -214,6 +215,15 @@ export default function ContractDetail() {
           waitingLabel="Väntar på signatur"
         />
       </Card>
+
+      {/* Utkastet ligger före leveransen, precis som i avtalstexten. */}
+      {data.status === 'ACTIVE' || data.status === 'DELIVERED' || data.status === 'COMPLETED' ? (
+        <DraftReview
+          contractId={data.id}
+          role={isBusiness ? 'BUSINESS' : 'INFLUENCER'}
+          contractStatus={data.status}
+        />
+      ) : null}
 
       <ActionCard
         contract={data}

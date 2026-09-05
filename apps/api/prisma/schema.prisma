@@ -392,6 +392,7 @@ model Contract {
 
   signatures Signature[]
   payment    Payment?
+  drafts     Draft[]
   delivery   Delivery?
   reviews    Review[]
 
@@ -419,6 +420,51 @@ model Signature {
   signedAt       DateTime @default(now())
 
   @@unique([contractId, userId])
+}
+
+/// Var ett utkast står i granskningen.
+enum DraftStatus {
+  /// Uppladdat, väntar på restaurangens svar.
+  PENDING
+  APPROVED
+  /// Restaurangen vill ha en ändring. Kreatören laddar upp en ny version.
+  CHANGES_REQUESTED
+}
+
+/// Ett videoutkast som lämnats för godkännande innan publicering.
+///
+/// Filen ligger i Supabase Storage, aldrig hos oss – här sparas bara var den
+/// ligger. Restaurangen får också filen genom det här steget, vilket är vad
+/// nyttjanderätten i avtalet handlar om.
+model Draft {
+  id String @id @default(cuid())
+
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  /// Räknas upp per avtal. En begärd ändring ger version 2, och så vidare.
+  version Int
+
+  /// Sökvägen i lagringshinken. Adressen signeras vid varje uppspelning.
+  storagePath String
+  fileName    String  @default("")
+  contentType String
+  sizeBytes   Int     @default(0)
+
+  /// Kreatörens medskick, t.ex. "andra klippet är utan musik".
+  note String @default("")
+
+  status     DraftStatus @default(PENDING)
+  /// Restaurangens svar när den ber om en ändring.
+  reviewNote String      @default("")
+  reviewedAt DateTime?
+  /// Sattes för att restaurangen inte svarade i tid.
+  autoApproved Boolean @default(false)
+
+  submittedAt DateTime @default(now())
+
+  @@unique([contractId, version])
+  @@index([contractId, status])
 }
 
 model Delivery {

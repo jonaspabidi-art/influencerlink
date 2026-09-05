@@ -172,6 +172,25 @@ export interface Match {
   counterpartRating: RatingSummary;
 }
 
+/** Ett videoutkast som lämnats för godkännande. */
+export interface Draft {
+  id: string;
+  version: number;
+  status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  note: string;
+  reviewNote: string;
+  submittedAt: string;
+  reviewedAt: string | null;
+  autoApproved: boolean;
+  /** Signerad adress som slutar gälla. Null när lagringen inte svarar. */
+  playbackUrl: string | null;
+  daysLeftToReview: number;
+  cleared: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;

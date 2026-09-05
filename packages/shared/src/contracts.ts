@@ -69,6 +69,8 @@ Uppdragstagaren ska leverera:
 
 ${deliverableList}
 
+Innan publicering lämnar uppdragstagaren materialet för godkännande i Pacta. Uppdragsgivaren har ${input.reviewDays} dagar på sig att godkänna eller begära ändring; svarar uppdragsgivaren inte inom den tiden räknas materialet som godkänt och får publiceras.
+
 Materialet ska vara publicerat senast **${dateFormatter.format(input.dueDate)}**.
 
 ## 3. Ersättning
@@ -90,6 +92,10 @@ Uppdragstagaren ska tydligt märka allt material som reklam i enlighet med markn
 ## 5. Rättigheter till materialet
 
 Uppdragstagaren behåller upphovsrätten till materialet. Uppdragsgivaren får en icke-exklusiv rätt att återpublicera materialet i sina egna kanaler i sex (6) månader från publiceringen, med angivande av uppdragstagarens användarnamn. All annan användning, inklusive betald annonsering, kräver skriftligt medgivande.
+
+Rätten omfattar även den filmfil uppdragstagaren lämnat för godkännande, i samma omfattning och under samma tid. Uppdragsgivaren får inte vidarelicensiera materialet, sälja det, eller ändra det på ett sätt som förvanskar innehållet eller uppdragstagarens medverkan.
+
+Medverkar någon annan person i materialet ansvarar uppdragstagaren för att ha deras samtycke till den användning som anges här.
 
 ## 6. Ändring och avbokning
 

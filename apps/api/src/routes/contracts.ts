@@ -1,9 +1,18 @@
+import { randomUUID } from 'node:crypto';
 import type { DeliverableKind } from '@pacta/shared';
 import {
   contractInputSchema,
   contractStatusSchema,
+  daysLeftToReviewDraft,
   deliverableKindSchema,
   deliveryProofInputSchema,
+  draftReviewSchema,
+  draftSchema,
+  draftSubmitSchema,
+  draftUploadRequestSchema,
+  draftUploadTargetSchema,
+  isDraftCleared,
+  MAX_VIDEO_BYTES,
   paymentStatusSchema,
   problemSchema,
   splitFee,
@@ -11,7 +20,8 @@ import {
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { badRequest, forbidden, notFound } from '../lib/errors.js';
+import { badRequest, forbidden, notFound, serviceUnavailable } from '../lib/errors.js';
+import { StorageError } from '../services/storage.js';
 import { recordAudit } from '../lib/audit.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
@@ -184,6 +194,197 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
     },
   );
 
+  // --- Videoutkast ---------------------------------------------------------
+
+  /*
+   * Kreatören lämnar filmen för godkännande innan den publiceras. Restaurangen
+   * ser vad som ska ut, och får samtidigt filen – det är den nyttjanderätten i
+   * avtalet vilar på. Svarar restaurangen inte i tid räknas utkastet som
+   * godkänt, så att ett tyst kök aldrig blockerar kreatören.
+   */
+
+  server.post(
+    '/contracts/:id/drafts/upload-url',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: draftUploadRequestSchema,
+        response: { 200: draftUploadTargetSchema, 400: problemSchema, 503: problemSchema },
+      },
+    },
+    async (request) => {
+      const store = requireStorage();
+      const contract = await loadContractForParty(services, request.params.id, request);
+      if (contract.status !== 'ACTIVE') {
+        throw badRequest('Avtalet måste vara aktivt innan du kan lämna ett utkast.');
+      }
+      if (request.body.sizeBytes > MAX_VIDEO_BYTES) {
+        throw badRequest('Filmen är för stor. Exportera i 1080p i stället för 4K.');
+      }
+
+      // Sökvägen bär avtalet och en slumpdel, så att två uppladdningar aldrig
+      // skriver över varandra och ingen kan gissa sig till någon annans fil.
+      const extension = extensionFor(request.body.contentType);
+      const path = `${contract.id}/${randomUUID()}${extension}`;
+      try {
+        const target = await store.createUploadTarget(path, request.body.contentType);
+        return { uploadUrl: target.url, storagePath: target.path };
+      } catch (caught) {
+        if (caught instanceof StorageError) {
+          request.log.warn({ code: caught.code }, 'kunde inte skapa uppladdningsadress');
+          throw badRequest(caught.message);
+        }
+        throw caught;
+      }
+    },
+  );
+
+  server.post(
+    '/contracts/:id/drafts',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: draftSubmitSchema,
+        response: { 200: draftSchema, 400: problemSchema, 503: problemSchema },
+      },
+    },
+    async (request) => {
+      const store = requireStorage();
+      const contract = await loadContractForParty(services, request.params.id, request);
+      if (contract.status !== 'ACTIVE') {
+        throw badRequest('Avtalet måste vara aktivt innan du kan lämna ett utkast.');
+      }
+      // Filen måste ligga under det här avtalets prefix. Annars skulle en
+      // kreatör kunna peka på någon annans uppladdning.
+      if (!request.body.storagePath.startsWith(`${contract.id}/`)) {
+        throw badRequest('Filen hör inte till det här avtalet.');
+      }
+
+      const latest = await prisma.draft.findFirst({
+        where: { contractId: contract.id },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      });
+
+      const draft = await prisma.draft.create({
+        data: {
+          contractId: contract.id,
+          version: (latest?.version ?? 0) + 1,
+          storagePath: request.body.storagePath,
+          contentType: request.body.contentType,
+          fileName: request.body.fileName,
+          sizeBytes: request.body.sizeBytes,
+          note: request.body.note,
+        },
+      });
+      await recordAudit(prisma, {
+        userId: request.user.sub,
+        action: 'draft.submitted',
+        entityType: 'Draft',
+        entityId: draft.id,
+        metadata: { contractId: contract.id, version: draft.version },
+      });
+
+      return toPublicDraft(draft, contract.reviewDays, await playbackUrl(store, draft.storagePath));
+    },
+  );
+
+  server.get(
+    '/contracts/:id/drafts',
+    {
+      preHandler: app.requireRole('INFLUENCER', 'BUSINESS'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: { 200: z.array(draftSchema), 403: problemSchema, 404: problemSchema },
+      },
+    },
+    async (request) => {
+      const contract = await loadContractForParty(services, request.params.id, request);
+      const drafts = await prisma.draft.findMany({
+        where: { contractId: contract.id },
+        orderBy: { version: 'desc' },
+      });
+
+      const store = services.storage;
+      return Promise.all(
+        drafts.map(async (draft) =>
+          toPublicDraft(draft, contract.reviewDays, await playbackUrl(store, draft.storagePath)),
+        ),
+      );
+    },
+  );
+
+  server.post(
+    '/drafts/:id/review',
+    {
+      preHandler: app.requireRole('BUSINESS'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: draftReviewSchema,
+        response: { 200: draftSchema, 400: problemSchema, 403: problemSchema, 404: problemSchema },
+      },
+    },
+    async (request) => {
+      const draft = await prisma.draft.findUnique({
+        where: { id: request.params.id },
+        include: {
+          contract: {
+            select: {
+              id: true,
+              reviewDays: true,
+              // Avtalet har ingen egen företagsreferens – den går via kampanjen.
+              campaign: { select: { businessId: true } },
+            },
+          },
+        },
+      });
+      if (!draft) throw notFound('Utkastet hittades inte.');
+      if (draft.contract.campaign.businessId !== requireProfileId(request)) {
+        throw forbidden('Utkastet hör till ett annat avtal.');
+      }
+      if (draft.status !== 'PENDING') {
+        throw badRequest('Utkastet är redan besvarat.');
+      }
+      // En begärd ändring utan motivering ger kreatören inget att gå på.
+      if (!request.body.approve && request.body.note.trim().length < 3) {
+        throw badRequest('Skriv vad som ska ändras.');
+      }
+
+      const updated = await prisma.draft.update({
+        where: { id: draft.id },
+        data: {
+          status: request.body.approve ? 'APPROVED' : 'CHANGES_REQUESTED',
+          reviewNote: request.body.note.trim(),
+          reviewedAt: new Date(),
+        },
+      });
+      await recordAudit(prisma, {
+        userId: request.user.sub,
+        action: request.body.approve ? 'draft.approved' : 'draft.changes_requested',
+        entityType: 'Draft',
+        entityId: draft.id,
+        metadata: { contractId: draft.contract.id, version: draft.version },
+      });
+
+      return toPublicDraft(
+        updated,
+        draft.contract.reviewDays,
+        await playbackUrl(services.storage, updated.storagePath),
+      );
+    },
+  );
+
+  function requireStorage() {
+    if (!services.storage) {
+      throw serviceUnavailable(
+        'Uppladdning av utkast är inte påslaget än. Skicka filmen på annat sätt så länge.',
+      );
+    }
+    return services.storage;
+  }
+
   /** Influencern rapporterar in de publicerade länkarna. */
   server.post(
     '/contracts/:id/delivery',
@@ -199,6 +400,28 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
       const contract = await loadContractForParty(services, request.params.id, request);
       if (contract.status !== 'ACTIVE') {
         throw badRequest('Avtalet måste vara aktivt innan du kan rapportera leverans.');
+      }
+
+      /*
+       * Avtalet säger att materialet lämnas för godkännande före publicering,
+       * så leveransen kräver ett utkast som är klart. Utan lagring uppsatt
+       * finns inget utkast att kräva, och då hoppas steget över.
+       */
+      if (services.storage) {
+        const latest = await prisma.draft.findFirst({
+          where: { contractId: contract.id },
+          orderBy: { version: 'desc' },
+        });
+        if (!latest) {
+          throw badRequest('Lämna filmen för godkännande innan du rapporterar leverans.');
+        }
+        if (!isDraftCleared(latest, contract.reviewDays)) {
+          throw badRequest(
+            latest.status === 'CHANGES_REQUESTED'
+              ? 'Restaurangen har bett om en ändring. Ladda upp en ny version först.'
+              : 'Utkastet väntar på restaurangens godkännande.',
+          );
+        }
       }
 
       await prisma.delivery.upsert({
@@ -371,4 +594,59 @@ function toContractDetail(contract: ContractRow, role: string, _userId: string) 
     awaitingMySignature:
       mySignature === null && (contract.status === 'SENT' || contract.status === 'PARTIALLY_SIGNED'),
   };
+}
+
+/** Uppspelningsadressen är signerad och kortlivad, så den hämtas vid varje läsning. */
+async function playbackUrl(
+  store: Services['storage'],
+  storagePath: string,
+): Promise<string | null> {
+  if (!store) return null;
+  try {
+    return await store.createPlaybackUrl(storagePath);
+  } catch {
+    // En trasig adress ska inte fälla hela listan – raden syns ändå.
+    return null;
+  }
+}
+
+type DraftRow = {
+  id: string;
+  version: number;
+  status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  note: string;
+  reviewNote: string;
+  submittedAt: Date;
+  reviewedAt: Date | null;
+  autoApproved: boolean;
+};
+
+function toPublicDraft(draft: DraftRow, reviewDays: number, playback: string | null) {
+  return {
+    id: draft.id,
+    version: draft.version,
+    status: draft.status,
+    fileName: draft.fileName,
+    contentType: draft.contentType,
+    sizeBytes: draft.sizeBytes,
+    note: draft.note,
+    reviewNote: draft.reviewNote,
+    submittedAt: draft.submittedAt.toISOString(),
+    reviewedAt: draft.reviewedAt?.toISOString() ?? null,
+    autoApproved: draft.autoApproved,
+    playbackUrl: playback,
+    daysLeftToReview:
+      draft.status === 'PENDING' ? daysLeftToReviewDraft(draft.submittedAt, reviewDays) : 0,
+    cleared: isDraftCleared(draft, reviewDays),
+  };
+}
+
+/** Filändelsen som hör till innehållstypen. Lagringen bryr sig inte, men människor gör det. */
+function extensionFor(contentType: string): string {
+  if (contentType === 'video/quicktime') return '.mov';
+  if (contentType === 'video/webm') return '.webm';
+  return '.mp4';
 }
