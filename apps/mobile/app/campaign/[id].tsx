@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
+import { ImagePickerField } from '../../src/components/ImagePickerField';
 import {
   Avatar,
   Body,
@@ -52,6 +53,35 @@ export default function CampaignDetail() {
     enabled: Boolean(id),
   });
 
+  // Bilden går att byta i efterhand. PATCH tar hela kampanjen, så vi skickar
+  // tillbaka det vi redan hämtat med bara adressen utbytt.
+  const setImage = useMutation({
+    mutationFn: (imageUrl: string | null) => {
+      const current = campaign.data;
+      if (!current) throw new Error('Kampanjen är inte hämtad än.');
+      return api.patch<Campaign>(`/campaigns/${id}`, {
+        title: current.title,
+        brief: current.brief,
+        categories: current.categories,
+        platforms: current.platforms,
+        deliverables: current.deliverables,
+        compensationType: current.compensationType,
+        budgetPerCreator: current.budgetPerCreator,
+        productValue: current.productValue,
+        slots: current.slots,
+        city: current.city,
+        minFollowers: current.minFollowers,
+        imageUrl,
+        startDate: current.startDate,
+        endDate: current.endDate,
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['campaign', id] });
+      void queryClient.invalidateQueries({ queryKey: ['campaigns', 'mine'] });
+    },
+  });
+
   const setStatus = useMutation({
     mutationFn: (status: 'ACTIVE' | 'PAUSED' | 'CLOSED') =>
       api.post<Campaign>(`/campaigns/${id}/status`, { status }),
@@ -87,6 +117,16 @@ export default function CampaignDetail() {
   return (
     <ScrollScreen contentStyle={styles.content}>
       <Header title="Kampanj" onBack={() => router.back()} />
+
+      <Card>
+        <ImagePickerField
+          label="Kampanjbild"
+          value={data.imageUrl}
+          onChange={(url) => setImage.mutate(url)}
+          aspect={[4, 3]}
+          hint="Fyller kortet kreatörerna swipar på."
+        />
+      </Card>
 
       <View style={styles.titleBlock}>
         <Text style={styles.title}>{data.title}</Text>
@@ -140,7 +180,7 @@ export default function CampaignDetail() {
         {pending.map((application) => (
           <View key={application.id} style={styles.application}>
             <View style={styles.applicantRow}>
-              <Avatar uri={application.influencer.avatarUrl} size={40} />
+              <Avatar uri={application.influencer.avatarUrl} name={application.influencer.displayName} size={40} />
               <View style={styles.applicantText}>
                 <Text style={styles.applicantName}>{application.influencer.displayName}</Text>
                 <Text style={styles.secondary}>{application.influencer.city}</Text>

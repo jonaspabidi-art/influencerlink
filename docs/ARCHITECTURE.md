@@ -98,6 +98,29 @@ och bio går att ändra i efterhand. Företaget läser sin egen profil via
 `GET /me/business-profile`, som till skillnad från `GET /businesses/:id` även
 innehåller organisationsnummer och adress.
 
+## Bilder
+
+Profilbilder, logotyper och kampanjbilder laddas upp med `POST /media` och
+hämtas med `GET /media/:id`. Bilderna ligger i databasen som `MediaAsset`, inte
+hos en filtjänst: det håller uppsättningen till Railway och Supabase, utan
+bucket och utan fler nycklar. Vid några hundra kilobyte per bild är det
+oproblematiskt länge, och byts det mot objektlagring är `routes/media.ts` det
+enda som ändras – adressen som sparas pekar vart som helst.
+
+Adressen sparas relativt (`/media/<id>`). En absolut adress hade slutat fungera
+så fort API-domänen bytte, och appen kör mot olika adresser i utveckling, demo
+och drift. `resolveMediaUrl` i appen sätter på rätt värd innan bilden ritas.
+
+Appen skalar ned bilden till 1280 px och komprimerar den innan den skickas, så
+varken uppkopplingen eller databasen får ta emot en obehandlad kamerabild.
+Servern tar bara emot JPEG, PNG och WebP – aldrig SVG, som kan innehålla
+skript. `GET /media/:id` kräver ingen inloggning: bilderna visas på kort som
+motparten ser, och adressen innehåller ett cuid som inte går att gissa.
+
+Utan bild ritar `Photo`, `Avatar` och `Logo` en ton som är densamma varje gång
+för samma namn, och de två små ytorna dessutom namnets initialer. En grå tom
+yta får ett kort att se ofärdigt ut; en färgad ser gjord ut.
+
 ## Uppvisat innehåll
 
 Tills OAuth mot TikTok och Meta är godkänd klistrar kreatören in länkar själv.

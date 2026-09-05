@@ -150,7 +150,7 @@ function EmptyDeck({ queue, onRefresh }: { queue: PendingLike[]; onRefresh: () =
             <View style={styles.queue}>
               {queue.slice(0, 3).map((item) => (
                 <View key={item.campaignId} style={styles.queueRow}>
-                  <Logo uri={item.businessLogoUrl} size={40} />
+                  <Logo uri={item.businessLogoUrl} name={item.businessName} size={40} />
                   <View style={styles.queueText}>
                     <Text style={styles.queueName}>{item.businessName}</Text>
                     <Text style={styles.queueStatus}>Väntar på svar</Text>

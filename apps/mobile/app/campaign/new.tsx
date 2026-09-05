@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
+import { ImagePickerField } from '../../src/components/ImagePickerField';
 import { SparkIcon } from '../../src/components/icons';
 import {
   Body,
@@ -88,6 +89,7 @@ export default function NewCampaign() {
   const [slots, setSlots] = useState('3');
   const [minFollowers, setMinFollowers] = useState('5000');
   const [city, setCity] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,6 +166,7 @@ export default function NewCampaign() {
         slots: Math.max(1, Number(slots) || 1),
         city: city.trim(),
         minFollowers: Math.max(0, Number(minFollowers) || 0),
+        imageUrl,
         startDate: now.toISOString(),
         endDate: new Date(now.getTime() + DEFAULT_RUN_DAYS * 86_400_000).toISOString(),
       });
@@ -267,6 +270,13 @@ export default function NewCampaign() {
       ) : null}
 
       <Card>
+        <ImagePickerField
+          label="Kampanjbild"
+          value={imageUrl}
+          onChange={setImageUrl}
+          aspect={[4, 3]}
+          hint="Fyller kortet kreatörerna swipar på. En bild på maten säger mer än rubriken."
+        />
         <Field label="Rubrik" value={title} onChangeText={setTitle} />
         <Field label="Brief till kreatören" value={brief} onChangeText={setBrief} multiline />
         <Field label="Stad" value={city} onChangeText={setCity} placeholder="Göteborg" />

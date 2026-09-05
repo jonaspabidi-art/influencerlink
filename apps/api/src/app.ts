@@ -34,7 +34,9 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
       ...(config.isProduction ? {} : { transport: { target: 'pino-pretty' } }),
     },
     trustProxy: true,
-    bodyLimit: 1_000_000,
+    // Bilder skickas som base64 i JSON. En nedskalad bild landar långt under
+    // det här, men base64 lägger på en tredjedel och PNG komprimerar sämre.
+    bodyLimit: 5_000_000,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);

@@ -27,6 +27,8 @@ export interface Campaign {
   businessId: string;
   businessName: string;
   businessLogoUrl: string | null;
+  /** Kampanjens egen bild. Faller tillbaka på logotypen på korten. */
+  imageUrl: string | null;
   title: string;
   brief: string;
   categories: Category[];
@@ -142,6 +144,8 @@ export interface Match {
     title: string;
     businessId: string;
     businessName: string;
+    businessLogoUrl: string | null;
+    imageUrl: string | null;
     budgetPerCreator: number;
     city: string;
   };

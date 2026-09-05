@@ -43,7 +43,7 @@ export default function BusinessProfileTab() {
       {data ? (
         <Card>
           <View style={styles.identity}>
-            <Logo uri={data.logoUrl} size={56} />
+            <Logo uri={data.logoUrl} name={data.companyName} size={56} />
             <View style={styles.identityText}>
               <Text style={styles.name}>{data.companyName}</Text>
               <Text style={styles.secondary}>{data.city}</Text>

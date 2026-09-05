@@ -51,7 +51,7 @@ export default function InfluencerProfileTab() {
       {data ? (
         <Card>
           <View style={styles.identity}>
-            <Avatar uri={data.avatarUrl} size={56} />
+            <Avatar uri={data.avatarUrl} name={data.displayName} size={56} />
             <View style={styles.identityText}>
               <Text style={styles.name}>{data.displayName}</Text>
               <Text style={styles.secondary}>{data.city}</Text>

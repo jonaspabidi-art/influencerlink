@@ -72,7 +72,11 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             onPress={() => router.push(`/match/${item.id}`)}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
-            {role === 'INFLUENCER' ? <Logo size={44} /> : <Avatar size={44} />}
+            {role === 'INFLUENCER' ? (
+              <Logo uri={item.campaign.businessLogoUrl} name={item.campaign.businessName} size={44} />
+            ) : (
+              <Avatar uri={item.influencer.avatarUrl} name={item.influencer.displayName} size={44} />
+            )}
             <View style={styles.rowText}>
               <Text style={styles.title}>
                 {role === 'INFLUENCER' ? item.campaign.businessName : item.influencer.displayName}

@@ -35,7 +35,12 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
 
   return (
     <View style={styles.card}>
-      <Photo uri={campaign.businessLogoUrl} style={styles.photo}>
+      {/* Tonen följer restaurangen, så alla deras kort hänger ihop. */}
+      <Photo
+        uri={campaign.imageUrl ?? campaign.businessLogoUrl}
+        name={campaign.businessName}
+        style={styles.photo}
+      >
         <View style={styles.pillSlot}>
           <MatchPill
             score={card.score}
@@ -43,7 +48,7 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
           />
         </View>
         <View style={styles.photoFooter}>
-          <Logo uri={campaign.businessLogoUrl} />
+          <Logo uri={campaign.businessLogoUrl} name={campaign.businessName} />
           <View style={styles.photoFooterText}>
             <Text style={styles.name}>{campaign.businessName}</Text>
             <View style={styles.metaRow}>
@@ -111,7 +116,7 @@ export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
 
   return (
     <View style={styles.card}>
-      <Photo uri={hero ?? influencer.avatarUrl} style={styles.photo}>
+      <Photo uri={hero ?? influencer.avatarUrl} name={influencer.displayName} style={styles.photo}>
         <View style={styles.pillSlot}>
           <MatchPill
             score={card.score}
@@ -119,7 +124,7 @@ export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
           />
         </View>
         <View style={styles.photoFooter}>
-          <Avatar uri={influencer.avatarUrl} />
+          <Avatar uri={influencer.avatarUrl} name={influencer.displayName} />
           <View style={styles.photoFooterText}>
             <Text style={styles.nameLarge}>{influencer.displayName}</Text>
             <View style={styles.metaRow}>

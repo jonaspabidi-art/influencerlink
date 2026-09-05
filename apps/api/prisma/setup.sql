@@ -520,6 +520,31 @@ CREATE INDEX "ShowcaseItem_influencerId_position_idx" ON "ShowcaseItem"("influen
 -- AddForeignKey
 ALTER TABLE "ShowcaseItem" ADD CONSTRAINT "ShowcaseItem_influencerId_fkey" FOREIGN KEY ("influencerId") REFERENCES "InfluencerProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- === 20260907000000_media ===
+
+-- AlterTable
+ALTER TABLE "Campaign" ADD COLUMN     "imageUrl" TEXT;
+
+-- CreateTable
+CREATE TABLE "MediaAsset" (
+    "id" TEXT NOT NULL,
+    "ownerId" TEXT,
+    "mimeType" TEXT NOT NULL,
+    "bytes" BYTEA NOT NULL,
+    "size" INTEGER NOT NULL,
+    "width" INTEGER,
+    "height" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MediaAsset_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "MediaAsset_ownerId_idx" ON "MediaAsset"("ownerId");
+
+-- AddForeignKey
+ALTER TABLE "MediaAsset" ADD CONSTRAINT "MediaAsset_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -547,6 +572,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         'b4b466e0c1c3874fb965c092575d4ec2fcd3d1c90f5323c7ff77ea157f55467a',
         now(), '20260906000000_showcase', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        'd53365460e1257cc0fc8eac91de7aadb31ff107bb9e2049bb27a2ef1e06d867c',
+        now(), '20260907000000_media', now(), 1);
 
 INSERT INTO public."User" VALUES ('cmtnc1h0l00007drmef4r8uxa', 'INFLUENCER', 'e1f4bb327cafad910b748c9cf12ebd64aa1b1acd9cc9eb0145ec8d6e5f9a2d8a', '19920315-****', 'Anna Karlsson', NULL, NULL, '2026-09-04 19:14:04.003', true, '2026-09-04 19:14:04.005', '2026-09-04 19:14:04.005');
 INSERT INTO public."User" VALUES ('cmtnc1h0s00047drmnw69zsq9', 'INFLUENCER', '835522d930a799e560a309e69664fbea2d0486f99395b786e64f580d04e018da', '19880722-****', 'Erik Lindberg', NULL, NULL, '2026-09-04 19:14:04.012', true, '2026-09-04 19:14:04.013', '2026-09-04 19:14:04.013');

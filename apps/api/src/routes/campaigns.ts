@@ -22,6 +22,7 @@ export const publicCampaignSchema = z.object({
   businessId: z.string(),
   businessName: z.string(),
   businessLogoUrl: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   title: z.string(),
   brief: z.string(),
   categories: z.array(categorySchema),
@@ -246,6 +247,7 @@ function toCampaignData(body: {
   slots: number;
   city: string;
   minFollowers: number;
+  imageUrl?: string | null;
   startDate: string;
   endDate: string;
 }) {
@@ -259,6 +261,7 @@ function toCampaignData(body: {
     budgetPerCreator: body.budgetPerCreator,
     productValue: body.productValue,
     slots: body.slots,
+    imageUrl: body.imageUrl ?? null,
     city: body.city,
     minFollowers: body.minFollowers,
     startDate: new Date(body.startDate),
@@ -280,6 +283,7 @@ export function toPublicCampaign(campaign: {
   id: string;
   businessId: string;
   business: { companyName: string; logoUrl: string | null };
+  imageUrl: string | null;
   title: string;
   brief: string;
   categories: Category[];
@@ -301,6 +305,7 @@ export function toPublicCampaign(campaign: {
     businessId: campaign.businessId,
     businessName: campaign.business.companyName,
     businessLogoUrl: campaign.business.logoUrl,
+    imageUrl: campaign.imageUrl,
     title: campaign.title,
     brief: campaign.brief,
     categories: campaign.categories,

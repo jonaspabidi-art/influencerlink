@@ -79,6 +79,7 @@ export interface DemoCampaign {
   slots: number;
   city: string;
   minFollowers: number;
+  imageUrl: string | null;
   startDate: string;
   endDate: string;
   status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'CLOSED';
@@ -256,6 +257,7 @@ export const DEMO_CAMPAIGNS: DemoCampaign[] = [
     minFollowers: 10_000,
     startDate: daysFromNow(0),
     endDate: daysFromNow(60),
+    imageUrl: null,
     status: 'ACTIVE',
   },
   {
@@ -275,6 +277,7 @@ export const DEMO_CAMPAIGNS: DemoCampaign[] = [
     minFollowers: 30_000,
     startDate: daysFromNow(0),
     endDate: daysFromNow(60),
+    imageUrl: null,
     status: 'ACTIVE',
   },
   {
@@ -294,6 +297,7 @@ export const DEMO_CAMPAIGNS: DemoCampaign[] = [
     minFollowers: 3_000,
     startDate: daysFromNow(0),
     endDate: daysFromNow(14),
+    imageUrl: null,
     status: 'ACTIVE',
   },
   {
@@ -313,6 +317,7 @@ export const DEMO_CAMPAIGNS: DemoCampaign[] = [
     minFollowers: 8_000,
     startDate: daysFromNow(0),
     endDate: daysFromNow(45),
+    imageUrl: null,
     status: 'ACTIVE',
   },
 ];

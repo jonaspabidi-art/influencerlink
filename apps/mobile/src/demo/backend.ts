@@ -449,6 +449,8 @@ function publicMatch(match: Match, viewerRole: 'INFLUENCER' | 'BUSINESS') {
       title: campaign.title,
       businessId: business.id,
       businessName: business.companyName,
+      businessLogoUrl: business.logoUrl,
+      imageUrl: campaign.imageUrl,
       budgetPerCreator: campaign.budgetPerCreator,
       city: campaign.city,
     },
@@ -670,7 +672,7 @@ route('PUT', '/me/influencer-profile', ({ body }) => {
     displayName: String(body.displayName ?? ''),
     bio: String(body.bio ?? ''),
     city: String(body.city ?? ''),
-    avatarUrl: existing?.avatarUrl ?? null,
+    avatarUrl: typeof body.avatarUrl === 'string' ? body.avatarUrl : null,
     categories: (body.categories as Category[]) ?? [],
     priceMin: Number(body.priceMin ?? 0),
     priceTarget: Number(body.priceTarget ?? 0),
@@ -799,6 +801,19 @@ route('DELETE', '/me/influencer-profile/showcase/:id', ({ params }) => {
   return { deleted: true };
 });
 
+// Demoläget har ingen server att lagra bilder i. Bilden stannar i
+// webbläsaren som en data-URL, vilket ser likadant ut för resten av appen.
+route('POST', '/media', ({ body }) => {
+  const mimeType = String(body.mimeType ?? 'image/jpeg');
+  const data = String(body.data ?? '');
+  if (data.length === 0) throw new DemoError(400, 'bad_request', 'Bilden gick inte att läsa.');
+  return {
+    url: `data:${mimeType};base64,${data}`,
+    width: typeof body.width === 'number' ? body.width : null,
+    height: typeof body.height === 'number' ? body.height : null,
+  };
+});
+
 route('GET', '/me/business-profile', () => {
   const user = currentUser();
   const business = state.businesses.find((item) => item.id === user.profileId);
@@ -826,7 +841,7 @@ route('PUT', '/me/business-profile', ({ body }) => {
     city: String(body.city ?? ''),
     address: String(body.address ?? ''),
     description: String(body.description ?? ''),
-    logoUrl: existing?.logoUrl ?? null,
+    logoUrl: typeof body.logoUrl === 'string' ? body.logoUrl : null,
     categories: (body.categories as Category[]) ?? [],
   };
   state.businesses = [...state.businesses.filter((item) => item.id !== business.id), business];
@@ -910,11 +925,25 @@ route('POST', '/campaigns', ({ body }) => {
     slots: Number(body.slots ?? 1),
     city: String(body.city ?? ''),
     minFollowers: Number(body.minFollowers ?? 0),
+    imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl : null,
     startDate: String(body.startDate ?? new Date().toISOString()),
     endDate: String(body.endDate ?? new Date().toISOString()),
     status: 'DRAFT',
   };
   state.campaigns.push(campaign);
+  return publicCampaign(campaign);
+});
+
+route('PATCH', '/campaigns/:id', ({ params, body }) => {
+  const campaign = campaignById(params[0]!);
+  campaign.title = String(body.title ?? campaign.title);
+  campaign.brief = String(body.brief ?? campaign.brief);
+  campaign.city = String(body.city ?? campaign.city);
+  campaign.slots = Number(body.slots ?? campaign.slots);
+  campaign.minFollowers = Number(body.minFollowers ?? campaign.minFollowers);
+  campaign.budgetPerCreator = Number(body.budgetPerCreator ?? campaign.budgetPerCreator);
+  campaign.productValue = Number(body.productValue ?? campaign.productValue);
+  campaign.imageUrl = typeof body.imageUrl === 'string' ? body.imageUrl : null;
   return publicCampaign(campaign);
 });
 

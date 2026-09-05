@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
+import { ImagePickerField } from '../../src/components/ImagePickerField';
 import { useAuth } from '../../src/auth';
 import {
   Body,
@@ -36,6 +37,7 @@ export default function EditBusinessProfile() {
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -49,6 +51,7 @@ export default function EditBusinessProfile() {
     setAddress(loaded.address);
     setDescription(loaded.description);
     setCategories(loaded.categories);
+    setLogoUrl(loaded.logoUrl);
   }, [loaded]);
 
   const toggleCategory = (category: Category) => {
@@ -81,6 +84,7 @@ export default function EditBusinessProfile() {
         address: address.trim(),
         description: description.trim(),
         categories,
+        logoUrl,
       });
       await replaceToken(result.accessToken);
       await profile.refetch();
@@ -104,6 +108,16 @@ export default function EditBusinessProfile() {
       {loaded ? (
         <>
           <Card>
+            <ImagePickerField
+              label="Logotyp"
+              value={logoUrl}
+              onChange={(url) => {
+                setSaved(false);
+                setLogoUrl(url);
+              }}
+              aspect={[1, 1]}
+              hint="Syns på era kampanjkort och i chatten."
+            />
             <Field
               label="Företagsnamn"
               value={companyName}

@@ -143,6 +143,7 @@ model User {
   messages          Message[]
   auditEvents       AuditEvent[]
   reviews           Review[]
+  media             MediaAsset[]
 }
 
 model InfluencerProfile {
@@ -251,6 +252,8 @@ model Campaign {
   startDate        DateTime
   endDate          DateTime
   status           CampaignStatus    @default(DRAFT)
+  /// Bilden som fyller kortets bildyta. Adress till en MediaAsset.
+  imageUrl         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -562,4 +565,29 @@ model ProcessedWebhook {
   id          String   @id
   source      String
   processedAt DateTime @default(now())
+}
+
+/// Uppladdad bild – profilbild, logotyp eller kampanjbild.
+///
+/// Bilderna ligger i databasen i stället för hos en filtjänst. Det gör att
+/// appen fungerar direkt på den uppsättning som redan finns, utan bucket och
+/// utan fler nycklar att hålla reda på. De skalas ned i appen innan de skickas,
+/// så en rad är några hundra kilobyte.
+model MediaAsset {
+  id String @id @default(cuid())
+
+  /// Vem som laddade upp. Null när kontot hunnit tas bort.
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  mimeType String
+  bytes    Bytes
+  /// Antal bytes, så att storleken går att läsa utan att hämta innehållet.
+  size     Int
+  width    Int?
+  height   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
 }

@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatRating, type RatingSummary } from '@pacta/shared';
+import { resolveMediaUrl } from '../media';
 import { HEIGHTS, HIT_SLOP, colors, radius, spacing, type } from '../theme';
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, LockIcon, StarIcon } from './icons';
 
@@ -599,28 +600,80 @@ export function RatingBars({ summary }: { summary: RatingSummary }) {
  * text, precis som handoffen säger – kortet håller ändå eftersom bildytan är
  * den som flexar.
  */
+/**
+ * Bildyta med reservläge.
+ *
+ * Utan bild fylls ytan med en ton som är samma varje gång för samma namn. En
+ * grå tom yta får kortet att se ofärdigt ut; en färgad ser gjord ut. Bokstäver
+ * står här emot: i den här storleken läser man dem som en platshållare, och
+ * kortets rubrik står ändå strax under.
+ */
 export function Photo({
   uri,
+  name,
   style,
   children,
 }: {
   uri?: string | null;
+  /** Namnet initialerna hämtas ur när bild saknas. */
+  name?: string;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }) {
+  const resolved = resolveMediaUrl(uri);
   return (
-    <View style={[styles.photo, style]}>
-      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+    <View style={[styles.photo, !resolved && name ? monogramTone(name) : null, style]}>
+      {resolved ? (
+        <Image source={{ uri: resolved }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : null}
       {children}
     </View>
   );
 }
 
+/** Två bokstäver ur namnet: "Restaurang Kajutan" blir RK, "annaäter" blir AN. */
+export function initials(name: string): string {
+  const words = name.trim().split(/[\s_-]+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return (words[0] ?? '').slice(0, 2).toUpperCase();
+  return `${words[0]?.[0] ?? ''}${words[1]?.[0] ?? ''}`.toUpperCase();
+}
+
+/** Samma namn ger alltid samma ton, så en profil ser likadan ut överallt. */
+const MONOGRAM_TONES = ['#E7D9C8', '#DCE3D6', '#E9D6D2', '#D9DEE7', '#EAE0CC', '#DDD8E5'];
+
+function monogramTone(name: string) {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = (hash * 31 + name.charCodeAt(index)) % 100_003;
+  }
+  return { backgroundColor: MONOGRAM_TONES[hash % MONOGRAM_TONES.length] };
+}
+
 /** Logotypruta 48 × 48 med radius 8. */
-export function Logo({ uri, size = 48 }: { uri?: string | null; size?: number }) {
+export function Logo({
+  uri,
+  name,
+  size = 48,
+}: {
+  uri?: string | null;
+  name?: string;
+  size?: number;
+}) {
+  const resolved = resolveMediaUrl(uri);
   return (
-    <View style={[styles.logo, { width: size, height: size }]}>
-      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+    <View
+      style={[
+        styles.logo,
+        { width: size, height: size },
+        !resolved && name ? monogramTone(name) : null,
+      ]}
+    >
+      {resolved ? (
+        <Image source={{ uri: resolved }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : name ? (
+        <Text style={[styles.monogram, { fontSize: size * 0.36 }]}>{initials(name)}</Text>
+      ) : null}
     </View>
   );
 }
@@ -631,22 +684,30 @@ export function Logo({ uri, size = 48 }: { uri?: string | null; size?: number })
  */
 export function Avatar({
   uri,
+  name,
   size = 52,
   ring = false,
 }: {
   uri?: string | null;
+  name?: string;
   size?: number;
   ring?: boolean;
 }) {
+  const resolved = resolveMediaUrl(uri);
   return (
     <View
       style={[
         styles.avatar,
         { width: size, height: size, borderRadius: size / 2 },
+        !resolved && name ? monogramTone(name) : null,
         ring && styles.avatarRing,
       ]}
     >
-      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+      {resolved ? (
+        <Image source={{ uri: resolved }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : name ? (
+        <Text style={[styles.monogram, { fontSize: size * 0.36 }]}>{initials(name)}</Text>
+      ) : null}
     </View>
   );
 }
@@ -940,13 +1001,22 @@ const styles = StyleSheet.create({
 
   photo: { backgroundColor: colors.photo, overflow: 'hidden' },
   logo: {
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radius.control,
     backgroundColor: colors.raised,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  avatar: { backgroundColor: colors.raised, overflow: 'hidden' },
+  avatar: {
+    backgroundColor: colors.raised,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monogram: { fontFamily: type.rowTitle.fontFamily, color: colors.muted },
+
   avatarRing: { borderWidth: 4, borderColor: colors.bg },
 
   field: { gap: 6 },

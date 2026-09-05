@@ -22,7 +22,9 @@ export function MatchScreen({
   secondaryLabel,
   onSecondary,
   leftAvatarUrl,
+  leftName,
   rightAvatarUrl,
+  rightName,
 }: {
   eyebrow: string;
   headline: string;
@@ -35,16 +37,18 @@ export function MatchScreen({
   secondaryLabel: string;
   onSecondary: () => void;
   leftAvatarUrl?: string | null;
+  leftName?: string;
   rightAvatarUrl?: string | null;
+  rightName?: string;
 }) {
   return (
     <Screen>
       <View style={styles.hero}>
-        <Photo style={styles.photo} />
+        <Photo style={styles.photo} name={headline} />
         <View style={styles.avatars}>
-          <Avatar uri={leftAvatarUrl} size={84} ring />
+          <Avatar uri={leftAvatarUrl} name={leftName} size={84} ring />
           <View style={styles.avatarRight}>
-            <Avatar uri={rightAvatarUrl} size={84} ring />
+            <Avatar uri={rightAvatarUrl} name={rightName} size={84} ring />
           </View>
         </View>
       </View>

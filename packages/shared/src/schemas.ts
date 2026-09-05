@@ -14,6 +14,7 @@ import {
   ROLES,
   SWIPE_DIRECTIONS,
 } from './domain.js';
+import { mediaUrlSchema } from './media.js';
 import { MAX_RATING, MIN_RATING, REVIEW_CRITERIA } from './reviews.js';
 
 export const roleSchema = z.enum(ROLES);
@@ -132,7 +133,7 @@ export const influencerProfileInputSchema = z.object({
   categories: z.array(categorySchema).min(1).max(6),
   priceMin: oreSchema,
   priceTarget: oreSchema,
-  avatarUrl: z.string().url().optional(),
+  avatarUrl: mediaUrlSchema.nullish(),
 });
 export type InfluencerProfileInput = z.infer<typeof influencerProfileInputSchema>;
 
@@ -143,7 +144,7 @@ export const businessProfileInputSchema = z.object({
   address: z.string().max(200).default(''),
   description: z.string().max(600).default(''),
   categories: z.array(categorySchema).min(1).max(6),
-  logoUrl: z.string().url().optional(),
+  logoUrl: mediaUrlSchema.nullish(),
 });
 export type BusinessProfileInput = z.infer<typeof businessProfileInputSchema>;
 
@@ -165,6 +166,7 @@ export const campaignInputSchema = z
     slots: z.number().int().min(1).max(100),
     city: z.string().min(2).max(80),
     minFollowers: z.number().int().min(0).default(0),
+    imageUrl: mediaUrlSchema.nullish(),
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
   })

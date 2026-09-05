@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
+import { ImagePickerField } from '../../src/components/ImagePickerField';
 import { useAuth } from '../../src/auth';
 import {
   Body,
@@ -41,6 +42,7 @@ export default function EditProfile() {
   const [city, setCity] = useState('');
   const [bio, setBio] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState('');
   const [priceTarget, setPriceTarget] = useState('');
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,7 @@ export default function EditProfile() {
     setCity(loaded.city);
     setBio(loaded.bio);
     setCategories(loaded.categories);
+    setAvatarUrl(loaded.avatarUrl);
     setPriceMin(String(oreToKronor(loaded.priceMin)));
     setPriceTarget(String(oreToKronor(loaded.priceTarget)));
   }, [loaded]);
@@ -85,6 +88,7 @@ export default function EditProfile() {
         bio: bio.trim(),
         city: city.trim(),
         categories,
+        avatarUrl,
         priceMin: kronorToOre(Number(priceMin) || 0),
         priceTarget: kronorToOre(Number(priceTarget) || 0),
       });
@@ -110,6 +114,17 @@ export default function EditProfile() {
       {loaded ? (
         <>
           <Card>
+            <ImagePickerField
+              label="Profilbild"
+              value={avatarUrl}
+              onChange={(url) => {
+                setSaved(false);
+                setAvatarUrl(url);
+              }}
+              aspect={[1, 1]}
+              shape="circle"
+              hint="Syns på ditt kort och i chatten."
+            />
             <Field
               label="Profilnamn"
               value={displayName}
