@@ -13,6 +13,33 @@ import { webhookRoutes } from './webhooks.js';
 
 export async function registerRoutes(app: FastifyInstance, services: Services): Promise<void> {
   await app.register(async (instance) => {
+    /*
+     * Tom kropp med JSON-huvud läses som ett tomt objekt.
+     *
+     * Appen sätter innehållstypen på varje anrop, även på en POST utan fält.
+     * Fastifys standardtolk avvisar det, och slutpunkter som inte tar emot
+     * något blev därför obrukbara. Att tolka det som {} är rimligare än att
+     * kräva att varje klient håller reda på när huvudet får sättas – och en
+     * gammal app som ligger kvar i någons webbläsare fortsätter fungera.
+     *
+     * Ligger här och inte på roten: webhooken har en egen tolk som behöver rå
+     * kropp för signaturkontrollen, och två tolkar för samma typ krockar.
+     */
+    instance.addContentTypeParser(
+      'application/json',
+      { parseAs: 'string' },
+      (_request, body: string, done) => {
+        if (body.trim() === '') return done(null, {});
+        try {
+          done(null, JSON.parse(body));
+        } catch (caught) {
+          const error = caught as Error & { statusCode?: number };
+          error.statusCode = 400;
+          done(error, undefined);
+        }
+      },
+    );
+
     await authRoutes(instance, services);
     await profileRoutes(instance, services);
     await mediaRoutes(instance, services);

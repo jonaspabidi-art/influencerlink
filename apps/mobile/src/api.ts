@@ -66,7 +66,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? 'GET',
     headers: {
-      'content-type': 'application/json',
+      // Bara när det finns något att tolka. En innehållstyp utan kropp får
+      // servern att försöka läsa tom JSON, vilket är ett fel.
+      ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
       ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),

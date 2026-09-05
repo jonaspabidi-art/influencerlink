@@ -42,6 +42,7 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
+
   await app.register(cors, {
     origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
     credentials: true,
@@ -79,6 +80,25 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
       reply.status(429).send({
         error: 'rate_limited',
         message: 'För många anrop. Vänta en stund och försök igen.',
+      });
+      return;
+    }
+
+    /*
+     * Fastifys egna fel bär redan rätt statuskod – tom JSON-kropp, fel
+     * innehållstyp, för stor kropp. De ska inte bli 500, som säger "felet är
+     * vårt" och döljer vad som faktiskt hände. En tom kropp på en POST utan
+     * fält är det vanligaste, och gjorde varje sådan knapp obrukbar.
+     */
+    const status = (error as { statusCode?: number }).statusCode;
+    if (typeof status === 'number' && status >= 400 && status < 500) {
+      request.log.warn({ err: error }, 'avvisad begäran');
+      reply.status(status).send({
+        error: 'bad_request',
+        message:
+          status === 413
+            ? 'Innehållet är för stort.'
+            : 'Begäran gick inte att läsa. Försök igen.',
       });
       return;
     }

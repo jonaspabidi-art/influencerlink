@@ -164,6 +164,34 @@ describe('HTTP-lagret', () => {
     }
   });
 
+  /*
+   * Appen sätter innehållstypen på varje anrop. En POST utan fält skickar då
+   * en tom kropp med JSON-huvud, vilket Fastify avvisar. Det felet blev en
+   * 500:a och gjorde varje sådan knapp obrukbar – TikTok-inloggningen och
+   * Stripe-kopplingen bland dem.
+   */
+  it('gör inte en tom JSON-kropp till ett serverfel', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/me/payouts/onboarding',
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(response.statusCode).not.toBe(500);
+    // Anropet tas emot och stannar på inloggningskravet, inte på kroppen.
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('behåller Fastifys statuskod i stället för att svara 500', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      headers: { 'content-type': 'application/json' },
+      payload: '{ trasig json',
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error).toBe('bad_request');
+  });
+
   it('svarar 400 på Stripe-webhooken utan signatur', async () => {
     const response = await app.inject({
       method: 'POST',
