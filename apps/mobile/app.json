@@ -36,7 +36,11 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E8543F"
+      }
     },
     "plugins": [
       "expo-router",
@@ -50,7 +54,23 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
-    }
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "InfluencerLink",
+      "shortName": "InfluencerLink",
+      "description": "Restauranger och kreatörer hittar varandra, med avtal och spärrad betalning.",
+      "display": "standalone",
+      "themeColor": "#E8543F",
+      "backgroundColor": "#F7F2EA",
+      "lang": "sv"
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F2EA"
+    },
+    "backgroundColor": "#F7F2EA",
+    "primaryColor": "#E8543F"
   }
 }
