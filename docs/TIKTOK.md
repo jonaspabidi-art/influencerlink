@@ -32,6 +32,20 @@ genom att köpa följare.
 Vi ber aldrig om behörighet att publicera. Det står också i texten kreatören
 läser innan hon trycker på knappen.
 
+## Sandbox: testa innan ansökan
+
+Registrera appen och skapa en sandbox. Där lägger du till ditt eget
+TikTok-konto som testanvändare och kör hela inloggningen mot TikToks riktiga
+API, med riktiga siffror, utan granskning. Ingen ansökan behövs för det steget.
+
+Sandboxen har **egna nycklar**, skilda från produktionens. Det är de som ska in
+i Railway när integrationen provas.
+
+Fyll i sandboxens formulär: app-ikon, beskrivning, användarvillkor,
+integritetspolicy, plattform Web, produkterna Login Kit och Display API, de
+fyra scopen, och redirect-adressen. Tryck sedan **Apply changes** – inget av
+det gäller annars.
+
 ## Ansökan hos TikTok
 
 Registrera appen på <https://developers.tiktok.com/>, under Manage apps.
@@ -52,6 +66,11 @@ https://<din-netlify-adress>/auth/tiktok/callback
 
 Adressen måste vara https. Byter du domän måste den ändras på båda ställena
 samtidigt, annars nekar TikTok inloggningen.
+
+I sandbox räcker det att skriva in adressen – ingen domänverifiering krävs, och
+en `*.netlify.app`-adress går bra. Vid produktionsansökan tillkommer
+verifiering under *URL properties*, och då behövs en domän ni själva kan lägga
+DNS-poster på.
 
 **Det som brukar fälla en ansökan**
 
