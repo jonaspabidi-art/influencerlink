@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
+import { useAuth } from '../../src/auth';
+import { InviteToCampaign } from '../../src/components/InviteToCampaign';
 import { GridIcon } from '../../src/components/icons';
 import {
   Avatar,
@@ -37,6 +39,7 @@ import type { InfluencerProfile, ProfileReviews } from '../../src/types';
 export default function CreatorProfile() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const router = useRouter();
+  const { user } = useAuth();
 
   const profile = useQuery({
     queryKey: ['influencer', id],
@@ -97,6 +100,11 @@ export default function CreatorProfile() {
               ))}
             </View>
           </Card>
+
+          {/* Utan det här går profilen inte att göra något med. */}
+          {user?.role === 'BUSINESS' ? (
+            <InviteToCampaign influencerId={String(id)} displayName={data.displayName} />
+          ) : null}
 
           <View style={styles.statRow}>
             <StatBox label="FÖLJARE" value={formatFollowers(data.followers)} />

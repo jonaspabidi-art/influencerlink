@@ -1,6 +1,7 @@
 import type { Category, Platform } from '@pacta/shared';
 import {
   businessProfileInputSchema,
+  compensationTypeSchema,
   emptyRatingSummary,
   ratingSummarySchema,
   categorySchema,
@@ -63,6 +64,7 @@ const ownBusinessSchema = z.object({
   address: z.string(),
   description: z.string(),
   logoUrl: z.string().nullable(),
+  photos: z.array(z.string()),
   categories: z.array(categorySchema),
 });
 
@@ -70,9 +72,21 @@ const publicBusinessSchema = z.object({
   id: z.string(),
   companyName: z.string(),
   city: z.string(),
+  address: z.string(),
   description: z.string(),
   logoUrl: z.string().nullable(),
+  photos: z.array(z.string()),
   categories: z.array(categorySchema),
+  /** Publicerade kampanjer, så kreatören ser vad stället söker just nu. */
+  openCampaigns: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      budgetPerCreator: z.number().int(),
+      compensationType: compensationTypeSchema,
+      productValue: z.number().int(),
+    }),
+  ),
 });
 
 export async function profileRoutes(app: FastifyInstance, services: Services): Promise<void> {
@@ -647,7 +661,10 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       schema: {
         body: businessProfileInputSchema,
         response: {
-          200: z.object({ profile: publicBusinessSchema, accessToken: z.string() }),
+          200: z.object({
+            profile: publicBusinessSchema.omit({ openCampaigns: true }),
+            accessToken: z.string(),
+          }),
           409: problemSchema,
         },
       },
@@ -670,6 +687,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         description: body.description,
         categories: body.categories,
         logoUrl: body.logoUrl ?? null,
+        photos: body.photos,
       };
       const profile = await prisma.businessProfile.upsert({
         where: { userId: request.user.sub },
@@ -708,6 +726,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         address: profile.address,
         description: profile.description,
         logoUrl: profile.logoUrl,
+        photos: profile.photos,
         categories: profile.categories,
       };
     },
@@ -723,9 +742,25 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       },
     },
     async (request) => {
-      const profile = await prisma.businessProfile.findUnique({ where: { id: request.params.id } });
+      const profile = await prisma.businessProfile.findUnique({
+        where: { id: request.params.id },
+        include: {
+          campaigns: {
+            where: { status: 'ACTIVE' },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+            select: {
+              id: true,
+              title: true,
+              budgetPerCreator: true,
+              compensationType: true,
+              productValue: true,
+            },
+          },
+        },
+      });
       if (!profile) throw notFound('Företaget hittades inte.');
-      return toPublicBusiness(profile);
+      return { ...toPublicBusiness(profile), openCampaigns: profile.campaigns };
     },
   );
 
@@ -924,16 +959,20 @@ function toPublicBusiness(profile: {
   id: string;
   companyName: string;
   city: string;
+  address: string;
   description: string;
   logoUrl: string | null;
+  photos: string[];
   categories: Category[];
 }) {
   return {
     id: profile.id,
     companyName: profile.companyName,
     city: profile.city,
+    address: profile.address,
     description: profile.description,
     logoUrl: profile.logoUrl,
+    photos: profile.photos,
     categories: profile.categories,
   };
 }

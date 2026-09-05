@@ -92,6 +92,15 @@ ens fanns någon att samarbeta med. `GET /influencers` finns för det: utbudet
 utan kampanj. En publicerad kampanj landar på kampanjen, där "Hitta influencers"
 är ett val och inte nästa tvingande steg.
 
+Båda parter har en publik profil: `app/creator/[id].tsx` och `app/venue/[id].tsx`.
+Kreatören visar räckvidd, betyg och sina klipp; restaurangen visar lokalen,
+betyget och vad den söker just nu. Symmetrin är avsiktlig – båda ska kunna
+avgöra om motparten är värd en dag av deras tid.
+
+Från kreatörsprofilen kan restaurangen bjuda in till en av sina publicerade
+kampanjer. Det är ett högersvep, samma slutpunkt som kortleken använder, fast
+från profilen. Utan det var kreatörslistan en katalog man inte kunde handla ur.
+
 Profilfliken listar aldrig något som redan är en flik. Utbetalningar och avtal
 nås från sina egna flikar, inte från två håll.
 

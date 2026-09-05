@@ -191,6 +191,8 @@ export const businessProfileInputSchema = z.object({
   description: z.string().max(600).default(''),
   categories: z.array(categorySchema).min(1).max(6),
   logoUrl: mediaUrlSchema.nullish(),
+  /** Bilder på stället, i visningsordning. */
+  photos: z.array(mediaUrlSchema).max(8).default([]),
 });
 export type BusinessProfileInput = z.infer<typeof businessProfileInputSchema>;
 

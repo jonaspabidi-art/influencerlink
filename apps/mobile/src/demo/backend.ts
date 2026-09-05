@@ -759,6 +759,30 @@ route('DELETE', '/me/influencer-profile/socials/:id', ({ params }) => {
   return { deleted: true };
 });
 
+route('GET', '/businesses/:id', ({ params }) => {
+  const business = businessById(params[0]!);
+  return {
+    id: business.id,
+    companyName: business.companyName,
+    city: business.city,
+    address: business.address,
+    description: business.description,
+    logoUrl: business.logoUrl,
+    photos: business.photos,
+    categories: business.categories,
+    openCampaigns: state.campaigns
+      .filter((campaign) => campaign.businessId === business.id && campaign.status === 'ACTIVE')
+      .slice(0, 5)
+      .map((campaign) => ({
+        id: campaign.id,
+        title: campaign.title,
+        budgetPerCreator: campaign.budgetPerCreator,
+        compensationType: campaign.compensationType,
+        productValue: campaign.productValue,
+      })),
+  };
+});
+
 route('GET', '/influencers', ({ query }) => {
   const city = query.get('city')?.toLowerCase();
   const category = query.get('category');
@@ -897,6 +921,7 @@ route('GET', '/me/business-profile', () => {
     address: business.address,
     description: business.description,
     logoUrl: business.logoUrl,
+    photos: business.photos,
     categories: business.categories,
   };
 });
@@ -913,6 +938,7 @@ route('PUT', '/me/business-profile', ({ body }) => {
     address: String(body.address ?? ''),
     description: String(body.description ?? ''),
     logoUrl: typeof body.logoUrl === 'string' ? body.logoUrl : null,
+    photos: Array.isArray(body.photos) ? (body.photos as string[]) : [],
     categories: (body.categories as Category[]) ?? [],
   };
   state.businesses = [...state.businesses.filter((item) => item.id !== business.id), business];

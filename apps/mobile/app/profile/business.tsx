@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { ImagePickerField } from '../../src/components/ImagePickerField';
+import { PhotoGalleryField } from '../../src/components/PhotoGalleryField';
 import { useAuth } from '../../src/auth';
 import {
   Body,
@@ -38,6 +39,7 @@ export default function EditBusinessProfile() {
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -52,6 +54,7 @@ export default function EditBusinessProfile() {
     setDescription(loaded.description);
     setCategories(loaded.categories);
     setLogoUrl(loaded.logoUrl);
+    setPhotos(loaded.photos);
   }, [loaded]);
 
   const toggleCategory = (category: Category) => {
@@ -85,6 +88,7 @@ export default function EditBusinessProfile() {
         description: description.trim(),
         categories,
         logoUrl,
+        photos,
       });
       await replaceToken(result.accessToken);
       await profile.refetch();
@@ -161,6 +165,18 @@ export default function EditBusinessProfile() {
                 setDescription(value);
               }}
               multiline
+            />
+          </Card>
+
+          <Card>
+            <PhotoGalleryField
+              label="Bilder på stället"
+              value={photos}
+              onChange={(next) => {
+                setSaved(false);
+                setPhotos(next);
+              }}
+              hint="Kreatören ser dem innan hon tackar ja. Lokalen, maten, stämningen."
             />
           </Card>
 

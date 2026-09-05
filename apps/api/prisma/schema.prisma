@@ -235,6 +235,9 @@ model BusinessProfile {
   address     String     @default("")
   description String     @default("")
   logoUrl     String?
+  /// Bilder på stället. Kreatören ska se vad det är för lokal innan hon
+  /// lägger en dag på den. Adresser till uppladdade bilder, i visningsordning.
+  photos      String[]
   categories  Category[]
 
   stripeCustomerId String?

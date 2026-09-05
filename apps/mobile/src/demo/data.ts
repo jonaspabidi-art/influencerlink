@@ -54,6 +54,7 @@ export interface DemoBusiness {
   address: string;
   description: string;
   logoUrl: string | null;
+  photos: string[];
   categories: Category[];
 }
 
@@ -214,6 +215,7 @@ export const DEMO_BUSINESSES: DemoBusiness[] = [
     address: 'Kungsportsavenyen 12, 411 36 Göteborg',
     description: 'Västkustkök med råvaror från Fiskhamnen. 60 sittplatser.',
     logoUrl: null,
+    photos: [],
     categories: ['RESTAURANG', 'FINE_DINING'],
   },
   {
@@ -225,6 +227,7 @@ export const DEMO_BUSINESSES: DemoBusiness[] = [
     address: 'Andra Långgatan 4, 413 03 Göteborg',
     description: 'Surdegsbageri och kafé i Linné. Öppnar 07 varje dag.',
     logoUrl: null,
+    photos: [],
     categories: ['BAGERI', 'CAFE'],
   },
 ];

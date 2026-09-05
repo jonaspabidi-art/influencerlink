@@ -106,7 +106,28 @@ export interface OwnBusinessProfile {
   address: string;
   description: string;
   logoUrl: string | null;
+  /** Bilder på stället, i visningsordning. */
+  photos: string[];
   categories: Category[];
+}
+
+/** Restaurangen som kreatören ser den. */
+export interface VenueProfile {
+  id: string;
+  companyName: string;
+  city: string;
+  address: string;
+  description: string;
+  logoUrl: string | null;
+  photos: string[];
+  categories: Category[];
+  openCampaigns: {
+    id: string;
+    title: string;
+    budgetPerCreator: number;
+    compensationType: 'FIXED' | 'PRODUCT' | 'HYBRID';
+    productValue: number;
+  }[];
 }
 
 /** Kreatörsprofilen som den syns för andra – och för kreatören själv. */

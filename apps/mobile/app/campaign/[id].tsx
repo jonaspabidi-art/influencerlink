@@ -130,6 +130,17 @@ export default function CampaignDetail() {
 
       <View style={styles.titleBlock}>
         <Text style={styles.title}>{data.title}</Text>
+        <Text
+          style={styles.venueLink}
+          onPress={() =>
+            router.push({
+              pathname: '/venue/[id]',
+              params: { id: data.businessId, name: data.businessName },
+            })
+          }
+        >
+          {data.businessName}
+        </Text>
         <Text style={styles.secondary}>
           {data.city} · {data.slotsFilled} av {data.slots} platser · till {formatDate(data.endDate)}
         </Text>
@@ -241,6 +252,7 @@ export default function CampaignDetail() {
 
 const styles = StyleSheet.create({
   content: { paddingTop: 0 },
+  venueLink: { ...type.secondary, color: colors.primary },
   titleBlock: { gap: 6 },
   title: { fontFamily: type.cardTitle.fontFamily, fontSize: 23, lineHeight: 27.6, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },
