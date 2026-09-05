@@ -9,7 +9,7 @@
   # npm-workspacen ligger. Anges här så att fältet i Netlifys gränssnitt
   # inte kan peka någon annanstans.
   base = "/"
-  command = "npm install && npm run build -w @influencerlink/shared && npm run export:web -w @influencerlink/mobile"
+  command = "npm install && npm run build -w @pacta/shared && npm run export:web -w @pacta/mobile"
   publish = "apps/mobile/dist"
 
 [build.environment]

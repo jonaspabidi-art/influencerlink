@@ -9,13 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
-RUN npm ci --workspace @influencerlink/api --workspace @influencerlink/shared --include-workspace-root
+RUN npm ci --workspace @pacta/api --workspace @pacta/shared --include-workspace-root
 
 COPY packages/shared packages/shared
 COPY apps/api apps/api
-RUN npm run build -w @influencerlink/shared \
+RUN npm run build -w @pacta/shared \
   && npx prisma generate --schema apps/api/prisma/schema.prisma \
-  && npm run build -w @influencerlink/api
+  && npm run build -w @pacta/api
 
 # Kör-steg: bara det som behövs för att starta servern.
 FROM node:22-slim AS runtime

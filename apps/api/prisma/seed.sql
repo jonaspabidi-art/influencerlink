@@ -1,4 +1,4 @@
--- Demodata för InfluencerLink.
+-- Demodata för Pacta.
 -- Klistra in i Supabase SQL Editor EFTER att Railway skapat tabellerna.
 -- 6 influencers, 2 restauranger, 4 kampanjer, en färdig matchning och ett
 -- avslutat samarbete med omdömen från båda parter.
@@ -82,7 +82,7 @@ INSERT INTO public."Contract" VALUES ('cmtnc1h1z00167drmhc6olick', 'cmtnc1h1s001
 **Uppdragsgivare:** Bageri Solrosen, org.nr 556987-6543
 **Uppdragstagare:** Kocken Erik, personnr 19900101-****
 
-Avtalet ingås via InfluencerLink, som förmedlar uppdraget och hanterar betalningen.
+Avtalet ingås via Pacta, som förmedlar uppdraget och hanterar betalningen.
 
 ## 2. Uppdraget
 
@@ -104,7 +104,7 @@ Materialet ska vara publicerat senast **23 augusti 2026**.
 | Plattformsavgift (12.0 %) | −420 kr |
 | **Utbetalas till uppdragstagaren** | **3 080 kr** |
 
-Uppdragsgivaren betalar in hela arvodet till InfluencerLink när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har 7 dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
+Uppdragsgivaren betalar in hela arvodet till Pacta när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har 7 dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
 
 Angivna belopp är exklusive mervärdesskatt. Uppdragstagaren ansvarar själv för skatt och eventuella sociala avgifter på ersättningen.
 
@@ -122,7 +122,7 @@ Avbokas uppdraget av uppdragsgivaren senare än 48 timmar före avtalad publicer
 
 ## 7. Personuppgifter
 
-Parterna behandlar personuppgifter enligt dataskyddsförordningen (EU) 2016/679. InfluencerLink är personuppgiftsansvarig för uppgifterna i plattformen.
+Parterna behandlar personuppgifter enligt dataskyddsförordningen (EU) 2016/679. Pacta är personuppgiftsansvarig för uppgifterna i plattformen.
 
 ## 8. Tvist
 

@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/mobile/package.json apps/mobile/
-RUN npm ci --workspace @influencerlink/mobile --workspace @influencerlink/shared --include-workspace-root
+RUN npm ci --workspace @pacta/mobile --workspace @pacta/shared --include-workspace-root
 
 COPY packages/shared packages/shared
 COPY apps/mobile apps/mobile
@@ -17,8 +17,8 @@ COPY apps/mobile apps/mobile
 ARG EXPO_PUBLIC_API_URL
 ENV EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
 
-RUN npm run build -w @influencerlink/shared \
-  && npm run export:web -w @influencerlink/mobile
+RUN npm run build -w @pacta/shared \
+  && npm run export:web -w @pacta/mobile
 
 FROM node:22-slim AS runtime
 WORKDIR /app
