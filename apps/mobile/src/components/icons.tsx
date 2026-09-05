@@ -172,3 +172,32 @@ export const PlusIcon = (props: IconProps) => (
     <Path d="M12 5v14M5 12h14" />
   </Icon>
 );
+
+export const ChevronRightIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <Path d="M9 5l7 7-7 7" />
+  </Icon>
+);
+
+/** Fliken Profil och raden "Redigera profil". */
+export const UserIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <Circle cx="12" cy="8.5" r="3.75" />
+    <Path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+  </Icon>
+);
+
+/** Sociala konton: två länkade ringar. */
+export const LinkIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <Path d="M10 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.5 1.5" />
+    <Path d="M14 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5L12.5 17" />
+  </Icon>
+);
+
+export const SignOutIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <Path d="M14 5.5H6.5v13H14" />
+    <Path d="M11.5 12H20M17 9l3 3-3 3" />
+  </Icon>
+);

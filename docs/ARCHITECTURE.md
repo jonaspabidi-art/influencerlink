@@ -79,6 +79,25 @@ ett omdöme de redan läst.
 Medelbetyg hämtas med `ratingsFor`, som summerar en hel kortlek i en fråga i
 stället för en per kort.
 
+## Navigering
+
+Båda rollerna har en profilflik längst till höger. Överst står det motparten
+ser – namn, ort, betyg, och för kreatörer räckvidden – och därunder ligger allt
+som går att ändra: profilen, de sociala kontona, omdömena och utloggningen.
+
+Profilfliken listar aldrig något som redan är en flik. Utbetalningar och avtal
+nås från sina egna flikar, inte från två håll.
+
+`MenuRow` i `apps/mobile/src/components/ui.tsx` är raden de består av. Hela
+raden är tryckyta, och pilen visas bara när raden leder vidare – en handling som
+loggar ut får ingen.
+
+Redigeringen ligger i `app/profile/edit.tsx` och `app/profile/business.tsx`.
+Onboardingguiden körs en gång; formulären är samma fält utan stegen, så att pris
+och bio går att ändra i efterhand. Företaget läser sin egen profil via
+`GET /me/business-profile`, som till skillnad från `GET /businesses/:id` även
+innehåller organisationsnummer och adress.
+
 ## Uppvisat innehåll
 
 Tills OAuth mot TikTok och Meta är godkänd klistrar kreatören in länkar själv.

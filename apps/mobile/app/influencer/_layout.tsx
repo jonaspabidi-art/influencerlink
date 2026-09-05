@@ -1,6 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { useAuth } from '../../src/auth';
-import { ChatIcon, DeckIcon, DocIcon, WalletIcon } from '../../src/components/icons';
+import { ChatIcon, DeckIcon, DocIcon, UserIcon, WalletIcon } from '../../src/components/icons';
 import { colors, type } from '../../src/theme';
 
 export default function InfluencerTabs() {
@@ -52,6 +52,13 @@ export default function InfluencerTabs() {
         options={{
           title: 'Plånbok',
           tabBarIcon: ({ color }) => <WalletIcon size={21} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />
     </Tabs>

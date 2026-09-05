@@ -799,6 +799,22 @@ route('DELETE', '/me/influencer-profile/showcase/:id', ({ params }) => {
   return { deleted: true };
 });
 
+route('GET', '/me/business-profile', () => {
+  const user = currentUser();
+  const business = state.businesses.find((item) => item.id === user.profileId);
+  if (!business) throw new DemoError(404, 'not_found', 'Företagsprofilen hittades inte.');
+  return {
+    id: business.id,
+    companyName: business.companyName,
+    orgNumber: business.orgNumber,
+    city: business.city,
+    address: business.address,
+    description: business.description,
+    logoUrl: business.logoUrl,
+    categories: business.categories,
+  };
+});
+
 route('PUT', '/me/business-profile', ({ body }) => {
   const user = currentUser();
   const existing = user.profileId ? state.businesses.find((item) => item.id === user.profileId) : undefined;

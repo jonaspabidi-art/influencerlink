@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatRating, type RatingSummary } from '@pacta/shared';
 import { HEIGHTS, HIT_SLOP, colors, radius, spacing, type } from '../theme';
-import { CheckIcon, ChevronLeftIcon, LockIcon, StarIcon } from './icons';
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, LockIcon, StarIcon } from './icons';
 
 // --- Ytor -------------------------------------------------------------------
 
@@ -288,6 +288,56 @@ export function IconButton({
 export function IconBox({ children, tone = 'raised' }: { children: ReactNode; tone?: 'raised' | 'tint' }) {
   return (
     <View style={[styles.iconBox, tone === 'tint' && styles.iconBoxTint]}>{children}</View>
+  );
+}
+
+/**
+ * Menyrad med ikon, etikett och pil. `MenuGroup` sätter dem i ett kort med
+ * hårlinjer emellan, som i de appar kreatörerna redan använder – hela raden är
+ * tryckyta, inte bara texten.
+ */
+export function MenuGroup({ children }: { children: ReactNode }) {
+  const rows = Children.toArray(children).filter(Boolean);
+  return (
+    <View style={styles.menuGroup}>
+      {rows.map((row, index) => (
+        <View key={index}>
+          {index > 0 ? <View style={styles.menuDivider} /> : null}
+          {row}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function MenuRow({
+  icon,
+  label,
+  hint,
+  onPress,
+  tone = 'default',
+}: {
+  icon: ReactNode;
+  label: string;
+  /** Kort värde till höger om etiketten, t.ex. antal eller status. */
+  hint?: string;
+  onPress: () => void;
+  /** 'danger' färgar etiketten röd – används för att logga ut. */
+  tone?: 'default' | 'danger';
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}
+    >
+      <View style={styles.menuIcon}>{icon}</View>
+      <Text style={tone === 'danger' ? styles.menuLabelDanger : styles.menuLabel}>{label}</Text>
+      {hint ? <Text style={styles.secondary}>{hint}</Text> : null}
+      {/* Pilen betyder "här finns mer". En handling som loggar ut leder ingenstans. */}
+      {tone === 'danger' ? null : <ChevronRightIcon size={18} color={colors.dim} />}
+    </Pressable>
   );
 }
 
@@ -784,6 +834,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconBoxTint: { backgroundColor: colors.tint },
+
+  menuGroup: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
+  menuDivider: { height: 1, backgroundColor: colors.border, marginLeft: 56 },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.base,
+  },
+  menuIcon: { width: 24, alignItems: 'center' },
+  menuLabel: { ...type.rowTitle, color: colors.text, flex: 1 },
+  menuLabelDanger: { ...type.rowTitle, color: colors.danger, flex: 1 },
 
   tag: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.tag },
   tagFilled: { backgroundColor: colors.raised },

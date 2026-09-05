@@ -43,6 +43,18 @@ const publicInfluencerSchema = z.object({
 /** Så många inlägg får en profil visa upp. Fler blir bara brus i kortet. */
 const MAX_SHOWCASE_ITEMS = 12;
 
+/** Företagets egen vy: samma fält som PUT tar emot, så formuläret kan fyllas. */
+const ownBusinessSchema = z.object({
+  id: z.string(),
+  companyName: z.string(),
+  orgNumber: z.string(),
+  city: z.string(),
+  address: z.string(),
+  description: z.string(),
+  logoUrl: z.string().nullable(),
+  categories: z.array(categorySchema),
+});
+
 const publicBusinessSchema = z.object({
   id: z.string(),
   companyName: z.string(),
@@ -362,6 +374,30 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       return {
         profile: toPublicBusiness(profile),
         accessToken: server.jwt.sign(await buildSessionPayload(prisma, request.user.sub)),
+      };
+    },
+  );
+
+  server.get(
+    '/me/business-profile',
+    {
+      preHandler: app.requireRole('BUSINESS'),
+      schema: { response: { 200: ownBusinessSchema, 404: problemSchema } },
+    },
+    async (request) => {
+      const profile = await prisma.businessProfile.findUnique({
+        where: { userId: request.user.sub },
+      });
+      if (!profile) throw notFound('Företagsprofilen hittades inte.');
+      return {
+        id: profile.id,
+        companyName: profile.companyName,
+        orgNumber: profile.orgNumber,
+        city: profile.city,
+        address: profile.address,
+        description: profile.description,
+        logoUrl: profile.logoUrl,
+        categories: profile.categories,
       };
     },
   );

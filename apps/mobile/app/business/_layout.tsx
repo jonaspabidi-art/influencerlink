@@ -1,6 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { useAuth } from '../../src/auth';
-import { ChatIcon, DocIcon, GridIcon } from '../../src/components/icons';
+import { ChatIcon, DocIcon, GridIcon, UserIcon } from '../../src/components/icons';
 import { colors, type } from '../../src/theme';
 
 export default function BusinessTabs() {
@@ -44,6 +44,13 @@ export default function BusinessTabs() {
         options={{
           title: 'Avtal',
           tabBarIcon: ({ color }) => <DocIcon size={21} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />
     </Tabs>

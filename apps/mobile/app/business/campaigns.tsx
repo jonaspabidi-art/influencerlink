@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
-import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
 import { PlusIcon } from '../../src/components/icons';
 import {
@@ -35,7 +34,6 @@ const STATUS_TONES: Record<Campaign['status'], StatusTone> = {
 
 export default function BusinessCampaigns() {
   const router = useRouter();
-  const { signOut } = useAuth();
   const campaigns = useQuery({
     queryKey: ['campaigns', 'mine'],
     queryFn: () => api.get<Campaign[]>('/campaigns/mine'),
@@ -80,7 +78,6 @@ export default function BusinessCampaigns() {
               onPress={() => router.push('/campaign/new')}
             />
           </Card>
-          <Button label="Logga ut" variant="secondary" onPress={() => void signOut()} />
           <DemoBanner />
         </View>
       </Screen>
@@ -108,7 +105,6 @@ export default function BusinessCampaigns() {
         }
         ListFooterComponent={
           <View style={styles.footer}>
-            <Button label="Logga ut" variant="secondary" onPress={() => void signOut()} />
             <DemoBanner />
           </View>
         }

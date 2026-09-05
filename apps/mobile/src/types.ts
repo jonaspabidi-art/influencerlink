@@ -78,6 +78,18 @@ export interface ShowcaseItem {
   position: number;
 }
 
+/** Företagets egen vy av sin profil – med organisationsnummer och adress. */
+export interface OwnBusinessProfile {
+  id: string;
+  companyName: string;
+  orgNumber: string;
+  city: string;
+  address: string;
+  description: string;
+  logoUrl: string | null;
+  categories: Category[];
+}
+
 /** Kreatörsprofilen som den syns för andra – och för kreatören själv. */
 export interface InfluencerProfile {
   id: string;
