@@ -6,7 +6,6 @@ import { useAuth } from '../src/auth';
 import { DemoBanner } from '../src/components/DemoBanner';
 import { DeckIcon, GridIcon, LockIcon } from '../src/components/icons';
 import { Button, Field, IconBox, ScrollScreen, Segmented } from '../src/components/ui';
-import { HeroArt } from '../src/components/HeroArt';
 import { Wordmark } from '../src/components/Wordmark';
 import { colors, radius, spacing, type } from '../src/theme';
 import type { DemoAccount, SessionUser } from '../src/types';
@@ -111,7 +110,6 @@ export default function Login() {
   return (
     <ScrollScreen contentStyle={styles.screen}>
       <Wordmark />
-      <HeroArt height={130} />
 
       <View style={styles.intro}>
         <Text style={styles.title}>Restauranger och kreatörer, ihop.</Text>
