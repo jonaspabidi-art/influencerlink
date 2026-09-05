@@ -25,6 +25,7 @@ export interface DemoShowcase {
   thumbnailUrl: string | null;
   thumbnailWidth: number | null;
   thumbnailHeight: number | null;
+  views: number | null;
   position: number;
 }
 
@@ -108,8 +109,8 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     // Miniatyrerna hämtas från plattformen i skarpt läge. I demoläget finns
     // ingen uppkoppling, så korten visar titel och plattform i stället.
     showcase: [
-      { id: 'shw_anna_1', platform: 'TIKTOK', url: 'https://www.tiktok.com/@annaater/video/7300000000000000001', postId: '7300000000000000001', title: 'Dagens lunch för under 130 kr', authorName: 'annaater', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, position: 0 },
-      { id: 'shw_anna_2', platform: 'TIKTOK', url: 'https://www.tiktok.com/@annaater/video/7300000000000000002', postId: '7300000000000000002', title: 'Tre nyöppnade ställen i Haga', authorName: 'annaater', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, position: 1 },
+      { id: 'shw_anna_1', platform: 'TIKTOK', url: 'https://www.tiktok.com/@annaater/video/7300000000000000001', postId: '7300000000000000001', title: 'Dagens lunch för under 130 kr', authorName: 'annaater', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, views: 42_000, position: 0 },
+      { id: 'shw_anna_2', platform: 'TIKTOK', url: 'https://www.tiktok.com/@annaater/video/7300000000000000002', postId: '7300000000000000002', title: 'Tre nyöppnade ställen i Haga', authorName: 'annaater', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, views: 18_500, position: 1 },
     ],
   },
   {
@@ -164,7 +165,7 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
       { id: 'soc_johan_ig', platform: 'INSTAGRAM', handle: 'gbgstreetfood', followers: 18_000, avgViews: 7_500, engagementRate: 0.039, verified: false },
     ],
     showcase: [
-      { id: 'shw_johan_1', platform: 'TIKTOK', url: 'https://www.tiktok.com/@gbgstreetfood/video/7300000000000000010', postId: '7300000000000000010', title: 'Bästa kebabpizzan efter midnatt', authorName: 'gbgstreetfood', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, position: 0 },
+      { id: 'shw_johan_1', platform: 'TIKTOK', url: 'https://www.tiktok.com/@gbgstreetfood/video/7300000000000000010', postId: '7300000000000000010', title: 'Bästa kebabpizzan efter midnatt', authorName: 'gbgstreetfood', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, views: 42_000, position: 0 },
     ],
   },
   {

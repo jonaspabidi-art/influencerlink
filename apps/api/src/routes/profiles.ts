@@ -426,6 +426,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
             title: video.title,
             authorName: handle,
             thumbnailUrl: video.coverImageUrl,
+            views: video.views,
             refreshedAt: new Date(),
             position: index,
           })),
@@ -805,6 +806,7 @@ type ShowcaseRow = {
   thumbnailUrl: string | null;
   thumbnailWidth: number | null;
   thumbnailHeight: number | null;
+  views: number | null;
   position: number;
 };
 
@@ -819,6 +821,7 @@ function toPublicShowcaseItem(item: ShowcaseRow) {
     thumbnailUrl: item.thumbnailUrl,
     thumbnailWidth: item.thumbnailWidth,
     thumbnailHeight: item.thumbnailHeight,
+    views: item.views,
     position: item.position,
   };
 }

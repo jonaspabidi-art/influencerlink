@@ -551,6 +551,9 @@ model ShowcaseItem {
   thumbnailUrl String?
   thumbnailWidth Int?
   thumbnailHeight Int?
+  /// Antal visningar när inlägget hämtades. Null för inklistrade länkar,
+  /// där plattformen inte lämnar ut siffran.
+  views        Int?
   refreshedAt  DateTime?
 
   /// Lägre tal först. Det första inlägget är det som syns på kortet.

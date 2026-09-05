@@ -554,6 +554,11 @@ CREATE TYPE "StatsSource" AS ENUM ('PLATFORM', 'DEMO');
 ALTER TABLE "SocialAccount" ADD COLUMN     "sampleSize" INTEGER,
 ADD COLUMN     "statsSource" "StatsSource" NOT NULL DEFAULT 'DEMO';
 
+-- === 20260909000000_showcase_views ===
+
+-- AlterTable
+ALTER TABLE "ShowcaseItem" ADD COLUMN     "views" INTEGER;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -591,6 +596,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         '9ff5f34f91ef4ecede7275fa104a2f8a65ae057c7db7bd3be202c79a1a51e1ac',
         now(), '20260908000000_stats_source', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        'fc6072e31c3212309c2e9883f66b906ec453570a77c368afc41ccd1f54b5cc9e',
+        now(), '20260909000000_showcase_views', now(), 1);
 
 INSERT INTO public."User" VALUES ('cmtnc1h0l00007drmef4r8uxa', 'INFLUENCER', 'e1f4bb327cafad910b748c9cf12ebd64aa1b1acd9cc9eb0145ec8d6e5f9a2d8a', '19920315-****', 'Anna Karlsson', NULL, NULL, '2026-09-04 19:14:04.003', true, '2026-09-04 19:14:04.005', '2026-09-04 19:14:04.005');
 INSERT INTO public."User" VALUES ('cmtnc1h0s00047drmnw69zsq9', 'INFLUENCER', '835522d930a799e560a309e69664fbea2d0486f99395b786e64f580d04e018da', '19880722-****', 'Erik Lindberg', NULL, NULL, '2026-09-04 19:14:04.012', true, '2026-09-04 19:14:04.013', '2026-09-04 19:14:04.013');

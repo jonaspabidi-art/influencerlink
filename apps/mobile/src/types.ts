@@ -92,6 +92,8 @@ export interface ShowcaseItem {
   thumbnailUrl: string | null;
   thumbnailWidth: number | null;
   thumbnailHeight: number | null;
+  /** Antal visningar. Null för inklistrade länkar. */
+  views: number | null;
   position: number;
 }
 

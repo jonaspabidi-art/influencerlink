@@ -165,6 +165,8 @@ export const showcaseItemSchema = z.object({
   thumbnailUrl: z.string().nullable(),
   thumbnailWidth: z.number().int().nullable(),
   thumbnailHeight: z.number().int().nullable(),
+  /** Antal visningar. Null när plattformen inte lämnar ut siffran. */
+  views: z.number().int().nullable(),
   position: z.number().int(),
 });
 export type ShowcaseItem = z.infer<typeof showcaseItemSchema>;

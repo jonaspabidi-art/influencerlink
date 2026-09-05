@@ -806,6 +806,7 @@ route('POST', '/me/influencer-profile/showcase', ({ body }) => {
     thumbnailUrl: null,
     thumbnailWidth: null,
     thumbnailHeight: null,
+    views: null,
     position: profile.showcase.length,
   };
   profile.showcase = [...profile.showcase, item];

@@ -133,9 +133,20 @@ export default function CreatorProfile() {
                   >
                     <Photo uri={item.thumbnailUrl} name={item.title || data.displayName} style={styles.tilePhoto} />
                     <View style={styles.tileFooter}>
-                      <Text style={styles.tileLabel} numberOfLines={1}>
-                        {PLATFORM_LABELS[item.platform]}
-                      </Text>
+                      {/*
+                        Visningarna är det restaurangen jämför med. Saknas de –
+                        en inklistrad länk, där plattformen inte lämnar ut
+                        siffran – står plattformen kvar i stället.
+                      */}
+                      {item.views === null ? (
+                        <Text style={styles.tileLabel} numberOfLines={1}>
+                          {PLATFORM_LABELS[item.platform]}
+                        </Text>
+                      ) : (
+                        <Text style={styles.tileViews} numberOfLines={1}>
+                          {formatFollowers(item.views)} visningar
+                        </Text>
+                      )}
                     </View>
                   </Pressable>
                 ))}
@@ -167,4 +178,5 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.75 },
   tileFooter: { paddingTop: 4 },
   tileLabel: { ...type.label, color: colors.muted },
+  tileViews: { fontFamily: type.listTitle.fontFamily, fontSize: 12, color: colors.text },
 });
