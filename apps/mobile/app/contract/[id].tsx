@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
+import { CampaignResult } from '../../src/components/CampaignResult';
 import { DraftReview } from '../../src/components/DraftReview';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
@@ -215,6 +216,11 @@ export default function ContractDetail() {
           waitingLabel="Väntar på signatur"
         />
       </Card>
+
+      {/* Resultatet först när något publicerats – annars finns inget att visa. */}
+      {data.status === 'DELIVERED' || data.status === 'COMPLETED' ? (
+        <CampaignResult contractId={data.id} fee={data.fee} />
+      ) : null}
 
       {/* Utkastet ligger före leveransen, precis som i avtalstexten. */}
       {data.status === 'ACTIVE' || data.status === 'DELIVERED' || data.status === 'COMPLETED' ? (

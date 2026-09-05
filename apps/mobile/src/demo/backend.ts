@@ -703,6 +703,19 @@ route('GET', '/me/influencer-profile/tiktok/videos', () => {
 
 // Demoläget har ingen fillagring. Listan är tom och uppladdningen förklarar
 // varför i stället för att fela tyst.
+// Demoläget mäter ingenting – siffrorna finns bara hos plattformen.
+route('GET', '/contracts/:id/results', () => ({
+  measuredAt: null,
+  final: false,
+  views: 0,
+  likes: 0,
+  comments: 0,
+  shares: 0,
+  engagementRate: 0,
+  costPerMille: 0,
+  posts: [],
+}));
+
 route('GET', '/contracts/:id/drafts', () => []);
 
 route('POST', '/contracts/:id/drafts/upload-url', () => {

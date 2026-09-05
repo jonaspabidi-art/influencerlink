@@ -193,6 +193,28 @@ export interface Match {
   counterpartRating: RatingSummary;
 }
 
+/** Vad ett samarbete gav. */
+export interface ContractResults {
+  measuredAt: string | null;
+  /** Mätfönstret är slut; siffran ändras inte mer. */
+  final: boolean;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  engagementRate: number;
+  /** Arvodet per tusen visningar, i öre. */
+  costPerMille: number;
+  posts: {
+    url: string;
+    platform: string;
+    views: number;
+    likes: number;
+    comments: number;
+    shares: number;
+  }[];
+}
+
 /** Ett videoutkast som lämnats för godkännande. */
 export interface Draft {
   id: string;

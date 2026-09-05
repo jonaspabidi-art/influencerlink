@@ -130,6 +130,22 @@ TikTok-klienten ligger i `services/social/tiktok.ts` och beskrivs i
 `lib/oauthstate.ts` och inte med sessionstokenen: ett state som gick att
 verifiera som en session vore en inloggning på vift.
 
+## Resultat
+
+Efter leverans visar avtalet vad samarbetet gav: visningar, engagemang och
+arvodet per tusen visningar. Det sista är måttet restaurangen kan jämföra med
+vad annonsplatsen bredvid kostar, och det enda som avgör om den bokar igen.
+
+Siffrorna finns bara hos plattformen, och plattformen lämnar bara ut dem till
+kreatören själv – de hämtas därför med hennes token. Restaurangen ser
+resultatet utan att någonsin komma åt kontot.
+
+Mätningen sker när någon tittar, inte enligt schema: en kampanj ingen bryr sig
+om behöver inte mätas, och det finns inget jobb att glömma bort. Högst en gång
+i timmen per avtal, och efter trettio dagar fryses siffran. Reglerna ligger i
+`packages/shared/src/results.ts`; hämtningen i `services/results.ts` sväljer
+alla fel, eftersom en mätning aldrig får fälla avtalsvyn.
+
 ## Videoutkast
 
 Kreatören lämnar filmen för godkännande innan den publiceras. Restaurangen ser

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DeliverableKind } from '@pacta/shared';
 import {
+  costPerMille,
   contractInputSchema,
   contractStatusSchema,
   daysLeftToReviewDraft,
@@ -16,12 +17,15 @@ import {
   paymentStatusSchema,
   problemSchema,
   splitFee,
+  summariseMetrics,
 } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { badRequest, forbidden, notFound, serviceUnavailable } from '../lib/errors.js';
 import { StorageError } from '../services/storage.js';
+import { createTikTokClient } from '../services/social/index.js';
+import { refreshMetrics } from '../services/results.js';
 import { recordAudit } from '../lib/audit.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
@@ -55,7 +59,7 @@ const contractDetailSchema = z.object({
 
 export async function contractRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();
-  const { prisma, payments } = services;
+  const { prisma, payments, config } = services;
 
   /** Restaurangen skapar avtalsutkastet utifrån en match. */
   server.post(
@@ -191,6 +195,86 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         contractId: request.params.id,
         userId: request.user.sub,
       });
+    },
+  );
+
+  // --- Resultat ------------------------------------------------------------
+
+  /**
+   * Vad samarbetet gav.
+   *
+   * Utan den här siffran har restaurangen inget att gå på när den ska avgöra
+   * om den ska köra igen. Den hämtas när någon tittar, uppdateras medan
+   * mätfönstret är öppet och fryses därefter.
+   */
+  server.get(
+    '/contracts/:id/results',
+    {
+      preHandler: app.requireRole('INFLUENCER', 'BUSINESS'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: {
+          200: z.object({
+            /** Null tills något publicerats. */
+            measuredAt: z.string().nullable(),
+            final: z.boolean(),
+            views: z.number().int(),
+            likes: z.number().int(),
+            comments: z.number().int(),
+            shares: z.number().int(),
+            engagementRate: z.number(),
+            /** Arvodet delat på visningar, per tusen. Noll utan visningar. */
+            costPerMille: z.number().int(),
+            posts: z.array(
+              z.object({
+                url: z.string(),
+                platform: z.string(),
+                views: z.number().int(),
+                likes: z.number().int(),
+                comments: z.number().int(),
+                shares: z.number().int(),
+              }),
+            ),
+          }),
+          403: problemSchema,
+          404: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const contract = await loadContractForParty(services, request.params.id, request);
+
+      const delivery = await prisma.delivery.findUnique({
+        where: { contractId: contract.id },
+        select: { urls: true },
+      });
+      await refreshMetrics(prisma, createTikTokClient(config), {
+        id: contract.id,
+        influencerId: contract.influencerId,
+        deliveredAt: contract.deliveredAt,
+        delivery,
+      });
+
+      const metrics = await prisma.postMetric.findMany({
+        where: { contractId: contract.id },
+        orderBy: { views: 'desc' },
+      });
+      const totals = summariseMetrics(metrics);
+
+      return {
+        measuredAt: metrics[0]?.measuredAt.toISOString() ?? null,
+        final: metrics.length > 0 && metrics.every((metric) => metric.final),
+        ...totals,
+        costPerMille: costPerMille(contract.fee, totals.views),
+        posts: metrics.map((metric) => ({
+          url: metric.url,
+          platform: metric.platform as string,
+          views: metric.views,
+          likes: metric.likes,
+          comments: metric.comments,
+          shares: metric.shares,
+        })),
+      };
     },
   );
 

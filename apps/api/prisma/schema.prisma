@@ -397,6 +397,7 @@ model Contract {
   payment    Payment?
   drafts     Draft[]
   delivery   Delivery?
+  metrics    PostMetric[]
   reviews    Review[]
 
   @@index([status])
@@ -482,6 +483,34 @@ model Delivery {
   approvedAt  DateTime?
   /// Sätts när restaurangen inte hunnit svara inom reviewDays.
   autoApproved Boolean @default(false)
+}
+
+/// Mätning av ett publicerat inlägg.
+///
+/// En rad per länk i leveransen. Siffrorna hämtas från plattformen med
+/// kreatörens egen token – det finns ingen annan väg till dem – och uppdateras
+/// medan mätfönstret är öppet. Efter det fryses de, för då rör de sig knappt.
+model PostMetric {
+  id String @id @default(cuid())
+
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  platform Platform
+  url      String
+  postId   String?
+
+  views    Int @default(0)
+  likes    Int @default(0)
+  comments Int @default(0)
+  shares   Int @default(0)
+
+  measuredAt DateTime
+  /// Mätfönstret är slut. Vi frågar inte plattformen igen.
+  final      Boolean  @default(false)
+
+  @@unique([contractId, url])
+  @@index([contractId])
 }
 
 model Payment {

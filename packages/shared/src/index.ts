@@ -6,4 +6,5 @@ export * from './links.js';
 export * from './media.js';
 export * from './matching.js';
 export * from './schemas.js';
+export * from './results.js';
 export * from './reviews.js';

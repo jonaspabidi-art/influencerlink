@@ -68,6 +68,9 @@ export interface TikTokVideo {
   /** Permalänken till inlägget. */
   shareUrl: string | null;
   views: number;
+  likes: number;
+  comments: number;
+  shares: number;
   /** Sekunder sedan epoch, som TikTok anger det. */
   createdAt: number;
 }
@@ -194,6 +197,9 @@ export class TikTokClient {
         coverImageUrl: https(video.cover_image_url),
         shareUrl: https(video.share_url),
         views: count(video.view_count),
+        likes: count(video.like_count),
+        comments: count(video.comment_count),
+        shares: count(video.share_count),
         createdAt: count(video.create_time),
       }))
       .filter((video) => video.id !== '')
