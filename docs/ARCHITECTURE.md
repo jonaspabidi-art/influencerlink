@@ -130,6 +130,26 @@ TikTok-klienten ligger i `services/social/tiktok.ts` och beskrivs i
 `lib/oauthstate.ts` och inte med sessionstokenen: ett state som gick att
 verifiera som en session vore en inloggning på vift.
 
+## Rådgivaren
+
+Företagaren har sällan gjort det här förut. `POST /assistant/ask` samlar ihop
+verksamheten, den valda kampanjen och kreatörerna i rätt stad, och låter Sonnet
+resonera om det.
+
+Modellen söker aldrig själv. Kandidaterna följer med i frågan, med de siffror vi
+faktiskt har, och prompten förbjuder den att nämna någon som inte står i
+underlaget. Ett påhittat användarnamn eller en påhittad räckvidd vore värre än
+inget svar, eftersom företaget betalar utifrån det. Underlaget säger också om en
+kreatörs siffror är hämtade från plattformen eller uppgivna av henne själv, så
+att ett råd som vilar på ogranskade tal kan säga det.
+
+Plattformens egna regler – tolv procent, spärrade pengar, BankID, godkännande
+före publicering, fjorton dagars omdömesfönster – står i systemprompten, så att
+svaren om hur det går till stämmer med vad koden gör.
+
+Utan `ANTHROPIC_API_KEY` svarar slutpunkten `available: false` och appen säger
+det rakt ut i stället för att låtsas.
+
 ## Resultat
 
 Efter leverans visar avtalet vad samarbetet gav: visningar, engagemang och

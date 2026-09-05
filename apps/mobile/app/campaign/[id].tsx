@@ -177,7 +177,14 @@ export default function CampaignDetail() {
       </Card>
 
       {data.status === 'ACTIVE' ? (
-        <Button label="Hitta influencers" onPress={() => router.push(`/discover/${data.id}`)} />
+        <>
+          <Button label="Hitta influencers" onPress={() => router.push(`/discover/${data.id}`)} />
+          <Button
+            label="Fråga Pacta vem som passar"
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/assistant', params: { campaignId: data.id } })}
+          />
+        </>
       ) : null}
 
       <Card>

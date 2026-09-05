@@ -83,7 +83,7 @@ export function VideoPicker() {
     <View style={styles.wrap}>
       <Label>VÄLJ VAD SOM SYNS PÅ PROFILEN</Label>
       <Body>
-        Tryck på de videor du vill visa upp. Restauranger ser dem när de tittar på din profil.
+        Tryck på de videor du vill visa upp. Företag ser dem när de tittar på din profil.
       </Body>
 
       <View style={styles.grid}>

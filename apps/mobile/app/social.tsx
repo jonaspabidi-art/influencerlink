@@ -141,7 +141,7 @@ export default function SocialAccounts() {
     <ScrollScreen contentStyle={styles.content}>
       <Header
         title="Sociala konton"
-        subtitle="Restauranger ser räckvidden och innehållet du visar upp."
+        subtitle="Företag ser räckvidden och innehållet du visar upp."
         onBack={() => router.back()}
       />
 
@@ -250,7 +250,7 @@ export default function SocialAccounts() {
       <View style={styles.section}>
         <Label>DITT INNEHÅLL</Label>
         <Body>
-          Klistra in länkar till inlägg du är stolt över. De visas på ditt kort när restauranger
+          Klistra in länkar till inlägg du är stolt över. De visas på ditt kort när företag
           swipar.
         </Body>
 

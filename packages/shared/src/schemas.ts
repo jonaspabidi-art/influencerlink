@@ -228,7 +228,7 @@ export type DraftSubmit = z.infer<typeof draftSubmitSchema>;
 
 export const draftReviewSchema = z.object({
   approve: z.boolean(),
-  /** Krävs när restaurangen ber om en ändring – annars vet ingen vad. */
+  /** Krävs när företaget ber om en ändring – annars vet ingen vad. */
   note: z.string().max(600).default(''),
 });
 export type DraftReview = z.infer<typeof draftReviewSchema>;
@@ -247,7 +247,7 @@ export const draftSchema = z.object({
   autoApproved: z.boolean(),
   /** Signerad adress som slutar gälla. Null när lagringen inte svarar. */
   playbackUrl: z.string().nullable(),
-  /** Dagar kvar för restaurangen att svara. */
+  /** Dagar kvar för företaget att svara. */
   daysLeftToReview: z.number().int(),
   /** Klart att publicera: godkänt, eller tiden ute utan svar. */
   cleared: z.boolean(),
@@ -302,7 +302,7 @@ export type CampaignDraftRequest = z.infer<typeof campaignDraftRequestSchema>;
 
 export const swipeInputSchema = z.object({
   campaignId: cuidSchema,
-  /** Sätts av restaurangen när den swipar på en influencer. */
+  /** Sätts av företaget när den swipar på en influencer. */
   influencerId: cuidSchema.optional(),
   direction: swipeDirectionSchema,
 });
@@ -342,7 +342,7 @@ export const contractInputSchema = z.object({
   fee: oreSchema,
   deliverables: z.array(deliverableKindSchema).min(1),
   dueDate: z.string().datetime(),
-  /** Dagar restaurangen har på sig att godkänna leveransen innan den auto-godkänns. */
+  /** Dagar företaget har på sig att godkänna leveransen innan den auto-godkänns. */
   reviewDays: z.number().int().min(1).max(30).default(7),
   extraTerms: z.string().max(2000).default(''),
 });

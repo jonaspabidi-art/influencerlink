@@ -9,7 +9,7 @@ import { Body, Card, Label, Loading, StatBox } from './ui';
 /**
  * Vad samarbetet gav.
  *
- * Restaurangen såg tidigare bara "godkänt" och hade inget att gå på när den
+ * Företaget såg tidigare bara "godkänt" och hade inget att gå på när den
  * skulle avgöra om den skulle köra igen. Kostnad per tusen visningar står med
  * eftersom det är det enda måttet som går att jämföra med vad annonsplatsen
  * bredvid kostar.

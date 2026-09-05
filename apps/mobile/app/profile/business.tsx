@@ -158,7 +158,7 @@ export default function EditBusinessProfile() {
               hint="Dit kreatören kommer."
             />
             <Field
-              label="Om stället"
+              label="Om verksamheten"
               value={description}
               onChangeText={(value) => {
                 setSaved(false);
@@ -170,13 +170,13 @@ export default function EditBusinessProfile() {
 
           <Card>
             <PhotoGalleryField
-              label="Bilder på stället"
+              label="Bilder"
               value={photos}
               onChange={(next) => {
                 setSaved(false);
                 setPhotos(next);
               }}
-              hint="Kreatören ser dem innan hon tackar ja. Lokalen, maten, stämningen."
+              hint="Kreatören ser dem innan hon tackar ja. Lokalen, produkten, stämningen."
             />
           </Card>
 

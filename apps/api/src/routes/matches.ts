@@ -40,7 +40,7 @@ const matchSchema = z.object({
   }),
   contractId: z.string().nullable(),
   lastMessage: z.string().nullable(),
-  /** Motpartens betyg – restaurangens för influencern, och tvärtom. */
+  /** Motpartens betyg – företagets för influencern, och tvärtom. */
   counterpartRating: ratingSummarySchema,
 });
 
@@ -286,7 +286,7 @@ export async function matchRoutes(app: FastifyInstance, services: Services): Pro
     },
   );
 
-  /** Att godkänna en ansökan är samma sak som att restaurangen swipar höger. */
+  /** Att godkänna en ansökan är samma sak som att företaget swipar höger. */
   server.post(
     '/applications/:id/decision',
     {

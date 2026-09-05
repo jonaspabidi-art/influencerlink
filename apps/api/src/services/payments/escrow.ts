@@ -6,7 +6,7 @@ import type { PaymentProvider } from './types.js';
 
 /**
  * Skapar (eller återanvänder) escrow-betalningen för ett kontrakt.
- * Restaurangen betalar in hela arvodet till plattformen; pengarna släpps
+ * Företaget betalar in hela arvodet till plattformen; pengarna släpps
  * först när leveransen godkänts.
  */
 export async function createEscrow(
@@ -151,7 +151,7 @@ export async function releasePayout(
   return { transferId: transfer.transferId, payout: payment.payout };
 }
 
-/** Återbetalar escrow till restaurangen, t.ex. vid utebliven leverans. */
+/** Återbetalar escrow till företaget, t.ex. vid utebliven leverans. */
 export async function refundEscrow(
   prisma: PrismaClient,
   payments: PaymentProvider,

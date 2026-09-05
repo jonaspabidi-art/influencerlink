@@ -89,7 +89,7 @@ describe('HTTP-lagret', () => {
     expect(response.statusCode).toBe(401);
   });
 
-  it('stoppar en influencer från restaurangens slutpunkter', async () => {
+  it('stoppar en influencer från företagets slutpunkter', async () => {
     const token = app.jwt.sign({ sub: 'user-1', role: 'INFLUENCER', pid: 'inf-1' });
     const response = await app.inject({
       method: 'GET',

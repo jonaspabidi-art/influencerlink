@@ -78,7 +78,7 @@ export default function WriteReview() {
   }
 
   const isBusiness = user?.role === 'BUSINESS';
-  // Restaurangen bedömer kreatören, och tvärtom.
+  // Företaget bedömer kreatören, och tvärtom.
   const subject = isBusiness ? ('INFLUENCER' as const) : ('BUSINESS' as const);
   const counterpart = isBusiness ? contract.data.influencerName : contract.data.businessName;
   const labels = REVIEW_CRITERION_LABELS[subject];

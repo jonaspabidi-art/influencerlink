@@ -172,7 +172,7 @@ export default function NewCampaign() {
       });
       await api.post(`/campaigns/${campaign.id}/publish`);
       // Kampanjen, inte kortleken. Där syns att den är publicerad, och därifrån
-      // väljer restaurangen själv om den vill leta upp kreatörer direkt.
+      // väljer företaget själv om den vill leta upp kreatörer direkt.
       router.replace(`/campaign/${campaign.id}`);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Kunde inte publicera kampanjen.');

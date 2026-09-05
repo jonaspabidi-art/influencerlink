@@ -8,7 +8,7 @@ import { tiktokAccessToken } from './social/tokens.js';
  *
  * Siffrorna finns bara hos plattformen, och plattformen lämnar bara ut dem
  * till kreatören själv. Vi hämtar dem alltså med hennes token och sparar en
- * mätning per publicerad länk. Restaurangen ser resultatet utan att någonsin
+ * mätning per publicerad länk. Företaget ser resultatet utan att någonsin
  * komma åt kreatörens konto.
  *
  * Mätningen sker när någon tittar, inte enligt schema. En kampanj som ingen

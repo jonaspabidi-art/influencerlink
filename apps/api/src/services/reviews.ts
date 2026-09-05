@@ -138,7 +138,7 @@ export async function ratingsFor(
 
   const reviews = await prisma.review.findMany({
     where: {
-      // Restaurangens omdömen handlar om kreatören, och tvärtom.
+      // Företagets omdömen handlar om kreatören, och tvärtom.
       authorRole: subject === 'INFLUENCER' ? 'BUSINESS' : 'INFLUENCER',
       ...(subject === 'INFLUENCER'
         ? { influencerId: { in: ids } }

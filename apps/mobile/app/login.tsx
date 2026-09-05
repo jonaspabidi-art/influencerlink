@@ -112,7 +112,7 @@ export default function Login() {
       <Wordmark />
 
       <View style={styles.intro}>
-        <Text style={styles.title}>Restauranger och kreatörer, ihop.</Text>
+        <Text style={styles.title}>Företag och kreatörer, ihop.</Text>
         <Text style={styles.lead}>
           Hitta ett samarbete, signera med BankID och låt pengarna ligga spärrade tills jobbet är
           godkänt.
@@ -198,7 +198,7 @@ export default function Login() {
               <View style={styles.demoText}>
                 <Text style={styles.demoName}>{account.displayName}</Text>
                 <Text style={styles.demoSummary}>
-                  {account.role === 'BUSINESS' ? 'Restaurang' : 'Kreatör'} · {account.summary}
+                  {account.role === 'BUSINESS' ? 'Företag' : 'Kreatör'} · {account.summary}
                 </Text>
               </View>
             </Pressable>

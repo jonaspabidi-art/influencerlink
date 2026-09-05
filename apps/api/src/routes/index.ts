@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../services/index.js';
+import { assistantRoutes } from './assistant.js';
 import { authRoutes } from './auth.js';
 import { campaignRoutes } from './campaigns.js';
 import { contractRoutes } from './contracts.js';
@@ -49,6 +50,7 @@ export async function registerRoutes(app: FastifyInstance, services: Services): 
     await matchRoutes(instance, services);
     await contractRoutes(instance, services);
     await reviewRoutes(instance, services);
+    await assistantRoutes(instance, services);
   });
 
   // Egen scope: webhooken behöver rå request-body för signaturkontrollen.

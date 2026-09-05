@@ -29,9 +29,9 @@ export async function swipeRoutes(app: FastifyInstance, services: Services): Pro
         influencerId = profileId;
       } else {
         if (!request.body.influencerId) {
-          throw badRequest('influencerId krävs när en restaurang swipar.');
+          throw badRequest('influencerId krävs när ett företag swipar.');
         }
-        // Restaurangen får bara swipa inom sina egna kampanjer.
+        // Företaget får bara swipa inom sina egna kampanjer.
         const campaign = await prisma.campaign.findUnique({
           where: { id: request.body.campaignId },
           select: { businessId: true },

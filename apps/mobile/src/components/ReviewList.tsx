@@ -7,7 +7,7 @@ import { Stars } from './ui';
 
 /**
  * Ett enskilt omdöme. `subject` avgör etiketterna: samma delbetyg heter olika
- * saker beroende på om det är kreatören eller restaurangen som blir bedömd.
+ * saker beroende på om det är kreatören eller företaget som blir bedömd.
  */
 export function ReviewCard({ review, showBreakdown = false }: { review: Review; showBreakdown?: boolean }) {
   const labels = REVIEW_CRITERION_LABELS[review.subject];
@@ -50,8 +50,8 @@ export function NoReviews({ subject }: { subject: 'INFLUENCER' | 'BUSINESS' }) {
       <Text style={styles.emptyTitle}>Inga omdömen än</Text>
       <Text style={styles.emptyText}>
         {subject === 'INFLUENCER'
-          ? 'Omdömen skrivs av restauranger efter att ett samarbete är klart och utbetalt. Den här kreatören har inte hunnit avsluta något ännu.'
-          : 'Omdömen skrivs av kreatörer efter att ett samarbete är klart och utbetalt. Den här restaurangen har inte hunnit avsluta något ännu.'}
+          ? 'Omdömen skrivs av företag efter att ett samarbete är klart och utbetalt. Den här kreatören har inte hunnit avsluta något ännu.'
+          : 'Omdömen skrivs av kreatörer efter att ett samarbete är klart och utbetalt. Den här företaget har inte hunnit avsluta något ännu.'}
       </Text>
     </View>
   );

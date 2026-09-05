@@ -171,7 +171,7 @@ export default function InfluencerOnboarding() {
         <>
           <Question
             title="Vad heter du i dina kanaler?"
-            lead="Det är namnet restaurangerna ser när du dyker upp i deras flöde."
+            lead="Det är namnet företagna ser när du dyker upp i deras flöde."
           />
           <Card>
             <Field
@@ -230,7 +230,7 @@ export default function InfluencerOnboarding() {
         <>
           <Question
             title="Koppla dina konton"
-            lead="Vi hämtar följarantal och snittvisningar. Restaurangerna ser bara siffrorna, aldrig din inloggning."
+            lead="Vi hämtar följarantal och snittvisningar. Företagna ser bara siffrorna, aldrig din inloggning."
           />
           <Card>
             <View style={styles.chipRow}>

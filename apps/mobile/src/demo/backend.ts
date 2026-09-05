@@ -704,6 +704,12 @@ route('GET', '/me/influencer-profile/tiktok/videos', () => {
 // Demoläget har ingen fillagring. Listan är tom och uppladdningen förklarar
 // varför i stället för att fela tyst.
 // Demoläget mäter ingenting – siffrorna finns bara hos plattformen.
+route('POST', '/assistant/ask', () => ({
+  available: false,
+  answer: null,
+  candidateCount: 0,
+}));
+
 route('GET', '/contracts/:id/results', () => ({
   measuredAt: null,
   final: false,

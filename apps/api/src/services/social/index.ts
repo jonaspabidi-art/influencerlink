@@ -6,7 +6,7 @@ import { TikTokClient } from './tiktok.js';
 /**
  * Varifrån siffrorna kommer.
  *
- * Skillnaden är hela poängen: en restaurang som betalar utifrån räckvidd måste
+ * Skillnaden är hela poängen: ett företag som betalar utifrån räckvidd måste
  * kunna se om talet kommer från plattformen eller är något vi genererat medan
  * integrationen väntar på godkännande.
  */

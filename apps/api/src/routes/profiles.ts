@@ -146,7 +146,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
    * Kreatörer att bläddra bland, utan kampanj.
    *
    * Tidigare gick de bara att se genom en kampanjs kortlek, vilket tvingade
-   * restaurangen att skriva ihop ett samarbete innan den sett om det ens fanns
+   * företaget att skriva ihop ett samarbete innan den sett om det ens fanns
    * någon att samarbeta med. Det här är utbudet, i den egna staden först.
    */
   server.get(

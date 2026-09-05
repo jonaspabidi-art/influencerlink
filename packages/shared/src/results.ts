@@ -1,7 +1,7 @@
 /**
  * Vad ett samarbete gav.
  *
- * Utan den här siffran har restaurangen inget att gå på när den ska bestämma
+ * Utan den här siffran har företaget inget att gå på när den ska bestämma
  * om den ska köra igen – och då kör den inte. Kostnad per tusen visningar är
  * måttet, eftersom det är det enda som går att jämföra med vad annonsplatsen
  * bredvid kostar.

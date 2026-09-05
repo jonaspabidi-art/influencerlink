@@ -45,7 +45,7 @@ export interface ScoreBreakdown {
 
 /**
  * Viktning per delpoäng. Nisch och engagemang väger tyngst eftersom en
- * matchande, aktiv publik ger restaurangen mer än ren räckvidd gör.
+ * matchande, aktiv publik ger företaget mer än ren räckvidd gör.
  */
 const WEIGHTS = {
   niche: 30,

@@ -144,7 +144,7 @@ function EmptyDeck({ queue, onRefresh }: { queue: PendingLike[]; onRefresh: () =
               Du är i kö på {queue.length} {queue.length === 1 ? 'kampanj' : 'kampanjer'}
             </Text>
             <Text style={styles.emptyText}>
-              Restaurangerna svarar oftast inom några dagar. Vi hör av oss så snart någon vill
+              Företagna svarar oftast inom några dagar. Vi hör av oss så snart någon vill
               jobba med dig.
             </Text>
             <View style={styles.queue}>

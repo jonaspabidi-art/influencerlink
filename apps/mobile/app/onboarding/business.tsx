@@ -77,7 +77,7 @@ export default function BusinessOnboarding() {
   const next = () => {
     setError(null);
     if (step === 1) {
-      if (companyName.trim().length < 2) return setError('Ange restaurangens namn.');
+      if (companyName.trim().length < 2) return setError('Ange företagets namn.');
       if (orgNumber.replace(/\D/g, '').length !== 10) {
         return setError('Organisationsnumret ska ha tio siffror.');
       }
@@ -90,7 +90,7 @@ export default function BusinessOnboarding() {
   return (
     <ScrollScreen contentStyle={styles.content}>
       <Header
-        title="Om restaurangen"
+        title="Om företaget"
         onBack={step > 1 ? () => setStep((current) => current - 1) : undefined}
         right={
           <Text style={styles.stepCounter}>
@@ -103,12 +103,12 @@ export default function BusinessOnboarding() {
       {step === 1 ? (
         <>
           <Question
-            title="Vad heter stället?"
+            title="Vad heter företaget?"
             lead="Namnet och organisationsnumret står i avtalen mot kreatören."
           />
           <Card>
             <Field
-              label="Restaurangens namn"
+              label="Företagets namn"
               value={companyName}
               onChangeText={setCompanyName}
               placeholder="Restaurang Kajutan"
@@ -139,7 +139,7 @@ export default function BusinessOnboarding() {
               placeholder="Kungsportsavenyen 12"
             />
             <Field
-              label="Beskriv stället"
+              label="Beskriv verksamheten"
               value={description}
               onChangeText={setDescription}
               placeholder="Vad serverar ni, och vilka kommer hit?"

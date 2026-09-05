@@ -23,19 +23,14 @@ import {
   StatusBadge,
   type StatusTone,
 } from '../../src/components/ui';
-import { DELIVERABLE_LABELS, formatDate, formatSek } from '../../src/format';
+import {
+  CONTRACT_STATUS_LABELS,
+  DELIVERABLE_LABELS,
+  formatDate,
+  formatSek,
+} from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
 import type { Contract, ReviewState } from '../../src/types';
-
-const STATUS_LABELS: Record<Contract['status'], string> = {
-  DRAFT: 'Utkast',
-  SENT: 'Väntar på signaturer',
-  PARTIALLY_SIGNED: 'En part har signerat',
-  ACTIVE: 'Pågår',
-  DELIVERED: 'Levererat – väntar',
-  COMPLETED: 'Klart och utbetalt',
-  CANCELLED: 'Avbrutet',
-};
 
 const STATUS_TONES: Record<Contract['status'], StatusTone> = {
   DRAFT: 'pending',
@@ -149,7 +144,7 @@ export default function ContractDetail() {
         title="Avtal"
         onBack={() => router.back()}
         right={
-          <StatusBadge label={STATUS_LABELS[data.status]} tone={STATUS_TONES[data.status]} />
+          <StatusBadge label={CONTRACT_STATUS_LABELS[data.status]} tone={STATUS_TONES[data.status]} />
         }
       />
 
@@ -265,7 +260,7 @@ export default function ContractDetail() {
       ) : (
         <Card>
           <TimelineStep title="Båda signerade" detail={data.signedByBusinessAt ? formatDate(data.signedByBusinessAt) : ''} />
-          <TimelineStep title={`${formatSek(data.fee)} spärrades`} detail="Betalt av restaurangen" />
+          <TimelineStep title={`${formatSek(data.fee)} spärrades`} detail="Betalt av företaget" />
           <TimelineStep
             title="Leverans godkänd"
             detail={data.completedAt ? formatDate(data.completedAt) : ''}
@@ -380,7 +375,7 @@ function ActionCard({
       <Card tone="primary">
         <Text style={styles.actionTitle}>Din tur att signera</Text>
         <Body>
-          När båda signerat betalar restaurangen in {formatSek(contract.fee)} till det spärrade
+          När båda signerat betalar företaget in {formatSek(contract.fee)} till det spärrade
           kontot.
         </Body>
         <Button label="Signera med BankID" onPress={onSign} />
@@ -455,7 +450,7 @@ function ActionCard({
       <Card>
         <Text style={styles.actionTitle}>Inskickat</Text>
         <Body>
-          Restaurangen har {contract.reviewDays} dagar på sig att godkänna. Sedan betalas
+          Företaget har {contract.reviewDays} dagar på sig att godkänna. Sedan betalas
           {' '}
           {formatSek(contract.payout)} ut automatiskt.
         </Body>

@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
+  formatSek,
   CATEGORIES,
   COMPENSATION_TYPES,
   DELIVERABLE_KINDS,
@@ -12,9 +13,11 @@ import {
 import { z } from 'zod';
 import type { Config } from '../../config.js';
 import {
+  ADVISOR_SYSTEM_PROMPT,
   CAMPAIGN_DRAFT_SYSTEM_PROMPT,
   MATCHING_SYSTEM_PROMPT,
   describeCampaign,
+  describeCandidateForAdvisor,
   describeInfluencer,
 } from './prompts.js';
 import type { CampaignDraft, RankedCampaign, RankedInfluencer } from './types.js';
@@ -220,12 +223,60 @@ export class AiService {
     const input = await this.callTool(
       CAMPAIGN_DRAFT_SYSTEM_PROMPT,
       DRAFT_TOOL,
-      `Restaurangägaren skriver: "${prompt}"\n${city ? `Restaurangen ligger i ${city}.` : ''}`,
+      `Restaurangägaren skriver: "${prompt}"\n${city ? `Företaget ligger i ${city}.` : ''}`,
       1500,
     );
     if (!input) return undefined;
     const parsed = draftSchema.safeParse(input);
     return parsed.success ? parsed.data : undefined;
+  }
+
+  /**
+   * Svarar på en fråga från företaget om vem det ska välja och hur det går till.
+   *
+   * Kandidaterna skickas med i frågan i stället för att modellen får leta själv:
+   * den ska bara kunna tala om profiler som faktiskt finns, med de siffror vi
+   * faktiskt har. Ett påhittat namn eller en påhittad räckvidd vore värre än
+   * inget svar alls, eftersom företaget betalar utifrån det.
+   */
+  async advise(input: {
+    question: string;
+    business: { companyName: string; city: string; categories: string[]; description: string };
+    campaign?: { title: string; brief: string; budgetPerCreator: number; slots: number } | null;
+    candidates: Parameters<typeof describeCandidateForAdvisor>[0][];
+  }): Promise<string | null> {
+    if (!this.client) return null;
+
+    const parts = [
+      `Företaget: ${input.business.companyName} i ${input.business.city}.`,
+      input.business.description ? `Om verksamheten: ${input.business.description}` : '',
+      `Nischer: ${input.business.categories.join(', ') || 'inga angivna'}.`,
+      input.campaign
+        ? `\nAktuell kampanj: ${input.campaign.title}\n${input.campaign.brief}\nBudget per kreatör: ${formatSek(input.campaign.budgetPerCreator)}, ${input.campaign.slots} platser.`
+        : '\nFöretaget har ingen kampanj vald just nu.',
+      input.candidates.length > 0
+        ? `\nKreatörer att välja bland:\n${input.candidates.map(describeCandidateForAdvisor).join('\n')}`
+        : '\nDet finns inga kreatörer att välja bland just nu.',
+      `\nFrågan: ${input.question}`,
+    ];
+
+    try {
+      const response = await this.client.messages.create({
+        model: this.config.ANTHROPIC_MODEL,
+        max_tokens: 700,
+        system: ADVISOR_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: parts.filter(Boolean).join('\n') }],
+      });
+      const text = response.content
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map((block) => block.text)
+        .join('\n')
+        .trim();
+      return text.length > 0 ? text : null;
+    } catch {
+      // Ett uteblivet råd är ett tomt svar, inte ett fel som fäller skärmen.
+      return null;
+    }
   }
 
   private async callTool(

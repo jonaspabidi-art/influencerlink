@@ -115,7 +115,7 @@ export const WalletIcon = (props: IconProps) => (
   </Icon>
 );
 
-/** Rutnät: fliken Kampanjer och restaurangens rollikon. */
+/** Rutnät: fliken Kampanjer och företagets rollikon. */
 export const GridIcon = (props: IconProps) => (
   <Icon {...props}>
     <Rect x="3.5" y="3.5" width="7" height="7" rx="1" />

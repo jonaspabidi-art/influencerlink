@@ -113,7 +113,7 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
   );
 
   /**
-   * Kampanjer influencern svajpat höger på men där restaurangen inte svarat
+   * Kampanjer influencern svajpat höger på men där företaget inte svarat
    * ännu. Driver det tomma läget i decken: "du är i kö på tre kampanjer".
    */
   server.get(
@@ -161,7 +161,7 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
     },
   );
 
-  /** Restaurangens deck: influencers att swipa på för en viss kampanj. */
+  /** Företagets deck: influencers att swipa på för en viss kampanj. */
   server.get(
     '/feed/influencers',
     {

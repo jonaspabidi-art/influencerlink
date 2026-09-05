@@ -51,7 +51,7 @@ export function toCampaignCandidate(campaign: {
 }
 
 /**
- * Influencers som restaurangen ännu inte har swipat på för den här kampanjen
+ * Influencers som företaget ännu inte har swipat på för den här kampanjen
  * och som klarar kampanjens hårda krav.
  */
 export async function findInfluencerCandidates(

@@ -23,7 +23,7 @@ import type { InfluencerProfile, ProfileReviews } from '../../src/types';
  * Kreatörens startsida för allt som rör hen själv.
  *
  * Tidigare låg profil, sociala konton och utloggning inklämda längst ned i
- * plånboken. Här är de en egen flik: överst det restaurangen ser om en –
+ * plånboken. Här är de en egen flik: överst det företaget ser om en –
  * betyg, räckvidd, uppvisat innehåll – och därunder allt som går att ändra.
  */
 export default function InfluencerProfileTab() {

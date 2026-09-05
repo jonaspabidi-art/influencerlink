@@ -190,7 +190,7 @@ export default function EditProfile() {
                 setPriceTarget(value);
               }}
               keyboardType="numeric"
-              hint="Det restaurangen ser på ditt kort."
+              hint="Det företaget ser på ditt kort."
             />
           </Card>
 

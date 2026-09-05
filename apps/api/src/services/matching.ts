@@ -91,7 +91,7 @@ export async function recordSwipe(
 
     const breakdown = scoreMatch(toCampaignCandidate(campaign), toInfluencerCandidate(influencer));
     const matchReason =
-      breakdown.reasons[0] ?? 'Ömsesidigt intresse mellan restaurangen och influencern';
+      breakdown.reasons[0] ?? 'Ömsesidigt intresse mellan företaget och influencern';
 
     const match = await tx.match.upsert({
       where: {

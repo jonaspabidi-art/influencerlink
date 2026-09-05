@@ -21,13 +21,13 @@ export interface PayoutResult {
 export interface CreateEscrowInput {
   contractId: string;
   amount: Ore;
-  /** Stripe-kund för restaurangen, skapas vid behov. */
+  /** Stripe-kund för företaget, skapas vid behov. */
   customerId?: string;
   description: string;
 }
 
 /**
- * Betalflödet i två steg: restaurangen betalar in till plattformen när
+ * Betalflödet i två steg: företaget betalar in till plattformen när
  * kontraktet blir aktivt (escrow), och pengarna förs över till influencern
  * först när leveransen är godkänd.
  */

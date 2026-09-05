@@ -11,7 +11,7 @@ describe('draftDeadline', () => {
 });
 
 describe('isDraftCleared', () => {
-  it('är klart när restaurangen godkänt', () => {
+  it('är klart när företaget godkänt', () => {
     expect(isDraftCleared({ status: 'APPROVED', submittedAt }, reviewDays, submittedAt)).toBe(true);
   });
 

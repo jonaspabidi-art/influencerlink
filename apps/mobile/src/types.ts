@@ -50,7 +50,7 @@ export interface CampaignCard {
   score: number;
   reason: string;
   aiReviewed: boolean;
-  /** Restaurangens betyg. count 0 = inga omdömen än. */
+  /** Företagets betyg. count 0 = inga omdömen än. */
   rating: RatingSummary;
   campaign: Campaign;
 }
@@ -106,12 +106,12 @@ export interface OwnBusinessProfile {
   address: string;
   description: string;
   logoUrl: string | null;
-  /** Bilder på stället, i visningsordning. */
+  /** Bilder på verksamheten, i visningsordning. */
   photos: string[];
   categories: Category[];
 }
 
-/** Restaurangen som kreatören ser den. */
+/** Företaget som kreatören ser det. */
 export interface VenueProfile {
   id: string;
   companyName: string;

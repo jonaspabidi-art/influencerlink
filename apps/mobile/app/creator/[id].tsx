@@ -30,7 +30,7 @@ import { colors, radius, spacing, type } from '../../src/theme';
 import type { InfluencerProfile, ProfileReviews } from '../../src/types';
 
 /**
- * Kreatörens profil, så som en restaurang ser den.
+ * Kreatörens profil, så som ett företag ser den.
  *
  * Kortet i kortleken är ett snabbt intryck. Här ligger hela underlaget för
  * beslutet: räckvidden, betyget, priset och framför allt innehållet – det är
@@ -142,7 +142,7 @@ export default function CreatorProfile() {
                     <Photo uri={item.thumbnailUrl} name={item.title || data.displayName} style={styles.tilePhoto} />
                     <View style={styles.tileFooter}>
                       {/*
-                        Visningarna är det restaurangen jämför med. Saknas de –
+                        Visningarna är det företaget jämför med. Saknas de –
                         en inklistrad länk, där plattformen inte lämnar ut
                         siffran – står plattformen kvar i stället.
                       */}

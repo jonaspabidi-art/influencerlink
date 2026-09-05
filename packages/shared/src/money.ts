@@ -20,7 +20,7 @@ export function formatSek(ore: Ore): string {
 }
 
 export interface FeeBreakdown {
-  /** Vad restaurangen debiteras. */
+  /** Vad företaget debiteras. */
   gross: Ore;
   /** Plattformens avgift. */
   platformFee: Ore;

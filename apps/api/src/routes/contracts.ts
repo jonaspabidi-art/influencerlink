@@ -61,7 +61,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
   const server = app.withTypeProvider<ZodTypeProvider>();
   const { prisma, payments, config } = services;
 
-  /** Restaurangen skapar avtalsutkastet utifrån en match. */
+  /** Företaget skapar avtalsutkastet utifrån en match. */
   server.post(
     '/contracts',
     {
@@ -172,7 +172,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
     },
   );
 
-  /** Restaurangen betalar in arvodet till spärrat konto. */
+  /** Företaget betalar in arvodet till spärrat konto. */
   server.post(
     '/contracts/:id/payment',
     {
@@ -203,7 +203,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
   /**
    * Vad samarbetet gav.
    *
-   * Utan den här siffran har restaurangen inget att gå på när den ska avgöra
+   * Utan den här siffran har företaget inget att gå på när den ska avgöra
    * om den ska köra igen. Den hämtas när någon tittar, uppdateras medan
    * mätfönstret är öppet och fryses därefter.
    */
@@ -281,9 +281,9 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
   // --- Videoutkast ---------------------------------------------------------
 
   /*
-   * Kreatören lämnar filmen för godkännande innan den publiceras. Restaurangen
+   * Kreatören lämnar filmen för godkännande innan den publiceras. Företaget
    * ser vad som ska ut, och får samtidigt filen – det är den nyttjanderätten i
-   * avtalet vilar på. Svarar restaurangen inte i tid räknas utkastet som
+   * avtalet vilar på. Svarar företaget inte i tid räknas utkastet som
    * godkänt, så att ett tyst kök aldrig blockerar kreatören.
    */
 
@@ -502,8 +502,8 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         if (!isDraftCleared(latest, contract.reviewDays)) {
           throw badRequest(
             latest.status === 'CHANGES_REQUESTED'
-              ? 'Restaurangen har bett om en ändring. Ladda upp en ny version först.'
-              : 'Utkastet väntar på restaurangens godkännande.',
+              ? 'Företaget har bett om en ändring. Ladda upp en ny version först.'
+              : 'Utkastet väntar på företagets godkännande.',
           );
         }
       }
@@ -529,7 +529,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
     },
   );
 
-  /** Restaurangen godkänner leveransen, vilket frigör utbetalningen. */
+  /** Företaget godkänner leveransen, vilket frigör utbetalningen. */
   server.post(
     '/contracts/:id/approve',
     {
@@ -582,7 +582,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         throw badRequest('Avtalet går inte att avbryta i sitt nuvarande läge.');
       }
 
-      // Eventuella inbetalda pengar går tillbaka till restaurangen.
+      // Eventuella inbetalda pengar går tillbaka till företaget.
       await refundEscrow(prisma, payments, {
         contractId: contract.id,
         userId: request.user.sub,

@@ -6,7 +6,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { LockIcon, PlusIcon } from '../../src/components/icons';
+import { DeckIcon, LockIcon, PlusIcon, SparkIcon } from '../../src/components/icons';
 import {
   Avatar,
   Body,
@@ -22,12 +22,12 @@ import {
 } from '../../src/components/ui';
 import { CATEGORY_LABELS, formatFollowers, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
-import type { InfluencerProfile, OwnBusinessProfile, RatingSummary } from '../../src/types';
+import type { Campaign, InfluencerProfile, OwnBusinessProfile, RatingSummary } from '../../src/types';
 
 type Browsable = InfluencerProfile & { rating: RatingSummary };
 
 /**
- * Restaurangens ingång.
+ * Företagets ingång.
  *
  * Tidigare landade ett nytt företagskonto direkt i kampanjguiden och kastades
  * sedan in i en kortlek. Man fick alltså binda sig innan man sett om det ens
@@ -38,6 +38,7 @@ export default function BusinessDiscover() {
   const { user } = useAuth();
   const [category, setCategory] = useState<Category | null>(null);
   const [nearby, setNearby] = useState(true);
+  const [pickingDeck, setPickingDeck] = useState(false);
 
   const profile = useQuery({
     queryKey: ['own-business'],
@@ -57,6 +58,22 @@ export default function BusinessDiscover() {
   });
 
   const data = creators.data ?? [];
+
+  // Kortleken hör till en kampanj – den är där högersvepet får en betydelse.
+  // Med en enda publicerad kampanj hoppar vi över frågan.
+  const campaigns = useQuery({
+    queryKey: ['campaigns', 'mine', 'ACTIVE'],
+    queryFn: () => api.get<Campaign[]>('/campaigns/mine?status=ACTIVE'),
+  });
+  const active = campaigns.data ?? [];
+
+  const openDeck = () => {
+    if (active.length === 1 && active[0]) {
+      router.push(`/discover/${active[0].id}`);
+      return;
+    }
+    setPickingDeck((current) => !current);
+  };
 
   return (
     <Screen>
@@ -84,6 +101,18 @@ export default function BusinessDiscover() {
               sköt ned första kreatören under skärmkanten, och utbudet är det
               man kom hit för att se.
             */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Fråga Pacta om vem du ska välja"
+              onPress={() => router.push('/assistant')}
+              style={({ pressed }) => [styles.advisor, pressed && styles.pressed]}
+            >
+              <SparkIcon size={18} color={colors.accent} />
+              <Text style={styles.advisorText}>
+                Osäker på vem du ska välja? Fråga Pacta.
+              </Text>
+            </Pressable>
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -105,6 +134,35 @@ export default function BusinessDiscover() {
                 />
               ))}
             </ScrollView>
+
+            {active.length > 0 ? (
+              <>
+                <Button
+                  label={pickingDeck ? 'Välj kampanj att svepa i' : 'Svep i stället'}
+                  variant="secondary"
+                  icon={<DeckIcon size={18} color={colors.text} />}
+                  onPress={openDeck}
+                />
+                {pickingDeck
+                  ? active.map((campaign) => (
+                      <Pressable
+                        key={campaign.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Svep bland kreatörer för ${campaign.title}`}
+                        onPress={() => router.push(`/discover/${campaign.id}`)}
+                        style={({ pressed }) => [styles.deckRow, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.deckTitle} numberOfLines={1}>
+                          {campaign.title}
+                        </Text>
+                        <Text style={styles.meta}>
+                          {campaign.slots - campaign.slotsFilled} lediga platser
+                        </Text>
+                      </Pressable>
+                    ))
+                  : null}
+              </>
+            ) : null}
 
             {creators.isLoading ? <Loading /> : null}
             {creators.isError ? (
@@ -203,6 +261,22 @@ const styles = StyleSheet.create({
   header: { gap: spacing.md, paddingBottom: spacing.sm },
   headerScroll: { marginHorizontal: -spacing.base },
   filterRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.base },
+  deckRow: {
+    backgroundColor: colors.raised,
+    borderRadius: radius.control,
+    padding: spacing.md,
+    gap: 2,
+  },
+  deckTitle: { ...type.listTitle, color: colors.text },
+  advisor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.tint,
+    borderRadius: radius.control,
+    padding: spacing.md,
+  },
+  advisorText: { ...type.bodySmall, color: colors.text, flex: 1 },
 
   row: {
     flexDirection: 'row',

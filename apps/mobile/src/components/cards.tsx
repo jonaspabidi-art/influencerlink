@@ -35,7 +35,7 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
 
   return (
     <View style={styles.card}>
-      {/* Tonen följer restaurangen, så alla deras kort hänger ihop. */}
+      {/* Tonen följer företaget, så alla deras kort hänger ihop. */}
       <Photo
         uri={campaign.imageUrl ?? campaign.businessLogoUrl}
         name={campaign.businessName}
@@ -102,7 +102,7 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
   );
 }
 
-/** Kreatörskortet i restaurangens kortlek. Samma mekanik, andra innehåll. */
+/** Kreatörskortet i företagets kortlek. Samma mekanik, andra innehåll. */
 export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
   const { influencer } = card;
   const niches = influencer.categories

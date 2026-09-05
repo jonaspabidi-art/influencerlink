@@ -1029,7 +1029,9 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     color: colors.text,
     fontFamily: type.body.fontFamily,
-    fontSize: 15,
+    // Minst 16 px. Safari på iPhone zoomar in på ett fält med mindre text när
+    // det får fokus, och sidan hoppar då till dubbel storlek.
+    fontSize: 16,
     minHeight: 48,
   },
   inputMultiline: { minHeight: 110, textAlignVertical: 'top' },

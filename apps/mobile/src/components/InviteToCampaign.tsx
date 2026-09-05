@@ -10,7 +10,7 @@ import { CheckIcon, PlusIcon } from './icons';
 import { Body, Button, Card, Label } from './ui';
 
 /**
- * Bjuder in en kreatör till en av restaurangens kampanjer.
+ * Bjuder in en kreatör till en av företagets kampanjer.
  *
  * Ett högersvep, fast från profilen i stället för kortleken. Utan det här var
  * Upptäck en katalog man inte kunde handla ur: man hittade rätt person och

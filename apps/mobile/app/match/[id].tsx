@@ -4,17 +4,27 @@ import { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { ChevronRightIcon } from '../../src/components/icons';
 import {
+  Avatar,
   Body,
   Button,
   Card,
   Field,
   Header,
   Loading,
+  Logo,
   Rating,
   Screen,
+  StatusBadge,
 } from '../../src/components/ui';
-import { formatSek, kronorToOre, oreToKronor } from '../../src/format';
+import {
+  CONTRACT_STATUS_LABELS,
+  describeNextStep,
+  formatSek,
+  kronorToOre,
+  oreToKronor,
+} from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
 import type { Campaign, ChatMessage, Contract, Match } from '../../src/types';
 
@@ -58,6 +68,12 @@ export default function MatchDetail() {
     },
   });
 
+  const contract = useQuery({
+    queryKey: ['contract', match?.contractId],
+    queryFn: () => api.get<Contract>(`/contracts/${match?.contractId}`),
+    enabled: Boolean(match?.contractId),
+  });
+
   const createContract = useMutation({
     mutationFn: () =>
       api.post<Contract>('/contracts', {
@@ -96,29 +112,12 @@ export default function MatchDetail() {
         onBack={() => router.back()}
       />
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Omdömen om ${counterpart}`}
-        onPress={() =>
-          router.push({
-            pathname: '/reviews/[type]/[id]',
-            params: {
-              type: isBusiness ? 'influencer' : 'business',
-              id: isBusiness ? match.influencer.id : match.campaign.businessId,
-              name: counterpart,
-            },
-          })
-        }
-        style={({ pressed }) => [styles.reviewLink, pressed && styles.pressed]}
-      >
-        <Rating
-          summary={match.counterpartRating}
-          size={13}
-          emptyLabel="Inga omdömen än"
-        />
-        <Text style={styles.reviewLinkLabel}>Läs omdömen</Text>
-      </Pressable>
-
+      {/*
+        En rad i stället för två. Bilden gör det tydligt vem man skriver med,
+        och hela raden leder till profilen – det var två separata länkar förut,
+        en till omdömena och en till profilen, och ingen av dem visade vem det
+        var man pratade med.
+      */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Öppna ${counterpart}s profil`}
@@ -135,19 +134,60 @@ export default function MatchDetail() {
                 },
           )
         }
-        style={({ pressed }) => [styles.reviewLink, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.counterpart, pressed && styles.pressed]}
       >
-        <Text style={styles.reviewLinkLabel}>
-          {isBusiness ? 'Se profil och innehåll' : 'Se stället'}
-        </Text>
+        {isBusiness ? (
+          <Avatar uri={match.influencer.avatarUrl} name={counterpart} size={44} />
+        ) : (
+          <Logo uri={match.campaign.businessLogoUrl} name={counterpart} size={44} />
+        )}
+        <View style={styles.counterpartText}>
+          <Text style={styles.counterpartName}>{counterpart}</Text>
+          <Rating summary={match.counterpartRating} size={12} emptyLabel="Inga omdömen än" />
+        </View>
+        <ChevronRightIcon size={18} color={colors.dim} />
       </Pressable>
 
       <View style={styles.actionArea}>
         {match.contractId ? (
-          <Button
-            label="Öppna avtalet"
-            onPress={() => router.push(`/contract/${match.contractId}`)}
-          />
+          /*
+            Avtalet i korthet, inte bara en knapp. Parterna pratar här och
+            behöver veta var det står utan att först gå in i det.
+          */
+          <Card tone="raised">
+            <View style={styles.contractHead}>
+              <Text style={styles.actionTitle}>Avtalet</Text>
+              {contract.data ? (
+                <StatusBadge
+                  label={CONTRACT_STATUS_LABELS[contract.data.status]}
+                  tone={contract.data.status === 'COMPLETED' ? 'done' : 'active'}
+                />
+              ) : null}
+            </View>
+            {contract.data ? (
+              <>
+                <Text style={styles.contractAmount}>
+                  {formatSek(isBusiness ? contract.data.fee : contract.data.payout)}
+                  <Text style={styles.hint}>
+                    {isBusiness ? ' att betala' : ' till dig efter avgift'}
+                  </Text>
+                </Text>
+                <Text style={styles.hint}>
+                  {describeNextStep(
+                    contract.data.status,
+                    isBusiness,
+                    isBusiness
+                      ? contract.data.signedByBusinessAt !== null
+                      : contract.data.signedByInfluencerAt !== null,
+                  )}
+                </Text>
+              </>
+            ) : null}
+            <Button
+              label="Öppna avtalet"
+              onPress={() => router.push(`/contract/${match.contractId}`)}
+            />
+          </Card>
         ) : isBusiness ? (
           showContractForm ? (
             <Card tone="primary">
@@ -191,7 +231,7 @@ export default function MatchDetail() {
         ) : (
           <Card tone="raised">
             <Text style={styles.hint}>
-              Restaurangen skickar avtalet när ni kommit överens. Du signerar med BankID innan
+              Företaget skickar avtalet när ni kommit överens. Du signerar med BankID innan
               något blir bindande.
             </Text>
           </Card>
@@ -205,10 +245,25 @@ export default function MatchDetail() {
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const mine = item.senderId === user?.id;
+          if (mine) {
+            return (
+              <View style={[styles.bubble, styles.bubbleMine]}>
+                <Text style={styles.messageMine}>{item.body}</Text>
+              </View>
+            );
+          }
+          // Bilden bredvid bubblan, inte namnet ovanför: man ser vem det är
+          // utan att läsa, och det blir en rad mindre per meddelande.
           return (
-            <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-              {!mine ? <Text style={styles.sender}>{item.senderName}</Text> : null}
-              <Text style={mine ? styles.messageMine : styles.messageTheirs}>{item.body}</Text>
+            <View style={styles.theirRow}>
+              {isBusiness ? (
+                <Avatar uri={match.influencer.avatarUrl} name={item.senderName} size={28} />
+              ) : (
+                <Logo uri={match.campaign.businessLogoUrl} name={item.senderName} size={28} />
+              )}
+              <View style={[styles.bubble, styles.bubbleTheirs]}>
+                <Text style={styles.messageTheirs}>{item.body}</Text>
+              </View>
             </View>
           );
         }}
@@ -240,6 +295,24 @@ export default function MatchDetail() {
 }
 
 const styles = StyleSheet.create({
+  counterpart: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+  },
+  counterpartText: { flex: 1, gap: 2 },
+  contractHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  contractAmount: { fontFamily: type.amountSmall.fontFamily, fontSize: 20, color: colors.text },
+  counterpartName: { ...type.listTitle, color: colors.text },
+  theirRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+
   reviewLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -290,7 +363,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
     fontFamily: type.bodySmall.fontFamily,
-    fontSize: 15,
+    // Minst 16 px, annars zoomar Safari på iPhone in vid fokus.
+    fontSize: 16,
     color: colors.text,
   },
   sendButton: { paddingHorizontal: spacing.base },

@@ -71,7 +71,7 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             <Text style={styles.emptyText}>
               {role === 'BUSINESS'
                 ? 'Öppna en matchning och skicka ett avtal när ni kommit överens om upplägget. Avtalet signeras med BankID av båda parter.'
-                : 'När restaurangen skickat ett avtal hamnar det här. Du signerar med BankID och pengarna spärras innan du börjar jobba.'}
+                : 'När företaget skickat ett avtal hamnar det här. Du signerar med BankID och pengarna spärras innan du börjar jobba.'}
             </Text>
             <Button
               label={role === 'BUSINESS' ? 'Till matchningar' : 'Till matchningar'}

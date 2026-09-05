@@ -22,8 +22,8 @@ import type { Contract, PayoutStatus } from '../../src/types';
 /** Stegen i förklaringen av hur pengarna når kreatören. */
 const PAYOUT_STEPS = [
   'Ni signerar avtalet med BankID.',
-  'Restaurangen betalar in arvodet. Beloppet ligger spärrat hos oss.',
-  'Du levererar, restaurangen godkänner och pengarna är hos dig inom 1–2 bankdagar.',
+  'Företaget betalar in arvodet. Beloppet ligger spärrat hos oss.',
+  'Du levererar, företaget godkänner och pengarna är hos dig inom 1–2 bankdagar.',
 ];
 
 export default function Wallet() {

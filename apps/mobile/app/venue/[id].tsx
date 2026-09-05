@@ -21,10 +21,10 @@ import { colors, radius, spacing, type } from '../../src/theme';
 import type { ProfileReviews, VenueProfile } from '../../src/types';
 
 /**
- * Restaurangen, så som kreatören ser den.
+ * Företaget, så som kreatören ser det.
  *
  * Motsvarigheten till kreatörsprofilen. Kreatören ser annars bara en rubrik
- * och en logotyp, och ska ändå avgöra om stället är värt en dag av hennes tid.
+ * och en logotyp, och ska ändå avgöra om uppdraget är värt en dag av hennes tid.
  * Här finns lokalen, vad de sagt om sig själva, vad andra tyckt om att jobba
  * med dem, och vad de söker just nu.
  */
@@ -49,11 +49,11 @@ export default function VenueProfileScreen() {
 
   return (
     <ScrollScreen contentStyle={styles.content}>
-      <Header title={data?.companyName ?? name ?? 'Restaurang'} onBack={() => router.back()} />
+      <Header title={data?.companyName ?? name ?? 'Företag'} onBack={() => router.back()} />
 
       {venue.isLoading ? <Loading /> : null}
       {venue.isError ? (
-        <ErrorState message="Kunde inte hämta stället." onRetry={() => void venue.refetch()} />
+        <ErrorState message="Kunde inte hämta företaget." onRetry={() => void venue.refetch()} />
       ) : null}
 
       {data ? (
@@ -96,7 +96,7 @@ export default function VenueProfileScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHead}>
                 <GridIcon size={18} color={colors.muted} />
-                <Text style={styles.sectionTitle}>Stället</Text>
+                <Text style={styles.sectionTitle}>Bilder</Text>
               </View>
               {/* I sidled: bilderna får vara stora nog att säga något. */}
               <ScrollView

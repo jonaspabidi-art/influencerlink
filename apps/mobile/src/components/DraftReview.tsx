@@ -10,7 +10,7 @@ import { Body, Button, Card, Field, Label, Loading, StatusBadge, type StatusTone
 import { VideoPlayer } from './VideoPlayer';
 
 /**
- * Utkastet: kreatören lämnar filmen för godkännande, restaurangen svarar.
+ * Utkastet: kreatören lämnar filmen för godkännande, företaget svarar.
  *
  * Filen går direkt till lagringen med en signerad adress – den passerar aldrig
  * vårt API. Först när den ligger uppe sparar vi raden, så en avbruten
@@ -114,7 +114,7 @@ export function DraftReview({
   const latest = list[0];
   const isCreator = role === 'INFLUENCER';
   const canUpload = isCreator && contractStatus === 'ACTIVE';
-  // En ny version behövs bara när restaurangen bett om en ändring, eller när
+  // En ny version behövs bara när företaget bett om en ändring, eller när
   // inget lämnats än. Ett godkänt utkast ska inte bytas ut i tysthet.
   const needsNewVersion = !latest || latest.status === 'CHANGES_REQUESTED';
 
@@ -125,7 +125,7 @@ export function DraftReview({
       {list.length === 0 ? (
         <Body>
           {isCreator
-            ? 'Lämna filmen här innan du publicerar. Restaurangen får se den och godkänna, och slipper överraskningar.'
+            ? 'Lämna filmen här innan du publicerar. Företaget får se den och godkänna, och slipper överraskningar.'
             : 'Kreatören har inte lämnat något utkast än. Du får en chans att se filmen innan den publiceras.'}
         </Body>
       ) : null}
@@ -158,7 +158,7 @@ export function DraftReview({
 
           {draft.reviewNote ? (
             <View style={styles.reviewNote}>
-              <Text style={styles.reviewNoteLabel}>Restaurangen skrev</Text>
+              <Text style={styles.reviewNoteLabel}>Företaget skrev</Text>
               <Text style={styles.note}>{draft.reviewNote}</Text>
             </View>
           ) : null}
@@ -200,7 +200,7 @@ export function DraftReview({
       {canUpload && needsNewVersion ? (
         <>
           <Field
-            label="Medskick till restaurangen"
+            label="Medskick till företaget"
             value={note}
             onChangeText={setNote}
             placeholder="Frivilligt, t.ex. vilken musik som ligger under"
