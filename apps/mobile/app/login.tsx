@@ -211,6 +211,17 @@ export default function Login() {
         <Text style={styles.footnoteText}>Plattformsavgift 12 %. Inga avgifter innan avtal.</Text>
       </View>
 
+      {/* Måste gå att nå utan konto – både granskare och besökare läser dem här. */}
+      <View style={styles.legalRow}>
+        <Text style={styles.legalLink} onPress={() => router.push('/terms')}>
+          Användarvillkor
+        </Text>
+        <Text style={styles.footnoteText}>·</Text>
+        <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>
+          Integritetspolicy
+        </Text>
+      </View>
+
       <DemoBanner />
     </ScrollScreen>
   );
@@ -294,6 +305,8 @@ const styles = StyleSheet.create({
   demoName: { ...type.listTitle, fontSize: 15, color: colors.text },
   demoSummary: { ...type.secondary, color: colors.muted },
 
+  legalRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm },
+  legalLink: { ...type.secondary, color: colors.primary },
   footnote: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   footnoteText: { ...type.secondary, color: colors.muted },
 });
