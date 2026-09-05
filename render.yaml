@@ -2,7 +2,7 @@
 # Databasen ligger hos Supabase; här körs bara API:et.
 services:
   - type: web
-    name: influencerlink-api
+    name: pacta-api
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .

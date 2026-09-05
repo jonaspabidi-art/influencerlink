@@ -116,7 +116,7 @@ export default function InfluencerSwipe() {
         keyExtractor={(card) => card.campaign.id}
         renderCard={(card) => <CampaignSwipeCard card={card} />}
         onSwipe={(card, direction) => swipe.mutate({ campaignId: card.campaign.id, direction })}
-        trustText="Arvodet spärras hos InfluencerLink"
+        trustText="Arvodet spärras hos Pacta"
         onExhausted={() => void feed.refetch()}
       />
     </Screen>

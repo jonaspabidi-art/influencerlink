@@ -1,4 +1,4 @@
-import type { Category, DeliverableKind, Platform } from '@influencerlink/shared';
+import type { Category, DeliverableKind, Platform } from '@pacta/shared';
 import {
   campaignDraftRequestSchema,
   campaignInputSchema,
@@ -8,7 +8,7 @@ import {
   deliverableKindSchema,
   platformSchema,
   problemSchema,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';

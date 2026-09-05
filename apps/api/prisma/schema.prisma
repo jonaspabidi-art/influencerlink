@@ -1,4 +1,4 @@
-// Datamodell för InfluencerLink.
+// Datamodell för Pacta.
 // Alla belopp lagras i öre (Int) för att undvika flyttalsfel.
 
 generator client {

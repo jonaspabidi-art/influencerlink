@@ -1,7 +1,7 @@
-# Handoff: InfluencerLink — mobilapp (iOS/Android, React Native)
+# Handoff: Pacta — mobilapp (iOS/Android, React Native)
 
 ## Overview
-InfluencerLink är en svensk marknadsplats där restauranger och innehållskreatörer hittar
+Pacta är en svensk marknadsplats där restauranger och innehållskreatörer hittar
 varandra och ingår betalda samarbeten. Båda parter swipar; vid ömsesidigt intresse uppstår
 en matchning med chatt. Legitimering och avtalssignering sker med BankID. Arvodet betalas in
 till ett spärrat konto (escrow) hos plattformen och betalas ut när restaurangen godkänt
@@ -157,7 +157,7 @@ Kort (surface, border, radius 12, overflow hidden):
    Göteborg" 13 positive · brief 14/1.5 (text, 82 % opacitet) · leverabeltaggar.
 3. Fot (1 px topborder, padding 12/16): plattformsrutor 28 × 28 radius 5 (aktiv full
    opacitet, inaktiv muted) och "Sista ansökan 17 sep." 13 muted.
-Under kortleken: trygghetsrad (hänglås + "Arvodet spärras hos InfluencerLink") och de två
+Under kortleken: trygghetsrad (hänglås + "Arvodet spärras hos Pacta") och de två
 svepknapparna (64 rund outline med kryss, 76 rund primary med bock).
 Flikrad: Upptäck / Matchningar / Avtal / Plånbok.
 
@@ -335,7 +335,7 @@ Saknas bild ska ytan bli en tom \`photo\`-färgad yta (ingen ikon, ingen text) �
 Ikoner: streckikoner enligt avsnittet Ikoner. Typsnitt: Instrument Sans.
 
 ## Files
-- \`InfluencerLink.dc.html\` — hela prototypen, alla 17 lägen. Öppna i webbläsare;
+- \`Pacta.dc.html\` — hela prototypen, alla 17 lägen. Öppna i webbläsare;
   vänsterspalten växlar skärm, tema och primärfärg, och A/B-växlaren ovanför telefonen
   växlar variant på matchningen, kampanjguidens steg 1 och onboarding.
 - \`support.js\` — runtime som prototypen behöver för att köra. Ingen designinformation.

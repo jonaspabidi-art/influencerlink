@@ -1,7 +1,7 @@
 import fastifyJwt from '@fastify/jwt';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
-import type { Role } from '@influencerlink/shared';
+import type { Role } from '@pacta/shared';
 import { forbidden, unauthorized } from '../lib/errors.js';
 
 export interface SessionPayload {

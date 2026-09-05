@@ -15,8 +15,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build -w @influencerlink/shared
-      - run: npm run db:generate -w @influencerlink/api
+      - run: npm run build -w @pacta/shared
+      - run: npm run db:generate -w @pacta/api
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/db
       - run: npm run typecheck

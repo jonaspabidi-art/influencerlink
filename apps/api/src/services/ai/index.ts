@@ -8,7 +8,7 @@ import {
   rankInfluencers,
   type CampaignCandidate,
   type InfluencerCandidate,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import { z } from 'zod';
 import type { Config } from '../../config.js';
 import {

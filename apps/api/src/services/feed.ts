@@ -1,5 +1,5 @@
-import type { CampaignCandidate, InfluencerCandidate } from '@influencerlink/shared';
-import { checkEligibility } from '@influencerlink/shared';
+import type { CampaignCandidate, InfluencerCandidate } from '@pacta/shared';
+import { checkEligibility } from '@pacta/shared';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { aggregateStats } from './social.js';
 

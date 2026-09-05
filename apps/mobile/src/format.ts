@@ -1,6 +1,6 @@
-import type { Category, DeliverableKind, Platform } from '@influencerlink/shared';
+import type { Category, DeliverableKind, Platform } from '@pacta/shared';
 
-export { formatSek, kronorToOre, oreToKronor } from '@influencerlink/shared';
+export { formatSek, kronorToOre, oreToKronor } from '@pacta/shared';
 
 /** Följarantal kort: 48 000 → "48 tn". */
 export function formatFollowers(followers: number): string {

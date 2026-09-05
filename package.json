@@ -1,5 +1,5 @@
 {
-  "name": "influencerlink",
+  "name": "pacta",
   "private": true,
   "version": "0.1.0",
   "description": "Matchningsplattform för restauranger och influencers – swipe, kampanjer, kontrakt, BankID och Stripe-utbetalningar.",
@@ -11,14 +11,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm run build -w @influencerlink/shared && npm run build -w @influencerlink/api",
+    "build": "npm run build -w @pacta/shared && npm run build -w @pacta/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test -w @influencerlink/api",
+    "test": "npm run test -w @pacta/api",
     "lint": "npm run typecheck",
-    "dev:api": "npm run dev -w @influencerlink/api",
-    "dev:mobile": "npm run start -w @influencerlink/mobile",
+    "dev:api": "npm run dev -w @pacta/api",
+    "dev:mobile": "npm run start -w @pacta/mobile",
     "db:up": "docker compose up -d db",
-    "db:migrate": "npm run db:migrate -w @influencerlink/api",
-    "db:seed": "npm run db:seed -w @influencerlink/api"
+    "db:migrate": "npm run db:migrate -w @pacta/api",
+    "db:seed": "npm run db:seed -w @pacta/api"
   }
 }

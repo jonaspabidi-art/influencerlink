@@ -1,4 +1,4 @@
-import { emptyRatingSummary, problemSchema, ratingSummarySchema } from '@influencerlink/shared';
+import { emptyRatingSummary, problemSchema, ratingSummarySchema } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';

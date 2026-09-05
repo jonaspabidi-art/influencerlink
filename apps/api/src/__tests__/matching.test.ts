@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CampaignCandidate, InfluencerCandidate } from '@influencerlink/shared';
+import type { CampaignCandidate, InfluencerCandidate } from '@pacta/shared';
 import {
   budgetScore,
   checkEligibility,
@@ -8,7 +8,7 @@ import {
   nicheOverlap,
   rankInfluencers,
   scoreMatch,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 
 const campaign: CampaignCandidate = {
   id: 'kampanj-1',

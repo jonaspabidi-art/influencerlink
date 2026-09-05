@@ -8,7 +8,7 @@ Uppdatera den när skärmar tillkommer.
 
 ---
 
-Designa mobilappen **InfluencerLink** — en svensk marknadsplats där restauranger
+Designa mobilappen **Pacta** — en svensk marknadsplats där restauranger
 och innehållskreatörer hittar varandra och ingår betalda samarbeten. iOS och
 Android, React Native. All text på svenska.
 

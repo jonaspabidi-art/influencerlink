@@ -1,4 +1,4 @@
-import { problemSchema, swipeInputSchema, swipeResponseSchema } from '@influencerlink/shared';
+import { problemSchema, swipeInputSchema, swipeResponseSchema } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { badRequest, forbidden, notFound } from '../lib/errors.js';

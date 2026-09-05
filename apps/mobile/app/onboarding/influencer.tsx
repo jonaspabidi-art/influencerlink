@@ -1,4 +1,4 @@
-import { CATEGORIES, PLATFORMS, type Category, type Platform } from '@influencerlink/shared';
+import { CATEGORIES, PLATFORMS, type Category, type Platform } from '@pacta/shared';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';

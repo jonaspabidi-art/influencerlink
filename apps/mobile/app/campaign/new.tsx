@@ -6,7 +6,7 @@ import {
   type CompensationType,
   type DeliverableKind,
   type Platform,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';

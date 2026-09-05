@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { CURRENCY } from '@influencerlink/shared';
+import { CURRENCY } from '@pacta/shared';
 import type { Config } from '../../config.js';
 import { failedDependency } from '../../lib/errors.js';
 import type {

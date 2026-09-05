@@ -1,4 +1,4 @@
-import { REVIEW_CRITERIA, REVIEW_CRITERION_LABELS, formatRating } from '@influencerlink/shared';
+import { REVIEW_CRITERIA, REVIEW_CRITERION_LABELS, formatRating } from '@pacta/shared';
 import { StyleSheet, Text, View } from 'react-native';
 import { formatDate } from '../format';
 import { colors, radius, spacing, type } from '../theme';

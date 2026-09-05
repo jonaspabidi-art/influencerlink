@@ -1,4 +1,4 @@
-import type { Ore } from '@influencerlink/shared';
+import type { Ore } from '@pacta/shared';
 
 export interface ConnectOnboarding {
   accountId: string;

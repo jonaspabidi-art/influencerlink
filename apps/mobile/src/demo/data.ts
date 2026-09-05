@@ -1,4 +1,4 @@
-import type { Category, DeliverableKind, Platform } from '@influencerlink/shared';
+import type { Category, DeliverableKind, Platform } from '@pacta/shared';
 
 /**
  * Demodata som speglar prisma/seed.ts, men körs helt i appen. Används när

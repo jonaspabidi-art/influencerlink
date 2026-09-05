@@ -1,4 +1,4 @@
-# InfluencerLink
+# Pacta
 
 Mobil plattform där restauranger och influencers hittar varandra genom att swipa,
 kommer överens i appen, signerar avtal med BankID och får betalt via Stripe.
@@ -54,7 +54,7 @@ fördelningen per stjärnsteg. Ett skickat omdöme går inte att ändra.
 ## Design
 
 Appen följer designen i `docs/design/HANDOFF.md` (prototypen ligger bredvid som
-`InfluencerLink.dc.html`). Ljust tema är valt; den mörka paletten finns kvar i
+`Pacta.dc.html`). Ljust tema är valt; den mörka paletten finns kvar i
 `apps/mobile/src/theme.ts` och kan slås på genom att byta vilken palett
 `colors` pekar på.
 
@@ -142,8 +142,8 @@ statusflödena och avtalstexten är samma kod som i det riktiga API:et.
 
 ```bash
 npm install
-npm run build -w @influencerlink/shared
-npm run export:web -w @influencerlink/mobile   # statisk webbversion i apps/mobile/dist
+npm run build -w @pacta/shared
+npm run export:web -w @pacta/mobile   # statisk webbversion i apps/mobile/dist
 ```
 
 Lägg upp `apps/mobile/dist` på Netlify, Vercel eller Cloudflare Pages och öppna
@@ -173,7 +173,7 @@ Kräver Node 22 och Docker.
 
 ```bash
 npm install
-npm run build -w @influencerlink/shared
+npm run build -w @pacta/shared
 
 cp apps/api/.env.example apps/api/.env
 # Sätt JWT_SECRET, PERSONAL_NUMBER_HMAC_KEY (minst 32 tecken) och

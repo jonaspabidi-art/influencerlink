@@ -9,7 +9,7 @@ import type {
   RatingSummary,
   ReviewScores,
   Role,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 
 export type { RatingSummary, ReviewScores };
 

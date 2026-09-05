@@ -1,5 +1,5 @@
-import type { SwipeActor, SwipeDirection } from '@influencerlink/shared';
-import { scoreMatch } from '@influencerlink/shared';
+import type { SwipeActor, SwipeDirection } from '@pacta/shared';
+import { scoreMatch } from '@pacta/shared';
 import type { PrismaClient } from '@prisma/client';
 import { badRequest, notFound } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';

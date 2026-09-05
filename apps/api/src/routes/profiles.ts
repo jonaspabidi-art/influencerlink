@@ -1,4 +1,4 @@
-import type { Category, Platform } from '@influencerlink/shared';
+import type { Category, Platform } from '@pacta/shared';
 import {
   businessProfileInputSchema,
   categorySchema,
@@ -7,7 +7,7 @@ import {
   problemSchema,
   socialAccountInputSchema,
   socialAccountSchema,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';

@@ -11,7 +11,7 @@ import {
   overallRating,
   reviewDeadline,
   summarizeRatings,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import { describe, expect, it } from 'vitest';
 
 const DAY = 86_400_000;

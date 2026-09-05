@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import type { CampaignCandidate, InfluencerCandidate } from '@influencerlink/shared';
+import type { CampaignCandidate, InfluencerCandidate } from '@pacta/shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { Config } from '../config.js';
 import { AiService, clampAdjustment } from '../services/ai/index.js';

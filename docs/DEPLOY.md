@@ -15,8 +15,8 @@ att nollställa demon.
 
 ```bash
 npm install
-npm run build -w @influencerlink/shared
-npm run export:web -w @influencerlink/mobile     # bygger till apps/mobile/dist
+npm run build -w @pacta/shared
+npm run export:web -w @pacta/mobile     # bygger till apps/mobile/dist
 ```
 
 Lägg upp `apps/mobile/dist` var som helst som serverar statiska filer –
@@ -105,7 +105,7 @@ någon som redan loggat in.
 Peka sedan webbappen på API:et vid bygget:
 
 ```bash
-EXPO_PUBLIC_API_URL=https://ditt-api.up.railway.app npm run export:web -w @influencerlink/mobile
+EXPO_PUBLIC_API_URL=https://ditt-api.up.railway.app npm run export:web -w @pacta/mobile
 ```
 
 Adressen bakas in i bundlen vid bygget. Metro cachar den, så `export:web`

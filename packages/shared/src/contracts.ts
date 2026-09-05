@@ -57,7 +57,7 @@ export function renderContractTerms(input: ContractTermsInput): string {
 **Uppdragsgivare:** ${input.businessName}, org.nr ${formatOrgNumber(input.businessOrgNumber)}
 **Uppdragstagare:** ${input.influencerName}, personnr ${input.influencerPersonalNumberMask}
 
-Avtalet ingås via InfluencerLink, som förmedlar uppdraget och hanterar betalningen.
+Avtalet ingås via Pacta, som förmedlar uppdraget och hanterar betalningen.
 
 ## 2. Uppdraget
 
@@ -79,7 +79,7 @@ Materialet ska vara publicerat senast **${dateFormatter.format(input.dueDate)}**
 | Plattformsavgift (${(input.platformFeeBps / 100).toFixed(1)} %) | −${formatSek(platformFee)} |
 | **Utbetalas till uppdragstagaren** | **${formatSek(net)}** |
 
-Uppdragsgivaren betalar in hela arvodet till InfluencerLink när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har ${input.reviewDays} dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
+Uppdragsgivaren betalar in hela arvodet till Pacta när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har ${input.reviewDays} dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
 
 Angivna belopp är exklusive mervärdesskatt. Uppdragstagaren ansvarar själv för skatt och eventuella sociala avgifter på ersättningen.
 
@@ -97,7 +97,7 @@ Avbokas uppdraget av uppdragsgivaren senare än 48 timmar före avtalad publicer
 
 ## 7. Personuppgifter
 
-Parterna behandlar personuppgifter enligt dataskyddsförordningen (EU) 2016/679. InfluencerLink är personuppgiftsansvarig för uppgifterna i plattformen.
+Parterna behandlar personuppgifter enligt dataskyddsförordningen (EU) 2016/679. Pacta är personuppgiftsansvarig för uppgifterna i plattformen.
 
 ## 8. Tvist
 

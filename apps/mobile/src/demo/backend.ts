@@ -17,7 +17,7 @@ import {
   type Platform,
   type RatingSummary,
   type ReviewScores,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import {
   DEMO_APPLICATIONS,
   DEMO_BUSINESSES,
@@ -138,7 +138,7 @@ interface State {
 const DEMO_BANKID_MS = 1400;
 const PLATFORM_FEE_BPS = 1200;
 
-const STORAGE_KEY = 'influencerlink.demo';
+const STORAGE_KEY = 'pacta.demo';
 
 /**
  * På webben sparas demoläget i localStorage, så att svep och avtal överlever

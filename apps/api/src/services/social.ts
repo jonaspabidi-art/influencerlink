@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { Platform } from '@influencerlink/shared';
+import type { Platform } from '@pacta/shared';
 
 export interface SocialStats {
   externalId: string;

@@ -1,4 +1,4 @@
-import { splitFee } from '@influencerlink/shared';
+import { splitFee } from '@pacta/shared';
 import type { PrismaClient } from '@prisma/client';
 import { badRequest, conflict } from '../../lib/errors.js';
 import { recordAudit } from '../../lib/audit.js';

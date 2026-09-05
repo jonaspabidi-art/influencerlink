@@ -5,7 +5,7 @@ export {
   describeDeliverable,
   renderContractTerms,
   type ContractTermsInput,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 
 /**
  * Kontrollsumman som signeras med BankID och sparas tillsammans med signaturen.

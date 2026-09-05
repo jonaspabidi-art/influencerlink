@@ -3,7 +3,7 @@ import { api, setAccessToken, setUnauthorizedHandler } from './api';
 import { getItem, removeItem, setItem } from './storage';
 import type { SessionUser } from './types';
 
-const TOKEN_KEY = 'influencerlink.session';
+const TOKEN_KEY = 'pacta.session';
 
 interface AuthState {
   user: SessionUser | null;

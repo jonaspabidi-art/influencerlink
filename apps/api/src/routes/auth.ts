@@ -6,7 +6,7 @@ import {
   problemSchema,
   registerInputSchema,
   roleSchema,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -76,7 +76,7 @@ export async function authRoutes(app: FastifyInstance, services: Services): Prom
         orderRef: session.orderRef,
         autoStartToken: session.autoStartToken,
         qrData: buildQrData(order.qrStartToken, order.qrStartSecret, session.startedAt),
-        autoStartUrl: buildAutoStartUrl(order.autoStartToken, 'influencerlink://bankid/return'),
+        autoStartUrl: buildAutoStartUrl(order.autoStartToken, 'pacta://bankid/return'),
       };
     },
   );

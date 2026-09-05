@@ -104,9 +104,9 @@ describe('buildQrData', () => {
 
 describe('buildAutoStartUrl', () => {
   it('kodar retur-URL:en så att djuplänken överlever', () => {
-    const url = buildAutoStartUrl('abc', 'influencerlink://bankid/return');
+    const url = buildAutoStartUrl('abc', 'pacta://bankid/return');
     expect(url).toContain('autostarttoken=abc');
-    expect(url).toContain('redirect=influencerlink%3A%2F%2Fbankid%2Freturn');
+    expect(url).toContain('redirect=pacta%3A%2F%2Fbankid%2Freturn');
   });
 });
 

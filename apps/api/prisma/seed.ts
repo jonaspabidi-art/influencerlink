@@ -1,9 +1,9 @@
 /**
  * Demodata för lokal utveckling: två restauranger, sex influencers med
  * kopplade konton, tre kampanjer och ett samarbete som redan hunnit bli
- * matchning. Kör med `npm run db:seed -w @influencerlink/api`.
+ * matchning. Kör med `npm run db:seed -w @pacta/api`.
  */
-import { overallRating, renderContractTerms, reviewDeadline, splitFee } from '@influencerlink/shared';
+import { overallRating, renderContractTerms, reviewDeadline, splitFee } from '@pacta/shared';
 import { PrismaClient, type Category, type Platform } from '@prisma/client';
 import { createHmac } from 'node:crypto';
 

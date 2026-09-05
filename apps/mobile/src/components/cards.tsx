@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import type { Category, Platform } from '@influencerlink/shared';
+import type { Category, Platform } from '@pacta/shared';
 import {
   CATEGORY_LABELS,
   DELIVERABLE_LABELS,

@@ -1,4 +1,4 @@
-import type { DeliverableKind } from '@influencerlink/shared';
+import type { DeliverableKind } from '@pacta/shared';
 import {
   contractInputSchema,
   contractStatusSchema,
@@ -7,7 +7,7 @@ import {
   paymentStatusSchema,
   problemSchema,
   splitFee,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';

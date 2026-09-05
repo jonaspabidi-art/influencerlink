@@ -1,5 +1,5 @@
 /**
- * Designtokens från handoffen "InfluencerLink — mobilapp".
+ * Designtokens från handoffen "Pacta — mobilapp".
  *
  * Ljust tema är standard. Mörkt finns kvar som färdig variant och väljs med
  * `resolveTheme`, så att appen kan följa systeminställningen när vi vill.

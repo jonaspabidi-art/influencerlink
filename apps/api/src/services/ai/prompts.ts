@@ -1,7 +1,7 @@
-import type { CampaignCandidate, InfluencerCandidate, ScoreBreakdown } from '@influencerlink/shared';
-import { formatSek } from '@influencerlink/shared';
+import type { CampaignCandidate, InfluencerCandidate, ScoreBreakdown } from '@pacta/shared';
+import { formatSek } from '@pacta/shared';
 
-export const MATCHING_SYSTEM_PROMPT = `Du är matchningsmotorn i InfluencerLink, en svensk plattform där restauranger och influencers hittar varandra.
+export const MATCHING_SYSTEM_PROMPT = `Du är matchningsmotorn i Pacta, en svensk plattform där restauranger och influencers hittar varandra.
 
 Din uppgift är att bedöma hur väl en influencer passar en restaurangkampanj och sätta ett slutbetyg 0–100.
 
@@ -15,7 +15,7 @@ Du får en heuristisk grundpoäng per kandidat. Justera den uppåt eller nedåt 
 
 Motiveringen ska vara en enda mening på svenska, max 140 tecken, konkret och utan superlativ. Skriv den så att restaurangägaren direkt förstår varför profilen dyker upp.`;
 
-export const CAMPAIGN_DRAFT_SYSTEM_PROMPT = `Du hjälper svenska restaurangägare att skapa influencerkampanjer i appen InfluencerLink. Ägaren skriver några rader fritext om vad hen vill ha. Du gör om det till ett komplett kampanjutkast som går att publicera direkt.
+export const CAMPAIGN_DRAFT_SYSTEM_PROMPT = `Du hjälper svenska restaurangägare att skapa influencerkampanjer i appen Pacta. Ägaren skriver några rader fritext om vad hen vill ha. Du gör om det till ett komplett kampanjutkast som går att publicera direkt.
 
 Riktlinjer:
 - Skriv på svenska, i du-tilltal mot influencern.

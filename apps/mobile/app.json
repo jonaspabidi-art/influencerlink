@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "InfluencerLink",
-    "slug": "influencerlink",
-    "scheme": "influencerlink",
+    "name": "Pacta",
+    "slug": "pacta",
+    "scheme": "pacta",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -12,7 +12,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "se.influencerlink.app",
+      "bundleIdentifier": "se.pacta.app",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
         "LSApplicationQueriesSchemes": [
@@ -21,14 +21,14 @@
       }
     },
     "android": {
-      "package": "se.influencerlink.app",
+      "package": "se.pacta.app",
       "edgeToEdgeEnabled": true,
       "intentFilters": [
         {
           "action": "VIEW",
           "data": [
             {
-              "scheme": "influencerlink"
+              "scheme": "pacta"
             }
           ],
           "category": [
@@ -56,8 +56,8 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "InfluencerLink",
-      "shortName": "InfluencerLink",
+      "name": "Pacta",
+      "shortName": "Pacta",
       "description": "Restauranger och kreatörer hittar varandra, med avtal och spärrad betalning.",
       "display": "standalone",
       "themeColor": "#E8543F",

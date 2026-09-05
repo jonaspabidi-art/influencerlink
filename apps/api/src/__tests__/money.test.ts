@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PLATFORM_FEE_BPS, formatSek, kronorToOre, oreToKronor, splitFee } from '@influencerlink/shared';
+import { PLATFORM_FEE_BPS, formatSek, kronorToOre, oreToKronor, splitFee } from '@pacta/shared';
 
 describe('splitFee', () => {
   it('delar upp beloppet så att avgift och utbetalning summerar till bruttot', () => {

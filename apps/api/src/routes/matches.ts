@@ -6,7 +6,7 @@ import {
   messageInputSchema,
   problemSchema,
   ratingSummarySchema,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';

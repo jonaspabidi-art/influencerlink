@@ -1,5 +1,5 @@
 {
-  "name": "@influencerlink/mobile",
+  "name": "@pacta/mobile",
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
@@ -15,7 +15,7 @@
     "@expo-google-fonts/instrument-sans": "^0.4.2",
     "@expo/metro-runtime": "~57.0.15",
     "@expo/vector-icons": "^15.0.2",
-    "@influencerlink/shared": "*",
+    "@pacta/shared": "*",
     "@tanstack/react-query": "^5.62.0",
     "expo": "^57.0.0",
     "expo-constants": "~57.0.17",

@@ -6,7 +6,7 @@ import {
   summarizeRatings,
   type RatingSummary,
   type ReviewInput,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';

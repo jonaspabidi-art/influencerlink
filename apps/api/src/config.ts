@@ -30,8 +30,8 @@ const envSchema = z.object({
 
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  STRIPE_CONNECT_RETURN_URL: z.string().default('influencerlink://stripe/return'),
-  STRIPE_CONNECT_REFRESH_URL: z.string().default('influencerlink://stripe/refresh'),
+  STRIPE_CONNECT_RETURN_URL: z.string().default('pacta://stripe/return'),
+  STRIPE_CONNECT_REFRESH_URL: z.string().default('pacta://stripe/refresh'),
 
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-sonnet-5'),

@@ -6,7 +6,7 @@ import type {
   InfluencerCandidate,
   Platform,
   ScoreBreakdown,
-} from '@influencerlink/shared';
+} from '@pacta/shared';
 
 export interface RankedInfluencer {
   influencer: InfluencerCandidate;

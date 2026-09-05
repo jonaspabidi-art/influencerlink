@@ -15,7 +15,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatRating, type RatingSummary } from '@influencerlink/shared';
+import { formatRating, type RatingSummary } from '@pacta/shared';
 import { HEIGHTS, HIT_SLOP, colors, radius, spacing, type } from '../theme';
 import { CheckIcon, ChevronLeftIcon, LockIcon, StarIcon } from './icons';
 

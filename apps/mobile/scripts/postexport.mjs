@@ -17,7 +17,7 @@ const tags = [
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
-  '<meta name="apple-mobile-web-app-title" content="InfluencerLink">',
+  '<meta name="apple-mobile-web-app-title" content="Pacta">',
 ];
 
 // viewport-fit=cover ger appen hela skärmen på telefoner med hak.
