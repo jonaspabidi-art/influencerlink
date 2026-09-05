@@ -1,5 +1,16 @@
 import { createHash } from 'node:crypto';
 import type { Platform } from '@pacta/shared';
+import type { Config } from '../../config.js';
+import { TikTokClient } from './tiktok.js';
+
+/**
+ * Varifrån siffrorna kommer.
+ *
+ * Skillnaden är hela poängen: en restaurang som betalar utifrån räckvidd måste
+ * kunna se om talet kommer från plattformen eller är något vi genererat medan
+ * integrationen väntar på godkännande.
+ */
+export type StatsSource = 'PLATFORM' | 'DEMO';
 
 export interface SocialStats {
   externalId: string;
@@ -9,6 +20,9 @@ export interface SocialStats {
   /** Andel, t.ex. 0.045 för 4,5 %. */
   engagementRate: number;
   verified: boolean;
+  source: StatsSource;
+  /** Antal videor snittvisningarna bygger på. Noll när siffran inte är mätt. */
+  sampleSize?: number;
   accessToken?: string;
   refreshToken?: string;
   tokenExpiresAt?: Date;
@@ -64,6 +78,7 @@ export class DemoSocialProvider implements SocialProvider {
       avgViews,
       engagementRate,
       verified: followers > 50_000,
+      source: 'DEMO',
     };
   }
 }
@@ -87,4 +102,21 @@ export function aggregateStats(
     avgViews,
     engagementRate: followers > 0 ? Number((weighted / followers).toFixed(4)) : 0,
   };
+}
+
+/**
+ * TikTok-klienten, eller null när appen inte är godkänd och konfigurerad än.
+ *
+ * Kopplingen mot TikTok går inte genom `SocialProvider`: den kräver att
+ * kreatören loggar in hos TikTok först, och har därför egna slutpunkter.
+ * Instagram och YouTube använder fortfarande demoleverantören, och deras
+ * siffror märks som ogranskade hela vägen ut i appen.
+ */
+export function createTikTokClient(config: Config): TikTokClient | null {
+  if (!config.TIKTOK_CLIENT_KEY || !config.TIKTOK_CLIENT_SECRET) return null;
+  return new TikTokClient({
+    clientKey: config.TIKTOK_CLIENT_KEY,
+    clientSecret: config.TIKTOK_CLIENT_SECRET,
+    redirectUri: config.TIKTOK_REDIRECT_URI,
+  });
 }

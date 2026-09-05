@@ -10,17 +10,23 @@ import {
   showcaseItemSchema,
   socialAccountInputSchema,
   socialAccountSchema,
+  tiktokAuthorizationSchema,
+  tiktokConnectSchema,
 } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { encryptToken } from '../lib/crypto.js';
-import { badRequest, conflict, notFound } from '../lib/errors.js';
+import { randomUUID } from 'node:crypto';
+import { signState, verifyState } from '../lib/oauthstate.js';
+import { badRequest, conflict, notFound, serviceUnavailable } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { buildSessionPayload } from '../lib/session.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
-import { aggregateStats } from '../services/social.js';
+import { aggregateStats } from '../services/social/index.js';
+import { createTikTokClient, type StatsSource } from '../services/social/index.js';
+import { TikTokError } from '../services/social/tiktok.js';
 
 const publicInfluencerSchema = z.object({
   id: z.string(),
@@ -66,7 +72,8 @@ const publicBusinessSchema = z.object({
 
 export async function profileRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();
-  const { prisma, social, payments, oembed } = services;
+  const { prisma, social, payments, oembed, config } = services;
+  const tiktok = createTikTokClient(config);
 
   // --- Influencerprofil ---------------------------------------------------
 
@@ -160,6 +167,8 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
           avgViews: stats.avgViews,
           engagementRate: stats.engagementRate,
           verified: stats.verified,
+          statsSource: stats.source,
+          sampleSize: stats.sampleSize ?? null,
           accessTokenEnc: stats.accessToken ? encryptToken(stats.accessToken) : null,
           refreshTokenEnc: stats.refreshToken ? encryptToken(stats.refreshToken) : null,
           tokenExpiresAt: stats.tokenExpiresAt ?? null,
@@ -172,6 +181,8 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
           avgViews: stats.avgViews,
           engagementRate: stats.engagementRate,
           verified: stats.verified,
+          statsSource: stats.source,
+          sampleSize: stats.sampleSize ?? null,
           lastSyncedAt: new Date(),
         },
       });
@@ -213,6 +224,8 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
           avgViews: stats.avgViews,
           engagementRate: stats.engagementRate,
           verified: stats.verified,
+          statsSource: stats.source,
+          sampleSize: stats.sampleSize ?? null,
           lastSyncedAt: new Date(),
         },
       });
@@ -238,6 +251,120 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       return { deleted: true as const };
     },
   );
+
+  // --- TikTok-inloggning ---------------------------------------------------
+
+  // Ett användarnamn räcker inte: TikTok lämnar bara ut följarantal och
+  // videostatistik för den som själv loggat in och gett appen tillstånd.
+  // Därför den här omvägen, och därför är siffrorna efteråt värda något.
+
+  server.post(
+    '/me/influencer-profile/socials/tiktok/authorize',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        response: { 200: tiktokAuthorizationSchema, 503: problemSchema },
+      },
+    },
+    async (request) => {
+      const client = requireTikTok();
+      const influencerId = requireProfileId(request);
+      const { url, codeVerifier } = client.authorizationUrl(randomUUID());
+
+      // PKCE-verifieraren måste överleva till inväxlingen. Den signeras in i
+      // state i stället för att lagras, så det inte behövs någon städning av
+      // påbörjade inloggningar som aldrig slutfördes.
+      const state = signState(
+        { purpose: 'tiktok', userId: request.user.sub, influencerId, codeVerifier },
+        config.JWT_SECRET,
+      );
+
+      const authorizeUrl = new URL(url);
+      authorizeUrl.searchParams.set('state', state);
+      return { url: authorizeUrl.toString(), state };
+    },
+  );
+
+  server.post(
+    '/me/influencer-profile/socials/tiktok/connect',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        body: tiktokConnectSchema,
+        response: { 200: socialAccountSchema, 400: problemSchema, 503: problemSchema },
+      },
+    },
+    async (request) => {
+      const client = requireTikTok();
+      const influencerId = requireProfileId(request);
+
+      const claims = verifyState(request.body.state, config.JWT_SECRET);
+      if (!claims) throw badRequest('Inloggningen tog för lång tid. Försök igen.');
+      // Koden ska lösas in av samma konto som startade inloggningen.
+      if (
+        claims.purpose !== 'tiktok' ||
+        claims.userId !== request.user.sub ||
+        claims.influencerId !== influencerId
+      ) {
+        throw badRequest('Inloggningen hörde till ett annat konto.');
+      }
+
+      let stats;
+      try {
+        const tokens = await client.exchangeCode(request.body.code, claims.codeVerifier);
+        stats = await client.statsFor(tokens);
+      } catch (caught) {
+        if (caught instanceof TikTokError) {
+          request.log.warn({ code: caught.code }, 'TikTok-koppling misslyckades');
+          throw badRequest(`Kopplingen till TikTok gick inte igenom: ${caught.message}`);
+        }
+        throw caught;
+      }
+
+      const data = {
+        handle: stats.handle,
+        externalId: stats.externalId,
+        followers: stats.followers,
+        avgViews: stats.avgViews,
+        engagementRate: stats.engagementRate,
+        verified: stats.verified,
+        statsSource: stats.source,
+        sampleSize: stats.sampleSize ?? null,
+        accessTokenEnc: stats.accessToken ? encryptToken(stats.accessToken) : null,
+        refreshTokenEnc: stats.refreshToken ? encryptToken(stats.refreshToken) : null,
+        tokenExpiresAt: stats.tokenExpiresAt ?? null,
+        lastSyncedAt: new Date(),
+      };
+
+      const account = await prisma.socialAccount.upsert({
+        where: { influencerId_platform: { influencerId, platform: 'TIKTOK' } },
+        create: { influencerId, platform: 'TIKTOK', ...data },
+        update: data,
+      });
+
+      await prisma.user.update({
+        where: { id: request.user.sub },
+        data: { onboardingComplete: true },
+      });
+      await recordAudit(prisma, {
+        userId: request.user.sub,
+        action: 'social.tiktok_connected',
+        entityType: 'SocialAccount',
+        entityId: account.id,
+      });
+
+      return toPublicSocialAccount(account);
+    },
+  );
+
+  function requireTikTok() {
+    if (!tiktok) {
+      throw serviceUnavailable(
+        'TikTok-inloggningen är inte påslagen än. Koppla kontot med användarnamn så länge.',
+      );
+    }
+    return tiktok;
+  }
 
   // --- Uppvisat innehåll --------------------------------------------------
 
@@ -525,6 +652,8 @@ type SocialAccountRow = {
   avgViews: number;
   engagementRate: number;
   verified: boolean;
+  statsSource: StatsSource;
+  sampleSize: number | null;
   lastSyncedAt: Date | null;
 };
 
@@ -537,6 +666,8 @@ function toPublicSocialAccount(account: SocialAccountRow) {
     avgViews: account.avgViews,
     engagementRate: account.engagementRate,
     verified: account.verified,
+    statsSource: account.statsSource,
+    sampleSize: account.sampleSize,
     lastSyncedAt: account.lastSyncedAt?.toISOString() ?? null,
   };
 }

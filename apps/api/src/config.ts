@@ -33,6 +33,15 @@ const envSchema = z.object({
   STRIPE_CONNECT_RETURN_URL: z.string().default('pacta://stripe/return'),
   STRIPE_CONNECT_REFRESH_URL: z.string().default('pacta://stripe/refresh'),
 
+  /**
+   * TikTok Login Kit. Finns bara när appen är godkänd i utvecklarportalen.
+   * Utan dem kopplas TikTok som förut, med siffror märkta som ogranskade.
+   */
+  TIKTOK_CLIENT_KEY: z.string().optional(),
+  TIKTOK_CLIENT_SECRET: z.string().optional(),
+  /** Måste stämma tecken för tecken med adressen i utvecklarportalen. */
+  TIKTOK_REDIRECT_URI: z.string().url().default('https://pacta.se/auth/tiktok/callback'),
+
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-sonnet-5'),
 

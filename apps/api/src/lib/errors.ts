@@ -28,3 +28,7 @@ export const conflict = (message: string, details?: unknown) =>
 
 export const failedDependency = (message: string, details?: unknown) =>
   new AppError(424, 'integration_error', message, details);
+
+/** Funktionen finns i koden men är inte påslagen i den här miljön. */
+export const serviceUnavailable = (message: string) =>
+  new AppError(503, 'service_unavailable', message);

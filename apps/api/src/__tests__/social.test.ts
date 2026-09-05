@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DemoSocialProvider, aggregateStats } from '../services/social.js';
+import { DemoSocialProvider, aggregateStats } from '../services/social/index.js';
 
 describe('DemoSocialProvider', () => {
   const provider = new DemoSocialProvider();

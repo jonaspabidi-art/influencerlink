@@ -7,7 +7,7 @@ import { MockBankIdClient } from '../services/bankid/index.js';
 import { AiService } from '../services/ai/index.js';
 import { MockPaymentProvider } from '../services/payments/index.js';
 import { StubOembedProvider } from '../services/oembed.js';
-import { DemoSocialProvider } from '../services/social.js';
+import { DemoSocialProvider } from '../services/social/index.js';
 import type { Services } from '../services/index.js';
 
 const config = {

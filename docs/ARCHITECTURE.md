@@ -98,6 +98,22 @@ och bio går att ändra i efterhand. Företaget läser sin egen profil via
 `GET /me/business-profile`, som till skillnad från `GET /businesses/:id` även
 innehåller organisationsnummer och adress.
 
+## Sociala konton
+
+Följarantal och visningar hämtas från plattformen efter att kreatören loggat in
+där. Det finns ingen väg dit från ett användarnamn – siffrorna tillhör
+kreatören, och TikTok lämnar bara ut dem till den som fått tillstånd.
+
+`SocialAccount.statsSource` säger varifrån siffrorna kommer: `PLATFORM` när de
+är hämtade, `DEMO` när de är genererade ur användarnamnet i väntan på att
+integrationen godkänns. Skillnaden syns i appen, eftersom en restaurang som
+betalar utifrån räckvidd måste kunna se vilket det är.
+
+TikTok-klienten ligger i `services/social/tiktok.ts` och beskrivs i
+[TIKTOK.md](TIKTOK.md). State för omdirigeringen signeras med egen HMAC i
+`lib/oauthstate.ts` och inte med sessionstokenen: ett state som gick att
+verifiera som en session vore en inloggning på vift.
+
 ## Bilder
 
 Profilbilder, logotyper och kampanjbilder laddas upp med `POST /media` och

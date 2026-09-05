@@ -4,7 +4,7 @@ import { AiService } from './ai/index.js';
 import { createBankIdClient, type BankIdClient } from './bankid/index.js';
 import { createPaymentProvider, type PaymentProvider } from './payments/index.js';
 import { HttpOembedProvider, type OembedProvider } from './oembed.js';
-import { DemoSocialProvider, type SocialProvider } from './social.js';
+import { DemoSocialProvider, type SocialProvider } from './social/index.js';
 
 /**
  * Alla externa beroenden samlade på ett ställe. Routes tar emot den här

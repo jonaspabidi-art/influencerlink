@@ -1,7 +1,7 @@
 import type { CampaignCandidate, InfluencerCandidate } from '@pacta/shared';
 import { checkEligibility } from '@pacta/shared';
 import type { Prisma, PrismaClient } from '@prisma/client';
-import { aggregateStats } from './social.js';
+import { aggregateStats } from './social/index.js';
 
 /** Så många kandidater hämtas ur databasen innan rangordningen. */
 const CANDIDATE_POOL = 100;

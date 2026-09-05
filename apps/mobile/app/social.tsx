@@ -2,7 +2,8 @@ import { PLATFORMS, recogniseLink, type Platform } from '@pacta/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform as RNPlatform, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { api, ApiError } from '../src/api';
 import { useAuth } from '../src/auth';
 import { CheckIcon, CloseIcon, PlusIcon } from '../src/components/icons';
@@ -64,6 +65,27 @@ export default function SocialAccounts() {
       void profile.refetch();
     },
     onError: (caught) => fail(caught, 'Kunde inte koppla kontot.'),
+  });
+
+  /**
+   * TikTok-inloggningen. Servern bygger adressen – klientnyckeln ska aldrig
+   * ligga i appen – och vi skickar kreatören dit.
+   */
+  const startTikTok = useMutation({
+    mutationFn: () =>
+      api.post<{ url: string; state: string }>(
+        '/me/influencer-profile/socials/tiktok/authorize',
+      ),
+    onSuccess: async ({ url }) => {
+      if (RNPlatform.OS === 'web') {
+        // Hel omdirigering i stället för ett fönster som blockeras av
+        // webbläsaren. State ligger i adressen och överlever hoppet.
+        window.location.assign(url);
+        return;
+      }
+      await WebBrowser.openAuthSessionAsync(url);
+    },
+    onError: (caught) => fail(caught, 'Kunde inte starta inloggningen hos TikTok.'),
   });
 
   const disconnect = useMutation({
@@ -128,9 +150,18 @@ export default function SocialAccounts() {
               <View style={styles.accountText}>
                 <Text style={styles.accountTitle}>{PLATFORM_LABELS[platform]}</Text>
                 {account ? (
-                  <Text style={styles.connected}>
-                    @{account.handle} · {formatFollowers(account.followers)} följare
-                  </Text>
+                  <>
+                    <Text style={styles.connected}>
+                      @{account.handle} · {formatFollowers(account.followers)} följare
+                    </Text>
+                    <Text style={styles.secondary}>
+                      {account.statsSource === 'PLATFORM'
+                        ? `${formatFollowers(account.avgViews)} visningar i snitt${
+                            account.sampleSize ? ` på senaste ${account.sampleSize}` : ''
+                          } · hämtat från ${PLATFORM_LABELS[platform]}`
+                        : 'Siffrorna är ogranskade tills kontot kopplas med inloggning'}
+                    </Text>
+                  </>
                 ) : (
                   <Text style={styles.secondary}>Inte kopplat</Text>
                 )}
@@ -147,6 +178,21 @@ export default function SocialAccounts() {
                   disconnect.mutate(account.id);
                 }}
               />
+            ) : platform === 'TIKTOK' ? (
+              <>
+                <Body>
+                  Du loggar in hos TikTok. Vi läser ditt följarantal och visningarna på dina
+                  senaste videor – vi kan inte publicera något åt dig.
+                </Body>
+                <Button
+                  label="Logga in med TikTok"
+                  onPress={() => {
+                    setError(null);
+                    startTikTok.mutate();
+                  }}
+                  loading={startTikTok.isPending}
+                />
+              </>
             ) : (
               <>
                 <Field

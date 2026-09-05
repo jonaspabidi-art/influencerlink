@@ -63,6 +63,10 @@ export interface SocialAccount {
   avgViews: number;
   engagementRate: number;
   verified: boolean;
+  /** PLATFORM = hämtat från plattformen. DEMO = genererat, säger inget. */
+  statsSource: 'PLATFORM' | 'DEMO';
+  /** Antal videor snittvisningarna bygger på. */
+  sampleSize: number | null;
   lastSyncedAt: string | null;
 }
 

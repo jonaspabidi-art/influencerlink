@@ -95,6 +95,14 @@ export const socialAccountInputSchema = z.object({
 });
 export type SocialAccountInput = z.infer<typeof socialAccountInputSchema>;
 
+/**
+ * Varifrån siffrorna kommer. PLATFORM betyder hämtat från plattformen efter
+ * att kreatören loggat in; DEMO att de är genererade i väntan på att
+ * integrationen godkänns, och alltså inte säger något om verkligheten.
+ */
+export const statsSourceSchema = z.enum(['PLATFORM', 'DEMO']);
+export type StatsSource = z.infer<typeof statsSourceSchema>;
+
 export const socialAccountSchema = z.object({
   id: cuidSchema,
   platform: platformSchema,
@@ -103,8 +111,23 @@ export const socialAccountSchema = z.object({
   avgViews: z.number().int().min(0),
   engagementRate: z.number().min(0).max(1),
   verified: z.boolean(),
+  statsSource: statsSourceSchema,
+  /** Antal videor snittvisningarna bygger på. Null när siffran inte är mätt. */
+  sampleSize: z.number().int().nullable(),
   lastSyncedAt: z.string().datetime().nullable(),
 });
+
+/** Startad TikTok-inloggning: adressen kreatören ska till, och vårt state. */
+export const tiktokAuthorizationSchema = z.object({
+  url: z.string(),
+  state: z.string(),
+});
+
+export const tiktokConnectSchema = z.object({
+  code: z.string().min(1),
+  state: z.string().min(1),
+});
+export type TikTokConnectInput = z.infer<typeof tiktokConnectSchema>;
 
 export const showcaseItemInputSchema = z.object({
   /** Adressen kreatören klistrat in, precis som den kopierades. */

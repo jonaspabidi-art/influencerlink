@@ -25,6 +25,18 @@ enum Platform {
   YOUTUBE
 }
 
+/// Varifrån ett kontos siffror kommer.
+///
+/// Skillnaden syns i appen: en restaurang som betalar utifrån räckvidd ska
+/// kunna se om talet kommer från plattformen eller är genererat medan
+/// integrationen väntar på godkännande.
+enum StatsSource {
+  /// Hämtat från plattformens API efter att kreatören loggat in.
+  PLATFORM
+  /// Genererat ur användarnamnet. Ingen koppling till verkligheten.
+  DEMO
+}
+
 enum Category {
   RESTAURANG
   CAFE
@@ -195,6 +207,11 @@ model SocialAccount {
   engagementRate Float @default(0)
 
   verified Boolean @default(false)
+  /// Var siffrorna kommer ifrån. Befintliga rader är genererade.
+  statsSource StatsSource @default(DEMO)
+  /// Antal videor snittvisningarna bygger på. Null när siffran inte är mätt.
+  sampleSize  Int?
+
   /// Krypterad OAuth-token. Läses aldrig ut via API:et.
   accessTokenEnc String?
   refreshTokenEnc String?

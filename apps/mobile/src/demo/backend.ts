@@ -691,6 +691,16 @@ route('PUT', '/me/influencer-profile', ({ body }) => {
   };
 });
 
+// Demoläget har ingen TikTok-app att logga in mot. Svaret säger det rakt ut i
+// stället för att låtsas att kopplingen lyckades.
+route('POST', '/me/influencer-profile/socials/tiktok/authorize', () => {
+  throw new DemoError(
+    503,
+    'service_unavailable',
+    'TikTok-inloggningen fungerar inte i demoläget. Koppla kontot med användarnamn så länge.',
+  );
+});
+
 route('POST', '/me/influencer-profile/socials', ({ body }) => {
   const user = currentUser();
   const profile = influencerById(requireProfileId(user));
@@ -714,7 +724,7 @@ route('POST', '/me/influencer-profile/socials', ({ body }) => {
   };
   profile.socials = [...profile.socials.filter((item) => item.platform !== platform), account];
   user.onboardingComplete = true;
-  return { ...account, lastSyncedAt: new Date().toISOString() };
+  return { ...account, statsSource: 'DEMO', sampleSize: null, lastSyncedAt: new Date().toISOString() };
 });
 
 // Samma tre slutpunkter som API:et. Demoläget har ingen uppkoppling, så
@@ -746,7 +756,12 @@ route('GET', '/influencers/:id', ({ params }) => {
     avgViews: stats.avgViews,
     engagementRate: stats.engagementRate,
     platforms: profile.socials.map((account) => account.platform),
-    socialAccounts: profile.socials.map((account) => ({ ...account, lastSyncedAt: null })),
+    socialAccounts: profile.socials.map((account) => ({
+      ...account,
+      statsSource: 'DEMO',
+      sampleSize: null,
+      lastSyncedAt: null,
+    })),
     showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
   };
 });
