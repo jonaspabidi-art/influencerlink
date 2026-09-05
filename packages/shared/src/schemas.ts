@@ -123,6 +123,26 @@ export const tiktokAuthorizationSchema = z.object({
   state: z.string(),
 });
 
+/** En video kreatören kan välja att visa upp på sin profil. */
+export const tiktokVideoSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  coverImageUrl: z.string().nullable(),
+  shareUrl: z.string().nullable(),
+  views: z.number().int(),
+  /** Sekunder sedan epoch, som TikTok anger det. */
+  createdAt: z.number().int(),
+  /** Om videon redan ligger på profilen. */
+  showcased: z.boolean(),
+});
+export type TikTokVideo = z.infer<typeof tiktokVideoSchema>;
+
+/** Vilka videor som ska synas på profilen. Listan ersätter den tidigare. */
+export const showcaseSelectionSchema = z.object({
+  videoIds: z.array(z.string().min(1)).max(12),
+});
+export type ShowcaseSelection = z.infer<typeof showcaseSelectionSchema>;
+
 export const tiktokConnectSchema = z.object({
   code: z.string().min(1),
   state: z.string().min(1),

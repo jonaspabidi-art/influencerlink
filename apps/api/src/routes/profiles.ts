@@ -8,15 +8,17 @@ import {
   recogniseLink,
   showcaseItemInputSchema,
   showcaseItemSchema,
+  showcaseSelectionSchema,
   socialAccountInputSchema,
   socialAccountSchema,
   tiktokAuthorizationSchema,
   tiktokConnectSchema,
+  tiktokVideoSchema,
 } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { encryptToken } from '../lib/crypto.js';
+import { decryptToken, encryptToken } from '../lib/crypto.js';
 import { randomUUID } from 'node:crypto';
 import { signState, verifyState } from '../lib/oauthstate.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../lib/errors.js';
@@ -26,7 +28,7 @@ import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { aggregateStats } from '../services/social/index.js';
 import { createTikTokClient, type StatsSource } from '../services/social/index.js';
-import { TikTokError } from '../services/social/tiktok.js';
+import { TikTokError, type TikTokClient } from '../services/social/tiktok.js';
 
 const publicInfluencerSchema = z.object({
   id: z.string(),
@@ -356,6 +358,127 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       return toPublicSocialAccount(account);
     },
   );
+
+  // --- Videor att visa upp på profilen ------------------------------------
+
+  server.get(
+    '/me/influencer-profile/tiktok/videos',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        response: { 200: z.array(tiktokVideoSchema), 400: problemSchema, 503: problemSchema },
+      },
+    },
+    async (request) => {
+      const client = requireTikTok();
+      const influencerId = requireProfileId(request);
+      const accessToken = await tiktokAccessToken(client, influencerId);
+
+      const [videos, showcased] = await Promise.all([
+        client.recentVideos(accessToken),
+        prisma.showcaseItem.findMany({
+          where: { influencerId, platform: 'TIKTOK' },
+          select: { postId: true },
+        }),
+      ]);
+
+      const chosen = new Set(showcased.map((item) => item.postId));
+      return videos.map((video) => ({ ...video, showcased: chosen.has(video.id) }));
+    },
+  );
+
+  server.put(
+    '/me/influencer-profile/showcase/tiktok',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        body: showcaseSelectionSchema,
+        response: { 200: z.array(showcaseItemSchema), 400: problemSchema, 503: problemSchema },
+      },
+    },
+    async (request) => {
+      const client = requireTikTok();
+      const influencerId = requireProfileId(request);
+      const accessToken = await tiktokAccessToken(client, influencerId);
+
+      const videos = await client.recentVideos(accessToken);
+      const byId = new Map(videos.map((video) => [video.id, video]));
+      // Ordningen kreatören valde i är den ordning de visas i.
+      const chosen = request.body.videoIds
+        .map((id) => byId.get(id))
+        .filter((video): video is NonNullable<typeof video> => video !== undefined);
+
+      const handle = (await prisma.socialAccount.findUnique({
+        where: { influencerId_platform: { influencerId, platform: 'TIKTOK' } },
+        select: { handle: true },
+      }))?.handle ?? '';
+
+      // Valet ersätter det tidigare: det kreatören ser i rutnätet är det som
+      // ligger på profilen efteråt, inget mer.
+      await prisma.$transaction([
+        prisma.showcaseItem.deleteMany({ where: { influencerId, platform: 'TIKTOK' } }),
+        prisma.showcaseItem.createMany({
+          data: chosen.map((video, index) => ({
+            influencerId,
+            platform: 'TIKTOK' as const,
+            url: video.shareUrl ?? `https://www.tiktok.com/@${handle}/video/${video.id}`,
+            postId: video.id,
+            title: video.title,
+            authorName: handle,
+            thumbnailUrl: video.coverImageUrl,
+            refreshedAt: new Date(),
+            position: index,
+          })),
+        }),
+      ]);
+
+      const saved = await prisma.showcaseItem.findMany({
+        where: { influencerId },
+        orderBy: { position: 'asc' },
+      });
+      return saved.map(toPublicShowcaseItem);
+    },
+  );
+
+  /**
+   * Giltig åtkomsttoken för kreatörens TikTok-konto.
+   *
+   * Tokenen gäller ett dygn. Har den gått ut förnyas den här, vid anropet, i
+   * stället för av ett schemalagt jobb – kreatören märker ingenting, och det
+   * finns inget att glömma att sätta upp.
+   */
+  async function tiktokAccessToken(client: TikTokClient, influencerId: string): Promise<string> {
+    const account = await prisma.socialAccount.findUnique({
+      where: { influencerId_platform: { influencerId, platform: 'TIKTOK' } },
+    });
+    if (!account?.accessTokenEnc || account.statsSource !== 'PLATFORM') {
+      throw badRequest('Logga in med TikTok först, så kan vi hämta dina videor.');
+    }
+
+    const expired = account.tokenExpiresAt !== null && account.tokenExpiresAt <= new Date();
+    if (!expired) return decryptToken(account.accessTokenEnc);
+
+    if (!account.refreshTokenEnc) {
+      throw badRequest('Inloggningen hos TikTok har gått ut. Logga in igen.');
+    }
+    try {
+      const tokens = await client.refreshTokens(decryptToken(account.refreshTokenEnc));
+      await prisma.socialAccount.update({
+        where: { id: account.id },
+        data: {
+          accessTokenEnc: encryptToken(tokens.accessToken),
+          refreshTokenEnc: tokens.refreshToken ? encryptToken(tokens.refreshToken) : undefined,
+          tokenExpiresAt: tokens.expiresAt,
+        },
+      });
+      return tokens.accessToken;
+    } catch (caught) {
+      if (caught instanceof TikTokError) {
+        throw badRequest('Inloggningen hos TikTok har gått ut. Logga in igen.');
+      }
+      throw caught;
+    }
+  }
 
   function requireTikTok() {
     if (!tiktok) {

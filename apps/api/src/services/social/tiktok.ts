@@ -59,6 +59,19 @@ export interface TikTokTokens {
   expiresAt: Date;
 }
 
+/** En video som kreatören kan välja att visa upp på sin profil. */
+export interface TikTokVideo {
+  id: string;
+  title: string;
+  /** Miniatyrbilden. TikTok ger en adress som slutar gälla efter ett tag. */
+  coverImageUrl: string | null;
+  /** Permalänken till inlägget. */
+  shareUrl: string | null;
+  views: number;
+  /** Sekunder sedan epoch, som TikTok anger det. */
+  createdAt: number;
+}
+
 /** Statistiken vi räknar fram ur videolistan. */
 export interface VideoStats {
   /** Antal videor snittet bygger på. Färre än VIDEO_SAMPLE_SIZE för nya konton. */
@@ -156,6 +169,38 @@ export class TikTokClient {
   }
 
   /**
+   * Kreatörens senaste videor, med miniatyr och permalänk.
+   *
+   * Används när hon ska välja vilka som ska synas på profilen. Miniatyren
+   * kommer med i svaret, så vi slipper slå upp varje inlägg för sig.
+   */
+  async recentVideos(accessToken: string, limit = 20): Promise<TikTokVideo[]> {
+    const body = await this.request(videoListUrl(), {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ max_count: Math.max(1, Math.min(20, limit)) }),
+    });
+
+    const videos = ((body.data as Record<string, unknown> | undefined)?.videos ?? []) as Array<
+      Record<string, unknown>
+    >;
+    return videos
+      .map((video) => ({
+        id: text(video.id),
+        title: text(video.title),
+        coverImageUrl: https(video.cover_image_url),
+        shareUrl: https(video.share_url),
+        views: count(video.view_count),
+        createdAt: count(video.create_time),
+      }))
+      .filter((video) => video.id !== '')
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  /**
    * Snittvisningar och engagemang på de senaste videorna.
    *
    * Engagemanget räknas mot visningar, inte mot följare: det är det måttet som
@@ -163,13 +208,7 @@ export class TikTokClient {
    * lyfta genom att köpa följare.
    */
   async recentVideoStats(accessToken: string, sampleSize = VIDEO_SAMPLE_SIZE): Promise<VideoStats> {
-    const url = new URL(VIDEO_LIST_URL);
-    url.searchParams.set(
-      'fields',
-      'id,create_time,title,view_count,like_count,comment_count,share_count',
-    );
-
-    const body = await this.request(url.toString(), {
+    const body = await this.request(videoListUrl(), {
       method: 'POST',
       headers: {
         authorization: `Bearer ${accessToken}`,
@@ -302,8 +341,24 @@ function emptyVideoStats(): VideoStats {
   return { sampleSize: 0, avgViews: 0, engagementRate: 0 };
 }
 
+/** Fälten vi ber om ur videolistan. Samma uppsättning för båda anropen. */
+function videoListUrl(): string {
+  const url = new URL(VIDEO_LIST_URL);
+  url.searchParams.set(
+    'fields',
+    'id,create_time,title,cover_image_url,share_url,view_count,like_count,comment_count,share_count',
+  );
+  return url.toString();
+}
+
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+/** Adresser som inte går över https ritas ändå inte av appen. */
+function https(value: unknown): string | null {
+  const url = text(value);
+  return url.startsWith('https://') ? url : null;
 }
 
 /** TikTok skickar ibland tal som strängar. */

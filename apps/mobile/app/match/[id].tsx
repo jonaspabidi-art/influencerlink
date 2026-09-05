@@ -119,6 +119,22 @@ export default function MatchDetail() {
         <Text style={styles.reviewLinkLabel}>Läs omdömen</Text>
       </Pressable>
 
+      {isBusiness ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Öppna ${counterpart}s profil`}
+          onPress={() =>
+            router.push({
+              pathname: '/creator/[id]',
+              params: { id: match.influencer.id, name: counterpart },
+            })
+          }
+          style={({ pressed }) => [styles.reviewLink, pressed && styles.pressed]}
+        >
+          <Text style={styles.reviewLinkLabel}>Se profil och innehåll</Text>
+        </Pressable>
+      ) : null}
+
       <View style={styles.actionArea}>
         {match.contractId ? (
           <Button

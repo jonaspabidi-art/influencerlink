@@ -693,6 +693,14 @@ route('PUT', '/me/influencer-profile', ({ body }) => {
 
 // Demoläget har ingen TikTok-app att logga in mot. Svaret säger det rakt ut i
 // stället för att låtsas att kopplingen lyckades.
+route('GET', '/me/influencer-profile/tiktok/videos', () => {
+  throw new DemoError(
+    400,
+    'bad_request',
+    'Logga in med TikTok först, så kan vi hämta dina videor. Det går inte i demoläget.',
+  );
+});
+
 route('POST', '/me/influencer-profile/socials/tiktok/authorize', () => {
   throw new DemoError(
     503,

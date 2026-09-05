@@ -18,6 +18,7 @@ import {
   Photo,
   ScrollScreen,
 } from '../src/components/ui';
+import { VideoPicker } from '../src/components/VideoPicker';
 import { formatFollowers, PLATFORM_LABELS } from '../src/format';
 import { colors, radius, spacing, type } from '../src/theme';
 import type { InfluencerProfile, ShowcaseItem, SocialAccount } from '../src/types';
@@ -130,6 +131,11 @@ export default function SocialAccounts() {
 
   const accounts = profile.data?.socialAccounts ?? [];
   const items = showcase.data ?? [];
+  // Videorna går bara att lista när kontot är kopplat med inloggning – det är
+  // tokenen därifrån som ger oss åtkomst till listan.
+  const tiktokVerified = accounts.some(
+    (account) => account.platform === 'TIKTOK' && account.statsSource === 'PLATFORM',
+  );
 
   return (
     <ScrollScreen contentStyle={styles.content}>
@@ -169,7 +175,38 @@ export default function SocialAccounts() {
               {account ? <CheckIcon size={18} color={colors.positive} /> : null}
             </View>
 
-            {account ? (
+            {/*
+              Ett konto med ogranskade siffror ska gå att uppgradera på plats.
+              Att först koppla bort och sedan koppla om vore ett onödigt steg,
+              och slutpunkten skriver ändå över den befintliga raden.
+            */}
+            {platform === 'TIKTOK' && account?.statsSource !== 'PLATFORM' ? (
+              <>
+                <Body>
+                  {account
+                    ? 'Logga in hos TikTok så byts de ogranskade siffrorna mot dina riktiga. Kontot du redan angett ligger kvar tills dess.'
+                    : 'Du loggar in hos TikTok. Vi läser ditt följarantal och visningarna på dina senaste videor – vi kan inte publicera något åt dig.'}
+                </Body>
+                <Button
+                  label={account ? 'Verifiera med TikTok-inloggning' : 'Logga in med TikTok'}
+                  onPress={() => {
+                    setError(null);
+                    startTikTok.mutate();
+                  }}
+                  loading={startTikTok.isPending}
+                />
+                {account ? (
+                  <Button
+                    label="Koppla bort"
+                    variant="secondary"
+                    onPress={() => {
+                      setError(null);
+                      disconnect.mutate(account.id);
+                    }}
+                  />
+                ) : null}
+              </>
+            ) : account ? (
               <Button
                 label="Koppla bort"
                 variant="secondary"
@@ -178,21 +215,6 @@ export default function SocialAccounts() {
                   disconnect.mutate(account.id);
                 }}
               />
-            ) : platform === 'TIKTOK' ? (
-              <>
-                <Body>
-                  Du loggar in hos TikTok. Vi läser ditt följarantal och visningarna på dina
-                  senaste videor – vi kan inte publicera något åt dig.
-                </Body>
-                <Button
-                  label="Logga in med TikTok"
-                  onPress={() => {
-                    setError(null);
-                    startTikTok.mutate();
-                  }}
-                  loading={startTikTok.isPending}
-                />
-              </>
             ) : (
               <>
                 <Field
@@ -218,6 +240,12 @@ export default function SocialAccounts() {
           </Card>
         );
       })}
+
+      {tiktokVerified ? (
+        <Card>
+          <VideoPicker />
+        </Card>
+      ) : null}
 
       <View style={styles.section}>
         <Label>DITT INNEHÅLL</Label>

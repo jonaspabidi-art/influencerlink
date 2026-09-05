@@ -70,6 +70,17 @@ export interface SocialAccount {
   lastSyncedAt: string | null;
 }
 
+/** En video kreatören kan välja att visa upp. */
+export interface TikTokVideo {
+  id: string;
+  title: string;
+  coverImageUrl: string | null;
+  shareUrl: string | null;
+  views: number;
+  createdAt: number;
+  showcased: boolean;
+}
+
 /** Ett inlägg kreatören valt att visa upp på sin profil. */
 export interface ShowcaseItem {
   id: string;

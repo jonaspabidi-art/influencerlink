@@ -154,6 +154,20 @@ tomt svar och länken sparas ändå utan bild.
 Kreatörskortet i kortleken visar det första uppvisade inlägget som bildyta och
 faller tillbaka på profilbilden när inget finns.
 
+Med TikTok kopplat behöver kreatören inte klistra in något: `GET
+/me/influencer-profile/tiktok/videos` listar hennes senaste videor med miniatyr,
+och `PUT /me/influencer-profile/showcase/tiktok` sparar de hon valt. Listan
+ersätter den tidigare – det hon ser i rutnätet är det som ligger på profilen
+efteråt. Ordningen hon valde i är ordningen de visas i.
+
+Åtkomsttokenen gäller ett dygn och förnyas vid anropet när den gått ut, inte av
+ett schemalagt jobb. Det finns då inget att glömma att sätta upp, och kreatören
+märker ingenting.
+
+`app/creator/[id].tsx` är profilen en restaurang ser: räckvidd, betyg, pris och
+ett rutnät av innehållet. Den nås från en ansökan, från matchningen, och från
+kreatörens egen profilflik så att hon kan se vad motparten ser.
+
 ## Betalflödet
 
 ```

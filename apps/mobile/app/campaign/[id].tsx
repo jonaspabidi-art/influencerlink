@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { ImagePickerField } from '../../src/components/ImagePickerField';
 import {
@@ -179,16 +179,29 @@ export default function CampaignDetail() {
         ) : null}
         {pending.map((application) => (
           <View key={application.id} style={styles.application}>
-            <View style={styles.applicantRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Öppna ${application.influencer.displayName}s profil`}
+              onPress={() =>
+                router.push({
+                  pathname: '/creator/[id]',
+                  params: {
+                    id: application.influencer.id,
+                    name: application.influencer.displayName,
+                  },
+                })
+              }
+              style={styles.applicantRow}
+            >
               <Avatar uri={application.influencer.avatarUrl} name={application.influencer.displayName} size={40} />
               <View style={styles.applicantText}>
                 <Text style={styles.applicantName}>{application.influencer.displayName}</Text>
-                <Text style={styles.secondary}>{application.influencer.city}</Text>
+                <Text style={styles.secondary}>{application.influencer.city} · se profilen</Text>
               </View>
               {application.proposedFee !== null ? (
                 <Text style={styles.proposedFee}>{formatSek(application.proposedFee)}</Text>
               ) : null}
-            </View>
+            </Pressable>
             <Body>{application.pitch}</Body>
             <View style={styles.applicationActions}>
               <Button

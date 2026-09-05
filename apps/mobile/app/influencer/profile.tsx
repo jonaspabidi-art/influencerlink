@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { LinkIcon, SignOutIcon, StarIcon, UserIcon } from '../../src/components/icons';
+import { GridIcon, LinkIcon, SignOutIcon, StarIcon, UserIcon } from '../../src/components/icons';
 import {
   Avatar,
   Card,
@@ -76,6 +76,17 @@ export default function InfluencerProfileTab() {
       ) : null}
 
       <MenuGroup>
+        <MenuRow
+          icon={<GridIcon size={20} color={colors.primary} />}
+          label="Visa min profil"
+          hint={data ? `${data.showcase.length} klipp` : undefined}
+          onPress={() =>
+            router.push({
+              pathname: '/creator/[id]',
+              params: { id: user?.profileId ?? '', name: data?.displayName ?? '' },
+            })
+          }
+        />
         <MenuRow
           icon={<UserIcon size={20} color={colors.primary} />}
           label="Redigera profil"
