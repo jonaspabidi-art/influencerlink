@@ -26,6 +26,8 @@ Kärnan är `Campaign` × `InfluencerProfile`. Runt det paret hänger:
   ge två matchningar.
 - **`Application`** – influencerns pitch. Räknas som ett högersvep.
 - **`Contract`** → `Signature`, `Delivery`, `Payment`, `Review`.
+- **`ShowcaseItem`** – ett inlägg kreatören valt att visa upp, unik på
+  `(influencerId, url)`.
 - **`Review`** – ett omdöme per part och avtal, unik på
   `(contractId, authorRole)`. Både `influencerId` och `businessId` sparas på
   raden så att betyg kan summeras utan att gå via avtalet och kampanjen.
@@ -76,6 +78,23 @@ ett omdöme de redan läst.
 
 Medelbetyg hämtas med `ratingsFor`, som summerar en hel kortlek i en fråga i
 stället för en per kort.
+
+## Uppvisat innehåll
+
+Tills OAuth mot TikTok och Meta är godkänd klistrar kreatören in länkar själv.
+`recogniseLink` i `packages/shared/src/links.ts` läser adressen – delningslänk,
+kortlänk eller vanlig – och ger plattform, ren adress och inläggs-id. Adressen
+sparas utan spårningsparametrar, så samma inlägg inte kan läggas till två
+gånger under olika adresser.
+
+Miniatyren hämtas av `OembedProvider` i `apps/api/src/services/oembed.ts`.
+TikTok och YouTube svarar utan nyckel; Instagram stängde sin öppna slutpunkt
+2020 och kräver apptoken, så därifrån sparas bara länken. Uppslaget får aldrig
+fälla sparandet: ett borttaget inlägg, en timeout eller ett nätverksfel ger ett
+tomt svar och länken sparas ändå utan bild.
+
+Kreatörskortet i kortleken visar det första uppvisade inlägget som bildyta och
+faller tillbaka på profilbilden när inget finns.
 
 ## Betalflödet
 

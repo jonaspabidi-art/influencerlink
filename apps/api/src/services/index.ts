@@ -3,6 +3,7 @@ import type { Config } from '../config.js';
 import { AiService } from './ai/index.js';
 import { createBankIdClient, type BankIdClient } from './bankid/index.js';
 import { createPaymentProvider, type PaymentProvider } from './payments/index.js';
+import { HttpOembedProvider, type OembedProvider } from './oembed.js';
 import { DemoSocialProvider, type SocialProvider } from './social.js';
 
 /**
@@ -17,6 +18,7 @@ export interface Services {
   payments: PaymentProvider;
   ai: AiService;
   social: SocialProvider;
+  oembed: OembedProvider;
 }
 
 export function createServices(
@@ -31,6 +33,7 @@ export function createServices(
     payments: createPaymentProvider(config),
     ai: new AiService(config),
     social: new DemoSocialProvider(),
+    oembed: new HttpOembedProvider(),
     ...overrides,
   };
 }

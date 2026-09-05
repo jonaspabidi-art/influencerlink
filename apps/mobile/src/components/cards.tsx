@@ -105,9 +105,13 @@ export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
     .slice(0, 2)
     .join(', ');
 
+  // Bildytan visar helst kreatörens eget innehåll. Utan uppvisade inlägg
+  // faller den tillbaka på profilbilden, som tidigare.
+  const hero = influencer.showcase.find((item) => item.thumbnailUrl)?.thumbnailUrl ?? null;
+
   return (
     <View style={styles.card}>
-      <Photo uri={influencer.avatarUrl} style={styles.photo}>
+      <Photo uri={hero ?? influencer.avatarUrl} style={styles.photo}>
         <View style={styles.pillSlot}>
           <MatchPill
             score={card.score}

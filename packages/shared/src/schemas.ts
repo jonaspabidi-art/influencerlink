@@ -105,6 +105,26 @@ export const socialAccountSchema = z.object({
   lastSyncedAt: z.string().datetime().nullable(),
 });
 
+export const showcaseItemInputSchema = z.object({
+  /** Adressen kreatören klistrat in, precis som den kopierades. */
+  url: z.string().min(8).max(500),
+});
+export type ShowcaseItemInput = z.infer<typeof showcaseItemInputSchema>;
+
+export const showcaseItemSchema = z.object({
+  id: cuidSchema,
+  platform: platformSchema,
+  url: z.string(),
+  postId: z.string().nullable(),
+  title: z.string(),
+  authorName: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  thumbnailWidth: z.number().int().nullable(),
+  thumbnailHeight: z.number().int().nullable(),
+  position: z.number().int(),
+});
+export type ShowcaseItem = z.infer<typeof showcaseItemSchema>;
+
 export const influencerProfileInputSchema = z.object({
   displayName: z.string().min(2).max(80),
   bio: z.string().max(600).default(''),

@@ -15,6 +15,19 @@ export interface DemoSocial {
   verified: boolean;
 }
 
+export interface DemoShowcase {
+  id: string;
+  platform: Platform;
+  url: string;
+  postId: string | null;
+  title: string;
+  authorName: string;
+  thumbnailUrl: string | null;
+  thumbnailWidth: number | null;
+  thumbnailHeight: number | null;
+  position: number;
+}
+
 export interface DemoInfluencer {
   id: string;
   userId: string;
@@ -28,6 +41,7 @@ export interface DemoInfluencer {
   payoutsEnabled: boolean;
   stripeAccountId: string | null;
   socials: DemoSocial[];
+  showcase: DemoShowcase[];
 }
 
 export interface DemoBusiness {
@@ -90,6 +104,12 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
       { id: 'soc_anna_tt', platform: 'TIKTOK', handle: 'annaater', followers: 48_000, avgViews: 39_000, engagementRate: 0.071, verified: false },
       { id: 'soc_anna_ig', platform: 'INSTAGRAM', handle: 'annaater', followers: 21_000, avgViews: 9_000, engagementRate: 0.048, verified: false },
     ],
+    // Miniatyrerna hämtas från plattformen i skarpt läge. I demoläget finns
+    // ingen uppkoppling, så korten visar titel och plattform i stället.
+    showcase: [
+      { id: 'shw_anna_1', platform: 'TIKTOK', url: 'https://www.tiktok.com/@annaater/video/7300000000000000001', postId: '7300000000000000001', title: 'Dagens lunch för under 130 kr', authorName: 'annaater', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, position: 0 },
+      { id: 'shw_anna_2', platform: 'TIKTOK', url: 'https://www.tiktok.com/@annaater/video/7300000000000000002', postId: '7300000000000000002', title: 'Tre nyöppnade ställen i Haga', authorName: 'annaater', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, position: 1 },
+    ],
   },
   {
     id: 'inf_erik',
@@ -107,6 +127,7 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
       { id: 'soc_erik_ig', platform: 'INSTAGRAM', handle: 'kockenerik', followers: 96_000, avgViews: 41_000, engagementRate: 0.032, verified: true },
       { id: 'soc_erik_yt', platform: 'YOUTUBE', handle: 'kockenerik', followers: 34_000, avgViews: 22_000, engagementRate: 0.041, verified: false },
     ],
+    showcase: [],
   },
   {
     id: 'inf_sara',
@@ -123,6 +144,7 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     socials: [
       { id: 'soc_sara_tt', platform: 'TIKTOK', handle: 'saraiskafferiet', followers: 14_500, avgViews: 18_000, engagementRate: 0.093, verified: false },
     ],
+    showcase: [],
   },
   {
     id: 'inf_johan',
@@ -140,6 +162,9 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
       { id: 'soc_johan_tt', platform: 'TIKTOK', handle: 'gbgstreetfood', followers: 62_000, avgViews: 55_000, engagementRate: 0.065, verified: true },
       { id: 'soc_johan_ig', platform: 'INSTAGRAM', handle: 'gbgstreetfood', followers: 18_000, avgViews: 7_500, engagementRate: 0.039, verified: false },
     ],
+    showcase: [
+      { id: 'shw_johan_1', platform: 'TIKTOK', url: 'https://www.tiktok.com/@gbgstreetfood/video/7300000000000000010', postId: '7300000000000000010', title: 'Bästa kebabpizzan efter midnatt', authorName: 'gbgstreetfood', thumbnailUrl: null, thumbnailWidth: null, thumbnailHeight: null, position: 0 },
+    ],
   },
   {
     id: 'inf_maja',
@@ -156,6 +181,7 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     socials: [
       { id: 'soc_maja_ig', platform: 'INSTAGRAM', handle: 'majagront', followers: 71_000, avgViews: 28_000, engagementRate: 0.044, verified: true },
     ],
+    showcase: [],
   },
   {
     id: 'inf_oskar',
@@ -172,6 +198,7 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     socials: [
       { id: 'soc_oskar_tt', platform: 'TIKTOK', handle: 'oskarpakrogen', followers: 29_000, avgViews: 24_000, engagementRate: 0.058, verified: false },
     ],
+    showcase: [],
   },
 ];
 

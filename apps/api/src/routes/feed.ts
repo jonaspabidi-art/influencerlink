@@ -23,6 +23,17 @@ const scoredSchema = z.object({
   rating: ratingSummarySchema,
 });
 
+/** Bara det kortet behöver: bild att visa och länk att öppna. */
+const showcaseThumbSchema = z.object({
+  id: z.string(),
+  platform: z.string(),
+  url: z.string(),
+  thumbnailUrl: z.string().nullable(),
+});
+
+/** Så många miniatyrer får plats på ett kort. */
+const CARD_SHOWCASE_LIMIT = 3;
+
 const influencerCardSchema = scoredSchema.extend({
   influencer: z.object({
     id: z.string(),
@@ -36,6 +47,7 @@ const influencerCardSchema = scoredSchema.extend({
     avgViews: z.number().int(),
     engagementRate: z.number(),
     priceTarget: z.number().int(),
+    showcase: z.array(showcaseThumbSchema),
   }),
 });
 
@@ -178,6 +190,9 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
       const top = ranked.slice(0, request.query.limit);
       const profiles = await prisma.influencerProfile.findMany({
         where: { id: { in: top.map((entry) => entry.influencer.id) } },
+        include: {
+          showcase: { orderBy: { position: 'asc' }, take: CARD_SHOWCASE_LIMIT },
+        },
       });
       const byId = new Map(profiles.map((profile) => [profile.id, profile]));
       const ratings = await ratingsFor(
@@ -207,6 +222,12 @@ export async function feedRoutes(app: FastifyInstance, services: Services): Prom
               avgViews: entry.influencer.avgViews,
               engagementRate: entry.influencer.engagementRate,
               priceTarget: entry.influencer.priceTarget,
+              showcase: profile.showcase.map((item) => ({
+                id: item.id,
+                platform: item.platform as string,
+                url: item.url,
+                thumbnailUrl: item.thumbnailUrl,
+              })),
             },
           },
         ];

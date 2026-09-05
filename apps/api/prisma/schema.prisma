@@ -169,6 +169,7 @@ model InfluencerProfile {
   updatedAt DateTime @updatedAt
 
   socialAccounts SocialAccount[]
+  showcase       ShowcaseItem[]
   swipes         Swipe[]
   matches        Match[]
   applications   Application[]
@@ -504,6 +505,40 @@ model Review {
   @@unique([contractId, authorRole])
   @@index([influencerId, publishedAt])
   @@index([businessId, publishedAt])
+}
+
+/// Ett inlägg kreatören visar upp på sin profil.
+///
+/// Fylls i genom att klistra in en länk. TikTok och YouTube har öppna
+/// oEmbed-slutpunkter, så miniatyrbild och titel går att hämta utan att appen
+/// är godkänd hos plattformen. Instagram kräver apptoken och sparas därför
+/// utan bild tills den kopplingen finns.
+model ShowcaseItem {
+  id String @id @default(cuid())
+
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  platform Platform
+  /// Ren adress utan spårningsparametrar. Unik per kreatör.
+  url      String
+  postId   String?
+  title    String  @default("")
+  authorName String @default("")
+
+  /// Plattformarnas miniatyrer ligger på CDN-adresser som slutar gälla, så
+  /// den här måste hämtas om med jämna mellanrum.
+  thumbnailUrl String?
+  thumbnailWidth Int?
+  thumbnailHeight Int?
+  refreshedAt  DateTime?
+
+  /// Lägre tal först. Det första inlägget är det som syns på kortet.
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([influencerId, url])
+  @@index([influencerId, position])
 }
 
 /// Spårbarhetslogg för händelser med juridisk eller ekonomisk innebörd.

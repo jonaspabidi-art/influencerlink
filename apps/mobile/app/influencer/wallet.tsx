@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
@@ -151,6 +152,11 @@ export default function Wallet() {
       <Card>
         <Text style={styles.accountTitle}>{user?.name}</Text>
         <Text style={styles.secondary}>{user?.personalNumberMask ?? ''}</Text>
+        <Button
+          label="Sociala konton och innehåll"
+          variant="secondary"
+          onPress={() => router.push('/social')}
+        />
         <Button label="Logga ut" variant="secondary" onPress={() => void signOut()} />
       </Card>
 

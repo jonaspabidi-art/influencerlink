@@ -6,6 +6,7 @@ import {
   overallRating,
   rankCampaigns,
   rankInfluencers,
+  recogniseLink,
   renderContractTerms,
   reviewDeadline,
   splitFee,
@@ -190,7 +191,11 @@ const nextId = (prefix: string) => `${prefix}_${(sequence += 1).toString(36)}${D
 function freshState(): State {
   return {
     users: DEMO_USERS.map((user) => ({ ...user })),
-    influencers: DEMO_INFLUENCERS.map((profile) => ({ ...profile, socials: [...profile.socials] })),
+    influencers: DEMO_INFLUENCERS.map((profile) => ({
+      ...profile,
+      socials: [...profile.socials],
+      showcase: [...profile.showcase],
+    })),
     businesses: DEMO_BUSINESSES.map((business) => ({ ...business })),
     campaigns: DEMO_CAMPAIGNS.map((campaign) => ({ ...campaign })),
     // Anna har redan swipat höger på lunchkampanjen: restaurangen ser henne direkt.
@@ -672,6 +677,7 @@ route('PUT', '/me/influencer-profile', ({ body }) => {
     payoutsEnabled: existing?.payoutsEnabled ?? false,
     stripeAccountId: existing?.stripeAccountId ?? null,
     socials: existing?.socials ?? [],
+    showcase: existing?.showcase ?? [],
   };
   state.influencers = [...state.influencers.filter((item) => item.id !== profile.id), profile];
   user.profileId = profile.id;
@@ -707,6 +713,90 @@ route('POST', '/me/influencer-profile/socials', ({ body }) => {
   profile.socials = [...profile.socials.filter((item) => item.platform !== platform), account];
   user.onboardingComplete = true;
   return { ...account, lastSyncedAt: new Date().toISOString() };
+});
+
+// Samma tre slutpunkter som API:et. Demoläget har ingen uppkoppling, så
+// länken sparas utan miniatyr – titeln sätts av plattformsnamnet.
+route('DELETE', '/me/influencer-profile/socials/:id', ({ params }) => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const before = profile.socials.length;
+  profile.socials = profile.socials.filter((item) => item.id !== params[0]);
+  if (profile.socials.length === before) {
+    throw new DemoError(404, 'not_found', 'Kontot hittades inte.');
+  }
+  return { deleted: true };
+});
+
+route('GET', '/influencers/:id', ({ params }) => {
+  const profile = influencerById(params[0]!);
+  const stats = aggregate(profile);
+  return {
+    id: profile.id,
+    displayName: profile.displayName,
+    bio: profile.bio,
+    city: profile.city,
+    avatarUrl: profile.avatarUrl,
+    categories: profile.categories,
+    priceMin: profile.priceMin,
+    priceTarget: profile.priceTarget,
+    payoutsEnabled: profile.payoutsEnabled,
+    followers: stats.followers,
+    avgViews: stats.avgViews,
+    engagementRate: stats.engagementRate,
+    platforms: profile.socials.map((account) => account.platform),
+    socialAccounts: profile.socials.map((account) => ({ ...account, lastSyncedAt: null })),
+    showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
+  };
+});
+
+route('GET', '/me/influencer-profile/showcase', () => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  return [...profile.showcase].sort((a, b) => a.position - b.position);
+});
+
+route('POST', '/me/influencer-profile/showcase', ({ body }) => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const link = recogniseLink(String(body.url ?? ''));
+  if (!link) {
+    throw new DemoError(
+      400,
+      'bad_request',
+      'Länken känns inte igen. Klistra in en länk till ett inlägg på TikTok, Instagram eller YouTube.',
+    );
+  }
+  if (profile.showcase.some((item) => item.url === link.url)) {
+    throw new DemoError(409, 'conflict', 'Inlägget finns redan på profilen.');
+  }
+  if (profile.showcase.length >= 12) {
+    throw new DemoError(409, 'conflict', 'Du kan visa upp högst 12 inlägg. Ta bort ett först.');
+  }
+
+  const item = {
+    id: nextId('shw'),
+    platform: link.platform,
+    url: link.url,
+    postId: link.postId,
+    title: `Inlägg på ${link.platform.toLowerCase()}`,
+    authorName: link.handle ?? '',
+    thumbnailUrl: null,
+    thumbnailWidth: null,
+    thumbnailHeight: null,
+    position: profile.showcase.length,
+  };
+  profile.showcase = [...profile.showcase, item];
+  return item;
+});
+
+route('DELETE', '/me/influencer-profile/showcase/:id', ({ params }) => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const before = profile.showcase.length;
+  profile.showcase = profile.showcase
+    .filter((item) => item.id !== params[0])
+    .map((item, index) => ({ ...item, position: index }));
+  if (profile.showcase.length === before) {
+    throw new DemoError(404, 'not_found', 'Inlägget hittades inte.');
+  }
+  return { deleted: true };
 });
 
 route('PUT', '/me/business-profile', ({ body }) => {
@@ -955,6 +1045,15 @@ route('GET', '/feed/influencers', ({ query }) => {
         avgViews: entry.influencer.avgViews,
         engagementRate: entry.influencer.engagementRate,
         priceTarget: entry.influencer.priceTarget,
+        showcase: [...profile.showcase]
+          .sort((a, b) => a.position - b.position)
+          .slice(0, 3)
+          .map((item) => ({
+            id: item.id,
+            platform: item.platform,
+            url: item.url,
+            thumbnailUrl: item.thumbnailUrl,
+          })),
       },
     };
   });

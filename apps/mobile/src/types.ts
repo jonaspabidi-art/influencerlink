@@ -53,6 +53,50 @@ export interface CampaignCard {
   campaign: Campaign;
 }
 
+export interface SocialAccount {
+  id: string;
+  platform: Platform;
+  handle: string;
+  followers: number;
+  avgViews: number;
+  engagementRate: number;
+  verified: boolean;
+  lastSyncedAt: string | null;
+}
+
+/** Ett inlägg kreatören valt att visa upp på sin profil. */
+export interface ShowcaseItem {
+  id: string;
+  platform: Platform;
+  url: string;
+  postId: string | null;
+  title: string;
+  authorName: string;
+  thumbnailUrl: string | null;
+  thumbnailWidth: number | null;
+  thumbnailHeight: number | null;
+  position: number;
+}
+
+/** Kreatörsprofilen som den syns för andra – och för kreatören själv. */
+export interface InfluencerProfile {
+  id: string;
+  displayName: string;
+  bio: string;
+  city: string;
+  avatarUrl: string | null;
+  categories: Category[];
+  priceMin: number;
+  priceTarget: number;
+  payoutsEnabled: boolean;
+  followers: number;
+  avgViews: number;
+  engagementRate: number;
+  platforms: Platform[];
+  socialAccounts: SocialAccount[];
+  showcase: ShowcaseItem[];
+}
+
 export interface InfluencerCard {
   score: number;
   reason: string;
@@ -71,6 +115,7 @@ export interface InfluencerCard {
     avgViews: number;
     engagementRate: number;
     priceTarget: number;
+    showcase: { id: string; platform: string; url: string; thumbnailUrl: string | null }[];
   };
 }
 

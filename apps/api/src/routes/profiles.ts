@@ -5,6 +5,9 @@ import {
   influencerProfileInputSchema,
   platformSchema,
   problemSchema,
+  recogniseLink,
+  showcaseItemInputSchema,
+  showcaseItemSchema,
   socialAccountInputSchema,
   socialAccountSchema,
 } from '@pacta/shared';
@@ -12,7 +15,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { encryptToken } from '../lib/crypto.js';
-import { conflict, notFound } from '../lib/errors.js';
+import { badRequest, conflict, notFound } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { buildSessionPayload } from '../lib/session.js';
 import { requireProfileId } from '../plugins/auth.js';
@@ -34,7 +37,11 @@ const publicInfluencerSchema = z.object({
   engagementRate: z.number(),
   platforms: z.array(platformSchema),
   socialAccounts: z.array(socialAccountSchema),
+  showcase: z.array(showcaseItemSchema),
 });
+
+/** Så många inlägg får en profil visa upp. Fler blir bara brus i kortet. */
+const MAX_SHOWCASE_ITEMS = 12;
 
 const publicBusinessSchema = z.object({
   id: z.string(),
@@ -47,7 +54,7 @@ const publicBusinessSchema = z.object({
 
 export async function profileRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();
-  const { prisma, social, payments } = services;
+  const { prisma, social, payments, oembed } = services;
 
   // --- Influencerprofil ---------------------------------------------------
 
@@ -79,7 +86,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         where: { userId: request.user.sub },
         create: { userId: request.user.sub, ...data },
         update: data,
-        include: { socialAccounts: true },
+        include: { socialAccounts: true, showcase: { orderBy: { position: 'asc' } } },
       });
 
       // Profilen räknas som klar först när minst ett socialt konto är kopplat.
@@ -108,7 +115,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
     async (request) => {
       const profile = await prisma.influencerProfile.findUnique({
         where: { id: request.params.id },
-        include: { socialAccounts: true },
+        include: { socialAccounts: true, showcase: { orderBy: { position: 'asc' } } },
       });
       if (!profile) throw notFound('Profilen hittades inte.');
       return toPublicInfluencer(profile);
@@ -216,6 +223,94 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         where: { id: request.params.id, influencerId },
       });
       if (count === 0) throw notFound('Kontot hittades inte.');
+      return { deleted: true as const };
+    },
+  );
+
+  // --- Uppvisat innehåll --------------------------------------------------
+
+  // Tills OAuth mot TikTok och Instagram är på plats klistrar kreatören in
+  // länkar själv. Vi läser adressen, hämtar miniatyr via oEmbed och sparar.
+
+  server.get(
+    '/me/influencer-profile/showcase',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: { response: { 200: z.array(showcaseItemSchema) } },
+    },
+    async (request) => {
+      const influencerId = requireProfileId(request);
+      const items = await prisma.showcaseItem.findMany({
+        where: { influencerId },
+        orderBy: { position: 'asc' },
+      });
+      return items.map(toPublicShowcaseItem);
+    },
+  );
+
+  server.post(
+    '/me/influencer-profile/showcase',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        body: showcaseItemInputSchema,
+        response: { 200: showcaseItemSchema, 400: problemSchema, 409: problemSchema },
+      },
+    },
+    async (request) => {
+      const influencerId = requireProfileId(request);
+      const link = recogniseLink(request.body.url);
+      if (!link) {
+        throw badRequest('Länken känns inte igen. Klistra in en länk till ett inlägg på TikTok, Instagram eller YouTube.');
+      }
+
+      const existing = await prisma.showcaseItem.findUnique({
+        where: { influencerId_url: { influencerId, url: link.url } },
+      });
+      if (existing) throw conflict('Inlägget finns redan på profilen.');
+
+      const count = await prisma.showcaseItem.count({ where: { influencerId } });
+      if (count >= MAX_SHOWCASE_ITEMS) {
+        throw conflict(`Du kan visa upp högst ${MAX_SHOWCASE_ITEMS} inlägg. Ta bort ett först.`);
+      }
+
+      // Uppslaget får aldrig fälla sparandet – utan bild syns länken ändå.
+      const meta = await oembed.lookup(link);
+
+      const item = await prisma.showcaseItem.create({
+        data: {
+          influencerId,
+          platform: link.platform,
+          url: link.url,
+          postId: link.postId,
+          title: meta.title,
+          authorName: meta.authorName || (link.handle ?? ''),
+          thumbnailUrl: meta.thumbnailUrl,
+          thumbnailWidth: meta.thumbnailWidth,
+          thumbnailHeight: meta.thumbnailHeight,
+          refreshedAt: new Date(),
+          position: count,
+        },
+      });
+      return toPublicShowcaseItem(item);
+    },
+  );
+
+  server.delete(
+    '/me/influencer-profile/showcase/:id',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: { 200: z.object({ deleted: z.literal(true) }), 404: problemSchema },
+      },
+    },
+    async (request) => {
+      const influencerId = requireProfileId(request);
+      const { count } = await prisma.showcaseItem.deleteMany({
+        where: { id: request.params.id, influencerId },
+      });
+      if (count === 0) throw notFound('Inlägget hittades inte.');
       return { deleted: true as const };
     },
   );
@@ -410,6 +505,34 @@ function toPublicSocialAccount(account: SocialAccountRow) {
   };
 }
 
+type ShowcaseRow = {
+  id: string;
+  platform: Platform;
+  url: string;
+  postId: string | null;
+  title: string;
+  authorName: string;
+  thumbnailUrl: string | null;
+  thumbnailWidth: number | null;
+  thumbnailHeight: number | null;
+  position: number;
+};
+
+function toPublicShowcaseItem(item: ShowcaseRow) {
+  return {
+    id: item.id,
+    platform: item.platform,
+    url: item.url,
+    postId: item.postId,
+    title: item.title,
+    authorName: item.authorName,
+    thumbnailUrl: item.thumbnailUrl,
+    thumbnailWidth: item.thumbnailWidth,
+    thumbnailHeight: item.thumbnailHeight,
+    position: item.position,
+  };
+}
+
 /** Tokens finns aldrig med här – de lämnar aldrig servern. */
 export function toPublicInfluencer(profile: {
   id: string;
@@ -422,6 +545,7 @@ export function toPublicInfluencer(profile: {
   priceTarget: number;
   payoutsEnabled: boolean;
   socialAccounts: SocialAccountRow[];
+  showcase?: ShowcaseRow[];
 }) {
   const stats = aggregateStats(profile.socialAccounts);
   return {
@@ -439,6 +563,7 @@ export function toPublicInfluencer(profile: {
     engagementRate: stats.engagementRate,
     platforms: profile.socialAccounts.map((account) => account.platform),
     socialAccounts: profile.socialAccounts.map(toPublicSocialAccount),
+    showcase: (profile.showcase ?? []).map(toPublicShowcaseItem),
   };
 }
 
