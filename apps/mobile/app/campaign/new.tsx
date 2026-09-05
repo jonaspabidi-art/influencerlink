@@ -171,7 +171,9 @@ export default function NewCampaign() {
         endDate: new Date(now.getTime() + DEFAULT_RUN_DAYS * 86_400_000).toISOString(),
       });
       await api.post(`/campaigns/${campaign.id}/publish`);
-      router.replace(`/discover/${campaign.id}`);
+      // Kampanjen, inte kortleken. Där syns att den är publicerad, och därifrån
+      // väljer restaurangen själv om den vill leta upp kreatörer direkt.
+      router.replace(`/campaign/${campaign.id}`);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Kunde inte publicera kampanjen.');
     } finally {

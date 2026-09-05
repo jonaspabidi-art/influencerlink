@@ -25,5 +25,7 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe'} />;
+  // Båda rollerna landar på sin upptäcktsflik: det som finns att göra affär av,
+  // inte en tom lista över det man själv skapat.
+  return <Redirect href={user.role === 'BUSINESS' ? '/business/discover' : '/influencer/swipe'} />;
 }

@@ -759,6 +759,41 @@ route('DELETE', '/me/influencer-profile/socials/:id', ({ params }) => {
   return { deleted: true };
 });
 
+route('GET', '/influencers', ({ query }) => {
+  const city = query.get('city')?.toLowerCase();
+  const category = query.get('category');
+  return state.influencers
+    .filter((profile) => profile.socials.length > 0)
+    .filter((profile) => !city || profile.city.toLowerCase() === city)
+    .filter((profile) => !category || profile.categories.includes(category as Category))
+    .map((profile) => {
+      const stats = aggregate(profile);
+      return {
+        id: profile.id,
+        displayName: profile.displayName,
+        bio: profile.bio,
+        city: profile.city,
+        avatarUrl: profile.avatarUrl,
+        categories: profile.categories,
+        priceMin: profile.priceMin,
+        priceTarget: profile.priceTarget,
+        payoutsEnabled: profile.payoutsEnabled,
+        followers: stats.followers,
+        avgViews: stats.avgViews,
+        engagementRate: stats.engagementRate,
+        platforms: profile.socials.map((account) => account.platform),
+        socialAccounts: profile.socials.map((account) => ({
+          ...account,
+          statsSource: 'DEMO',
+          sampleSize: null,
+          lastSyncedAt: null,
+        })),
+        showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
+        rating: ratingFor('INFLUENCER', profile.id),
+      };
+    });
+});
+
 route('GET', '/influencers/:id', ({ params }) => {
   const profile = influencerById(params[0]!);
   const stats = aggregate(profile);

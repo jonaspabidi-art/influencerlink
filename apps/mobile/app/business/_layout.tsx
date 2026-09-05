@@ -1,6 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { useAuth } from '../../src/auth';
-import { ChatIcon, DocIcon, GridIcon, UserIcon } from '../../src/components/icons';
+import { ChatIcon, DeckIcon, DocIcon, GridIcon, UserIcon } from '../../src/components/icons';
 import { colors, type } from '../../src/theme';
 
 export default function BusinessTabs() {
@@ -25,6 +25,13 @@ export default function BusinessTabs() {
         tabBarLabelStyle: { ...type.tab, marginTop: 2 },
       }}
     >
+      <Tabs.Screen
+        name="discover"
+        options={{
+          title: 'Upptäck',
+          tabBarIcon: ({ color }) => <DeckIcon size={21} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="campaigns"
         options={{

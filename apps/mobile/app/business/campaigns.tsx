@@ -77,6 +77,11 @@ export default function BusinessCampaigns() {
               icon={<PlusIcon size={18} color={colors.ink} />}
               onPress={() => router.push('/campaign/new')}
             />
+            <Button
+              label="Se kreatörer först"
+              variant="secondary"
+              onPress={() => router.push('/business/discover')}
+            />
           </Card>
           <DemoBanner />
         </View>

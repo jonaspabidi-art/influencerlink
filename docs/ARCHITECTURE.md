@@ -85,6 +85,13 @@ Båda rollerna har en profilflik längst till höger. Överst står det motparte
 ser – namn, ort, betyg, och för kreatörer räckvidden – och därunder ligger allt
 som går att ändra: profilen, de sociala kontona, omdömena och utloggningen.
 
+Restaurangen landar på **Upptäck** – kreatörerna i den egna staden – och inte i
+kampanjguiden. Tidigare tvingades ett nytt företagskonto skriva ihop en kampanj
+och kastades sedan rakt in i en kortlek, alltså binda sig innan det sett om det
+ens fanns någon att samarbeta med. `GET /influencers` finns för det: utbudet
+utan kampanj. En publicerad kampanj landar på kampanjen, där "Hitta influencers"
+är ett val och inte nästa tvingande steg.
+
 Profilfliken listar aldrig något som redan är en flik. Utbetalningar och avtal
 nås från sina egna flikar, inte från två håll.
 

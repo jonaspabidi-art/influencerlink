@@ -47,9 +47,9 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
                 : 'Svep på kreatörer i en av dina kampanjer. När ni båda svepat höger öppnas en chatt där ni kommer överens.'}
             </Text>
             <Button
-              label={role === 'INFLUENCER' ? 'Till kortleken' : 'Till kampanjerna'}
+              label={role === 'INFLUENCER' ? 'Till kortleken' : 'Hitta kreatörer'}
               onPress={() =>
-                router.push(role === 'INFLUENCER' ? '/influencer/swipe' : '/business/campaigns')
+                router.push(role === 'INFLUENCER' ? '/influencer/swipe' : '/business/discover')
               }
             />
           </View>

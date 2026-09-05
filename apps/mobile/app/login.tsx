@@ -55,7 +55,7 @@ export default function Login() {
         return;
       }
       router.replace(
-        session.user.role === 'BUSINESS' ? '/business/campaigns' : '/influencer/swipe',
+        session.user.role === 'BUSINESS' ? '/business/discover' : '/influencer/swipe',
       );
     },
     [router, signIn],

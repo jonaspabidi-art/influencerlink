@@ -64,7 +64,9 @@ export default function BusinessOnboarding() {
       });
       await replaceToken(saved.accessToken);
       await refresh();
-      router.replace('/campaign/new');
+      // Utbudet först. Att tvinga fram en kampanj innan man sett om det finns
+      // någon att samarbeta med är fel ordning.
+      router.replace('/business/discover');
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Kunde inte spara uppgifterna.');
     } finally {

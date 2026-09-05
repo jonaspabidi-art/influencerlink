@@ -1,6 +1,8 @@
 import type { Category, Platform } from '@pacta/shared';
 import {
   businessProfileInputSchema,
+  emptyRatingSummary,
+  ratingSummarySchema,
   categorySchema,
   influencerProfileInputSchema,
   platformSchema,
@@ -27,6 +29,7 @@ import { buildSessionPayload } from '../lib/session.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { aggregateStats } from '../services/social/index.js';
+import { ratingsFor } from '../services/reviews.js';
 import { createTikTokClient, type StatsSource } from '../services/social/index.js';
 import { TikTokError, type TikTokClient } from '../services/social/tiktok.js';
 
@@ -121,6 +124,63 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         // Sessionen får profil-id först nu, så appen byter till en färsk token.
         accessToken: server.jwt.sign(await buildSessionPayload(prisma, request.user.sub)),
       };
+    },
+  );
+
+  /**
+   * Kreatörer att bläddra bland, utan kampanj.
+   *
+   * Tidigare gick de bara att se genom en kampanjs kortlek, vilket tvingade
+   * restaurangen att skriva ihop ett samarbete innan den sett om det ens fanns
+   * någon att samarbeta med. Det här är utbudet, i den egna staden först.
+   */
+  server.get(
+    '/influencers',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        querystring: z.object({
+          city: z.string().max(80).optional(),
+          category: categorySchema.optional(),
+          limit: z.coerce.number().int().min(1).max(50).default(30),
+        }),
+        response: {
+          200: z.array(
+            publicInfluencerSchema.extend({
+              rating: ratingSummarySchema,
+              showcase: z.array(showcaseItemSchema),
+            }),
+          ),
+        },
+      },
+    },
+    async (request) => {
+      const { city, category, limit } = request.query;
+      const profiles = await prisma.influencerProfile.findMany({
+        where: {
+          user: { onboardingComplete: true },
+          socialAccounts: { some: {} },
+          ...(city ? { city: { equals: city, mode: 'insensitive' } } : {}),
+          ...(category ? { categories: { has: category } } : {}),
+        },
+        include: {
+          socialAccounts: true,
+          showcase: { orderBy: { position: 'asc' } },
+        },
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      const ratings = await ratingsFor(
+        prisma,
+        'INFLUENCER',
+        profiles.map((profile) => profile.id),
+      );
+
+      return profiles.map((profile) => ({
+        ...toPublicInfluencer(profile),
+        rating: ratings.get(profile.id) ?? emptyRatingSummary(),
+      }));
     },
   );
 
