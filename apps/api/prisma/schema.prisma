@@ -418,6 +418,7 @@ model Contract {
 
   signatures Signature[]
   payment    Payment?
+  usageRights UsageRights?
   drafts     Draft[]
   delivery   Delivery?
   metrics    PostMetric[]
@@ -711,4 +712,48 @@ model MediaAsset {
   createdAt DateTime @default(now())
 
   @@index([ownerId])
+}
+
+/// Om företaget frågat, och vad kreatören svarade.
+enum UsageRightsStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+}
+
+/// Tillägget som ger företaget rätt att köra materialet som annons.
+///
+/// Egen tabell och egen betalning: grundavtalets escrow är redan utbetald när
+/// det här blir aktuellt, och tillägget ska kunna avböjas utan att röra
+/// någonting i avtalet det hänger på.
+model UsageRights {
+  id String @id @default(cuid())
+
+  contractId String   @unique
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  status UsageRightsStatus @default(REQUESTED)
+  /// Hur länge rätten gäller, räknat från godkännandet.
+  months Int               @default(12)
+
+  /// Vad företaget betalar, och hur det delas. I öre.
+  amount        Int
+  creatorShare  Int
+  platformShare Int
+
+  /// Tilläggets text, fryst när förfrågan skickades, och dess kontrollsumma.
+  terms     String
+  termsHash String
+
+  requestedAt DateTime  @default(now())
+  respondedAt DateTime?
+
+  paymentStatus         PaymentStatus @default(PENDING)
+  stripePaymentIntentId String?       @unique
+  stripeTransferId      String?
+  escrowedAt            DateTime?
+  releasedAt            DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

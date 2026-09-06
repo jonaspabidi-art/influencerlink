@@ -17,8 +17,11 @@ import {
   MAX_VIDEO_BYTES,
   paymentStatusSchema,
   problemSchema,
+  canOfferUsageRights,
   splitFee,
   summariseMetrics,
+  usageRightsPrice,
+  USAGE_RIGHTS_MONTHS,
   type FeeSplit,
 } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
@@ -32,7 +35,23 @@ import { recordAudit } from '../lib/audit.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { renderContractTerms } from '../services/contracts.js';
+import {
+  payUsageRights,
+  requestUsageRights,
+  respondToUsageRights,
+} from '../services/rights.js';
 import { createEscrow, refundEscrow, releasePayout } from '../services/payments/escrow.js';
+
+/** Tillägget om annonsering, så som parterna ser det. */
+const usageRightsSchema = z.object({
+  status: z.enum(['REQUESTED', 'ACCEPTED', 'DECLINED']),
+  months: z.number().int(),
+  amount: z.number().int(),
+  creatorShare: z.number().int(),
+  terms: z.string(),
+  paymentStatus: paymentStatusSchema,
+  respondedAt: z.string().nullable(),
+});
 
 const contractDetailSchema = z.object({
   id: z.string(),
@@ -250,6 +269,20 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
                 shares: z.number().int(),
               }),
             ),
+            /** Tillägget om annonsering, när det finns ett. */
+            usageRights: usageRightsSchema.nullable(),
+            /**
+             * Vad tillägget skulle kosta, när det går att fråga. Null annars –
+             * en förstagångsköpare ska inte se erbjudandet innan det finns ett
+             * resultat att bedöma det mot.
+             */
+            usageRightsOffer: z
+              .object({
+                amount: z.number().int(),
+                creatorShare: z.number().int(),
+                months: z.number().int(),
+              })
+              .nullable(),
           }),
           403: problemSchema,
           404: problemSchema,
@@ -276,7 +309,25 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
       });
       const totals = summariseMetrics(metrics);
 
+      const rights = await prisma.usageRights.findUnique({
+        where: { contractId: contract.id },
+      });
+      const price = usageRightsPrice(contract.fee);
+      const canOffer = canOfferUsageRights({
+        deliveredAt: contract.deliveredAt,
+        views: totals.views,
+        existing: rights !== null,
+      });
+
       return {
+        usageRights: rights ? toUsageRights(rights) : null,
+        usageRightsOffer: canOffer
+          ? {
+              amount: price.amount,
+              creatorShare: price.creatorShare,
+              months: USAGE_RIGHTS_MONTHS,
+            }
+          : null,
         measuredAt: metrics[0]?.measuredAt.toISOString() ?? null,
         final: metrics.length > 0 && metrics.every((metric) => metric.final),
         ...totals,
@@ -581,6 +632,76 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
     },
   );
 
+  /**
+   * Företaget frågar om annonsrätt.
+   *
+   * Erbjudandet finns bara där det hör hemma: i resultatvyn, när filmen har
+   * visningar. Tjänsten avvisar förfrågan om den kommer för tidigt.
+   */
+  server.post(
+    '/contracts/:id/usage-rights',
+    {
+      preHandler: app.requireRole('BUSINESS'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: { 200: usageRightsSchema, 400: problemSchema, 409: problemSchema },
+      },
+    },
+    async (request) => {
+      const contract = await loadContractForParty(services, request.params.id, request);
+      const rights = await requestUsageRights(prisma, {
+        contractId: contract.id,
+        userId: request.user.sub,
+      });
+      return toUsageRights(rights);
+    },
+  );
+
+  /** Kreatören svarar ja eller nej. Ett nej stänger frågan. */
+  server.post(
+    '/contracts/:id/usage-rights/respond',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: z.object({ accept: z.boolean() }),
+        response: { 200: usageRightsSchema, 400: problemSchema, 409: problemSchema },
+      },
+    },
+    async (request) => {
+      const contract = await loadContractForParty(services, request.params.id, request);
+      const rights = await respondToUsageRights(prisma, {
+        contractId: contract.id,
+        userId: request.user.sub,
+        accept: request.body.accept,
+      });
+      return toUsageRights(rights);
+    },
+  );
+
+  /** Företaget betalar tillägget när kreatören sagt ja. */
+  server.post(
+    '/contracts/:id/usage-rights/pay',
+    {
+      preHandler: app.requireRole('BUSINESS'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: {
+          200: z.object({ clientSecret: z.string(), amount: z.number().int() }),
+          400: problemSchema,
+          409: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const contract = await loadContractForParty(services, request.params.id, request);
+      return payUsageRights(prisma, payments, {
+        contractId: contract.id,
+        userId: request.user.sub,
+      });
+    },
+  );
+
   server.post(
     '/contracts/:id/cancel',
     {
@@ -645,6 +766,27 @@ type ContractRow = {
   influencer: { displayName: string; userId: string };
   payment: { status: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED' } | null;
 };
+
+/** Tillägget i den form appen läser det. */
+function toUsageRights(rights: {
+  status: string;
+  months: number;
+  amount: number;
+  creatorShare: number;
+  terms: string;
+  paymentStatus: string;
+  respondedAt: Date | null;
+}) {
+  return {
+    status: rights.status as 'REQUESTED' | 'ACCEPTED' | 'DECLINED',
+    months: rights.months,
+    amount: rights.amount,
+    creatorShare: rights.creatorShare,
+    terms: rights.terms,
+    paymentStatus: rights.paymentStatus as 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED',
+    respondedAt: rights.respondedAt?.toISOString() ?? null,
+  };
+}
 
 /** Avgiftsfördelningen som sparades på avtalet när det tecknades. */
 function feeSplitOf(contract: { businessFeeBps: number; creatorFeeBps: number }): FeeSplit {

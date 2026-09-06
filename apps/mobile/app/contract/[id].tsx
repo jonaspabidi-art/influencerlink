@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { CampaignResult } from '../../src/components/CampaignResult';
+import { UsageRightsOffer } from '../../src/components/UsageRightsOffer';
 import { DraftReview } from '../../src/components/DraftReview';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
@@ -234,7 +235,15 @@ export default function ContractDetail() {
 
       {/* Resultatet först när något publicerats – annars finns inget att visa. */}
       {data.status === 'DELIVERED' || data.status === 'COMPLETED' ? (
-        <CampaignResult contractId={data.id} fee={data.fee} />
+        <>
+          <CampaignResult contractId={data.id} fee={data.fee} />
+          {/* Erbjudandet hör hemma direkt under siffrorna det bygger på. */}
+          <UsageRightsOffer
+            contractId={data.id}
+            role={isBusiness ? 'BUSINESS' : 'INFLUENCER'}
+            counterpart={counterpart}
+          />
+        </>
       ) : null}
 
       {/* Utkastet ligger före leveransen, precis som i avtalstexten. */}

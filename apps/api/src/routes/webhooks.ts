@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { badRequest } from '../lib/errors.js';
 import type { Services } from '../services/index.js';
 import { markEscrowed } from '../services/payments/escrow.js';
+import { settleUsageRights } from '../services/rights.js';
 import { StripePaymentProvider } from '../services/payments/index.js';
 
 /**
@@ -43,7 +44,10 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
 
     switch (event.type) {
       case 'payment_intent.succeeded': {
+        // Samma händelse bär både arvodet och ett eventuellt annonstillägg.
+        // Bara en av dem känner igen id:t; den andra gör ingenting.
         await markEscrowed(prisma, event.data.object.id);
+        await settleUsageRights(prisma, payments, event.data.object.id);
         break;
       }
       case 'payment_intent.payment_failed': {

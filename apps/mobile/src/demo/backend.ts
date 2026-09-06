@@ -6,11 +6,16 @@ import {
   overallRating,
   rankCampaigns,
   rankInfluencers,
+  canOfferUsageRights,
+  costPerMille,
   recogniseLink,
   renderContractTerms,
+  renderUsageRightsTerms,
   reviewDeadline,
   splitFee,
   summarizeRatings,
+  usageRightsPrice,
+  USAGE_RIGHTS_MONTHS,
   type CampaignCandidate,
   type Category,
   type DeliverableKind,
@@ -120,6 +125,18 @@ interface BankIdOrder {
   cancelled: boolean;
 }
 
+/** Annonstillägget, i den form appen läser det. */
+interface DemoUsageRights {
+  contractId: string;
+  status: 'REQUESTED' | 'ACCEPTED' | 'DECLINED';
+  months: number;
+  amount: number;
+  creatorShare: number;
+  terms: string;
+  paymentStatus: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED';
+  respondedAt: string | null;
+}
+
 interface State {
   users: DemoUser[];
   influencers: DemoInfluencer[];
@@ -131,6 +148,7 @@ interface State {
   applications: Application[];
   contracts: Contract[];
   reviews: DemoReview[];
+  usageRights: DemoUsageRights[];
   accounts: DemoAccountRecord[];
   orders: BankIdOrder[];
   sessionUserId: string | null;
@@ -139,6 +157,13 @@ interface State {
 /** Så länge låtsas BankID-dialogen pågå innan den blir klar. */
 const DEMO_BANKID_MS = 1400;
 const FEE_SPLIT = { businessFeeBps: 1000, creatorFeeBps: 1000 };
+
+/** Stabil siffra ur en sträng, så demons "resultat" är samma vid varje besök. */
+function hashCode(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  return hash;
+}
 
 /** Avgiftsfördelningen som avtalet tecknades med. */
 function feeSplitOf(contract: { businessFeeBps: number; creatorFeeBps: number }) {
@@ -163,6 +188,7 @@ const STATE_ARRAYS = [
   'applications',
   'contracts',
   'reviews',
+  'usageRights',
   'accounts',
   'orders',
 ] as const;
@@ -211,6 +237,7 @@ function freshState(): State {
     applications: DEMO_APPLICATIONS.map((application) => ({ ...application })),
     contracts: [],
     reviews: DEMO_REVIEWS.map((item) => ({ ...item, scores: { ...item.scores } })),
+    usageRights: [],
     accounts: [],
     orders: [],
     sessionUserId: null,
@@ -724,17 +751,116 @@ route('POST', '/assistant/ask', () => ({
   candidateCount: 0,
 }));
 
-route('GET', '/contracts/:id/results', () => ({
-  measuredAt: null,
-  final: false,
-  views: 0,
-  likes: 0,
-  comments: 0,
-  shares: 0,
-  engagementRate: 0,
-  costPerMille: 0,
-  posts: [],
-}));
+/**
+ * Resultatet i demoläget.
+ *
+ * Riktiga siffror kommer från TikTok och finns inte här. Utan siffror går
+ * varken resultatvyn eller annonstillägget att prova, så demoläget hittar på
+ * ett rimligt utfall – härlett ur avtalets id, så att det är samma varje gång.
+ */
+route('GET', '/contracts/:id/results', ({ params }) => {
+  const contract = state.contracts.find((item) => item.id === params[0]);
+  if (!contract || !contract.deliveredAt) {
+    return {
+      measuredAt: null,
+      final: false,
+      views: 0,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      engagementRate: 0,
+      costPerMille: 0,
+      posts: [],
+      usageRights: null,
+      usageRightsOffer: null,
+    };
+  }
+
+  const views = 12_000 + (hashCode(contract.id) % 40_000);
+  const likes = Math.round(views * 0.06);
+  const comments = Math.round(views * 0.004);
+  const shares = Math.round(views * 0.002);
+  const price = usageRightsPrice(contract.fee);
+  const rights = state.usageRights.find((item) => item.contractId === contract.id) ?? null;
+
+  return {
+    measuredAt: contract.deliveredAt,
+    final: false,
+    views,
+    likes,
+    comments,
+    shares,
+    engagementRate: (likes + comments + shares) / views,
+    costPerMille: costPerMille(contract.fee, views),
+    posts: [],
+    usageRights: rights,
+    usageRightsOffer: canOfferUsageRights({
+      deliveredAt: contract.deliveredAt,
+      views,
+      existing: rights !== null,
+    })
+      ? { amount: price.amount, creatorShare: price.creatorShare, months: USAGE_RIGHTS_MONTHS }
+      : null,
+  };
+});
+
+/** Företaget frågar om annonsrätt. */
+route('POST', '/contracts/:id/usage-rights', ({ params }) => {
+  const contract = contractById(params[0]!);
+  const campaign = campaignById(contract.campaignId);
+  const business = businessById(campaign.businessId);
+  const influencer = influencerById(contract.influencerId);
+  const price = usageRightsPrice(contract.fee);
+
+  const rights = {
+    contractId: contract.id,
+    status: 'REQUESTED' as const,
+    months: USAGE_RIGHTS_MONTHS,
+    amount: price.amount,
+    creatorShare: price.creatorShare,
+    terms: renderUsageRightsTerms({
+      contractId: contract.id,
+      businessName: business.companyName,
+      influencerName: influencer.displayName,
+      campaignTitle: campaign.title,
+      fee: contract.fee,
+      months: USAGE_RIGHTS_MONTHS,
+    }),
+    paymentStatus: 'PENDING' as const,
+    respondedAt: null as string | null,
+  };
+  state.usageRights = [
+    ...state.usageRights.filter((item) => item.contractId !== contract.id),
+    rights,
+  ];
+  return rights;
+});
+
+/** Kreatören svarar. */
+route('POST', '/contracts/:id/usage-rights/respond', ({ params, body }) => {
+  const rights = state.usageRights.find((item) => item.contractId === params[0]);
+  if (!rights) throw new DemoError(404, 'not_found', 'Det finns ingen förfrågan om annonsrätt.');
+  const updated = {
+    ...rights,
+    status: (body.accept ? 'ACCEPTED' : 'DECLINED') as 'ACCEPTED' | 'DECLINED',
+    respondedAt: new Date().toISOString(),
+  };
+  state.usageRights = state.usageRights.map((item) =>
+    item.contractId === updated.contractId ? updated : item,
+  );
+  return updated;
+});
+
+/** Företaget betalar. I demoläget finns ingen Stripe, så den bokförs direkt. */
+route('POST', '/contracts/:id/usage-rights/pay', ({ params }) => {
+  const rights = state.usageRights.find((item) => item.contractId === params[0]);
+  if (!rights) throw new DemoError(404, 'not_found', 'Det finns ingen förfrågan om annonsrätt.');
+  const updated = { ...rights, paymentStatus: 'RELEASED' as const };
+  state.usageRights = state.usageRights.map((item) =>
+    item.contractId === updated.contractId ? updated : item,
+  );
+  return { clientSecret: 'demo', amount: rights.amount };
+});
 
 route('GET', '/contracts/:id/drafts', () => []);
 

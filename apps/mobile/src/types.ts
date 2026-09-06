@@ -221,6 +221,23 @@ export interface ContractResults {
     comments: number;
     shares: number;
   }[];
+  /** Tillägget om annonsering, när det finns ett. */
+  usageRights: UsageRights | null;
+  /** Vad tillägget skulle kosta, när det går att fråga. Null annars. */
+  usageRightsOffer: { amount: number; creatorShare: number; months: number } | null;
+}
+
+/** Rätten att köra materialet som betald annons. */
+export interface UsageRights {
+  status: 'REQUESTED' | 'ACCEPTED' | 'DECLINED';
+  months: number;
+  /** Vad företaget betalar. */
+  amount: number;
+  /** Kreatörens del. */
+  creatorShare: number;
+  terms: string;
+  paymentStatus: PaymentStatus;
+  respondedAt: string | null;
 }
 
 /** Ett videoutkast som lämnats för godkännande. */
