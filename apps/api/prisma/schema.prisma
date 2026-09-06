@@ -238,6 +238,8 @@ model BusinessProfile {
   /// Bilder på stället. Kreatören ska se vad det är för lokal innan hon
   /// lägger en dag på den. Adresser till uppladdade bilder, i visningsordning.
   photos      String[]
+  /// Företagets egen hemsida. Kreatören vill se att stället finns på riktigt.
+  websiteUrl  String?
   categories  Category[]
 
   stripeCustomerId String?
@@ -246,9 +248,28 @@ model BusinessProfile {
   updatedAt DateTime @updatedAt
 
   campaigns Campaign[]
+  socials   BusinessSocial[]
   reviews   Review[]
 
   @@index([city])
+}
+
+/// Företagets eget konto på en plattform.
+///
+/// Ingen inloggning: vi vill inte ha företagets följarsiffror, bara adressen.
+/// Handtaget har ett praktiskt syfte – det är kontot kreatören ska tagga, och
+/// det skrivs in i avtalets märkningsklausul.
+model BusinessSocial {
+  id String @id @default(cuid())
+
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  platform Platform
+  /// Utan @, som kreatörernas konton lagras.
+  handle   String
+
+  @@unique([businessId, platform])
 }
 
 model Campaign {

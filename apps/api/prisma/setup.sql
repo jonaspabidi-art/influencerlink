@@ -1,5 +1,6 @@
 -- Pacta: skapar alla tabeller och lägger in demodata.
 -- Klistra in allt i Supabase SQL Editor och tryck Run. Körs en gång.
+-- Genererad av build-setup.mjs – ändra inte för hand.
 
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
@@ -559,6 +560,93 @@ ADD COLUMN     "statsSource" "StatsSource" NOT NULL DEFAULT 'DEMO';
 -- AlterTable
 ALTER TABLE "ShowcaseItem" ADD COLUMN     "views" INTEGER;
 
+-- === 20260910000000_drafts ===
+
+-- CreateEnum
+CREATE TYPE "DraftStatus" AS ENUM ('PENDING', 'APPROVED', 'CHANGES_REQUESTED');
+
+-- CreateTable
+CREATE TABLE "Draft" (
+    "id" TEXT NOT NULL,
+    "contractId" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "storagePath" TEXT NOT NULL,
+    "fileName" TEXT NOT NULL DEFAULT '',
+    "contentType" TEXT NOT NULL,
+    "sizeBytes" INTEGER NOT NULL DEFAULT 0,
+    "note" TEXT NOT NULL DEFAULT '',
+    "status" "DraftStatus" NOT NULL DEFAULT 'PENDING',
+    "reviewNote" TEXT NOT NULL DEFAULT '',
+    "reviewedAt" TIMESTAMP(3),
+    "autoApproved" BOOLEAN NOT NULL DEFAULT false,
+    "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Draft_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "Draft_contractId_status_idx" ON "Draft"("contractId", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Draft_contractId_version_key" ON "Draft"("contractId", "version");
+
+-- AddForeignKey
+ALTER TABLE "Draft" ADD CONSTRAINT "Draft_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- === 20260911000000_venue_photos ===
+
+-- AlterTable
+ALTER TABLE "BusinessProfile" ADD COLUMN     "photos" TEXT[];
+
+-- === 20260912000000_post_metrics ===
+
+-- CreateTable
+CREATE TABLE "PostMetric" (
+    "id" TEXT NOT NULL,
+    "contractId" TEXT NOT NULL,
+    "platform" "Platform" NOT NULL,
+    "url" TEXT NOT NULL,
+    "postId" TEXT,
+    "views" INTEGER NOT NULL DEFAULT 0,
+    "likes" INTEGER NOT NULL DEFAULT 0,
+    "comments" INTEGER NOT NULL DEFAULT 0,
+    "shares" INTEGER NOT NULL DEFAULT 0,
+    "measuredAt" TIMESTAMP(3) NOT NULL,
+    "final" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "PostMetric_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "PostMetric_contractId_idx" ON "PostMetric"("contractId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PostMetric_contractId_url_key" ON "PostMetric"("contractId", "url");
+
+-- AddForeignKey
+ALTER TABLE "PostMetric" ADD CONSTRAINT "PostMetric_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- === 20260913000000_business_links ===
+
+-- AlterTable
+ALTER TABLE "BusinessProfile" ADD COLUMN     "websiteUrl" TEXT;
+
+-- CreateTable
+CREATE TABLE "BusinessSocial" (
+    "id" TEXT NOT NULL,
+    "businessId" TEXT NOT NULL,
+    "platform" "Platform" NOT NULL,
+    "handle" TEXT NOT NULL,
+
+    CONSTRAINT "BusinessSocial_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BusinessSocial_businessId_platform_key" ON "BusinessSocial"("businessId", "platform");
+
+-- AddForeignKey
+ALTER TABLE "BusinessSocial" ADD CONSTRAINT "BusinessSocial_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "BusinessProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -602,6 +690,33 @@ VALUES (gen_random_uuid()::text,
         'fc6072e31c3212309c2e9883f66b906ec453570a77c368afc41ccd1f54b5cc9e',
         now(), '20260909000000_showcase_views', now(), 1);
 
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '3eab023380fc3b3d0a14c0303db0efc1b571ec9225a8dc6d34498dc036058aed',
+        now(), '20260910000000_drafts', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '2126e23b70ba33b743f08ed7ad57f237ceb540ffacd27df3662c60339a10d0f1',
+        now(), '20260911000000_venue_photos', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '9d7695829a0802f4887168fba5f93f99c158d9a5ff328f93fd8f20ae91f05548',
+        now(), '20260912000000_post_metrics', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        'f8fb445ce26336eb99eb0d1f6ec2e235a20d6ad279c8e0bf42d61b11da6da31f',
+        now(), '20260913000000_business_links', now(), 1);
+
+-- === Demodata ===
+
+-- Demodata för Pacta.
+-- Klistra in i Supabase SQL Editor EFTER att Railway skapat tabellerna.
+-- 6 influencers, 2 restauranger, 4 kampanjer, en färdig matchning och ett
+-- avslutat samarbete med omdömen från båda parter.
+
 INSERT INTO public."User" VALUES ('cmtnc1h0l00007drmef4r8uxa', 'INFLUENCER', 'e1f4bb327cafad910b748c9cf12ebd64aa1b1acd9cc9eb0145ec8d6e5f9a2d8a', '19920315-****', 'Anna Karlsson', NULL, NULL, '2026-09-04 19:14:04.003', true, '2026-09-04 19:14:04.005', '2026-09-04 19:14:04.005');
 INSERT INTO public."User" VALUES ('cmtnc1h0s00047drmnw69zsq9', 'INFLUENCER', '835522d930a799e560a309e69664fbea2d0486f99395b786e64f580d04e018da', '19880722-****', 'Erik Lindberg', NULL, NULL, '2026-09-04 19:14:04.012', true, '2026-09-04 19:14:04.013', '2026-09-04 19:14:04.013');
 INSERT INTO public."User" VALUES ('cmtnc1h0w00087drm18ehvtya', 'INFLUENCER', '58b5b012f8abc5b04cbeb098a81565318356249c55f2769fb22ecb5bde318d3b', '19991102-****', 'Sara Nyström', NULL, NULL, '2026-09-04 19:14:04.015', true, '2026-09-04 19:14:04.016', '2026-09-04 19:14:04.016');
@@ -612,11 +727,17 @@ INSERT INTO public."User" VALUES ('cmtnc1h18000l7drmaygd0wjw', 'BUSINESS', '9431
 INSERT INTO public."User" VALUES ('cmtnc1h1b000n7drmbnles470', 'BUSINESS', 'c2e8cdd51c1076cac950300a2acc1a5df2c1a2034142e447252675157a06b1ce', '19801212-****', 'Ali Rahimi', NULL, NULL, '2026-09-04 19:14:04.031', true, '2026-09-04 19:14:04.032', '2026-09-04 19:14:04.032');
 
 
+--
+-- Data for Name: BusinessProfile; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."BusinessProfile" VALUES ('cmtnc1h18000m7drm8vy9nwoe', 'cmtnc1h18000l7drmaygd0wjw', 'Restaurang Kajutan', '5560123456', 'Göteborg', 'Kungsportsavenyen 12, 411 36 Göteborg', 'Västkustkök med råvaror från Fiskhamnen. 60 sittplatser.', NULL, '{RESTAURANG,FINE_DINING}', NULL, '2026-09-04 19:14:04.029', '2026-09-04 19:14:04.029');
 INSERT INTO public."BusinessProfile" VALUES ('cmtnc1h1b000o7drmtfw3df98', 'cmtnc1h1b000n7drmbnles470', 'Bageri Solrosen', '5569876543', 'Göteborg', 'Andra Långgatan 4, 413 03 Göteborg', 'Surdegsbageri och kafé i Linné. Öppnar 07 varje dag.', NULL, '{BAGERI,CAFE}', NULL, '2026-09-04 19:14:04.032', '2026-09-04 19:14:04.032');
 
 
+--
+-- Data for Name: Campaign; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."Campaign" VALUES ('cmtnc1h1e000q7drmk72tm4sx', 'cmtnc1h18000m7drm8vy9nwoe', 'Lansera vår nya lunchmeny', 'Vi byter till en ny lunchmeny med råvaror från Fiskhamnen. Du kommer förbi en vardag mellan 11 och 14, äter på vår bekostnad och gör innehåll som visar rätterna och stämningen i lokalen. Ta gärna med att lunchen kostar 145 kr inklusive kaffe.', '{RESTAURANG,MAT_OCH_DRYCK}', '{TIKTOK,INSTAGRAM}', '{TIKTOK_VIDEO,INSTAGRAM_STORY}', 'HYBRID', 400000, 30000, 3, 'Göteborg', 10000, '2026-09-04 19:14:04.034', '2026-11-03 19:14:04.033', 'ACTIVE', '2026-09-04 19:14:04.034', '2026-09-04 19:14:04.034');
 INSERT INTO public."Campaign" VALUES ('cmtnc1h1h000s7drm9ikv0pgk', 'cmtnc1h18000m7drm8vy9nwoe', 'Smakmeny för matintresserade', 'Sexrättersmeny med dryckespaket för dig som gör innehåll om fine dining. Vi vill ha en längre film där du berättar om rätterna och köket.', '{FINE_DINING,RESTAURANG}', '{YOUTUBE,INSTAGRAM}', '{YOUTUBE_VIDEO,INSTAGRAM_POST}', 'HYBRID', 1200000, 240000, 1, 'Göteborg', 30000, '2026-09-04 19:14:04.037', '2026-11-03 19:14:04.033', 'ACTIVE', '2026-09-04 19:14:04.038', '2026-09-04 19:14:04.038');
@@ -624,6 +745,9 @@ INSERT INTO public."Campaign" VALUES ('cmtnc1h1j000u7drmaoo4ltvx', 'cmtnc1h1b000
 INSERT INTO public."Campaign" VALUES ('cmtnc1h1p00107drmngu00i0a', 'cmtnc1h1b000o7drmtfw3df98', 'Fredagsfika med kanelbullar', 'Vi bakade extra inför fredagen och ville visa det. En kortare film från disken och en story när bullarna kommer ut ur ugnen.', '{BAGERI,CAFE}', '{INSTAGRAM}', '{INSTAGRAM_REEL}', 'FIXED', 350000, 0, 1, 'Göteborg', 3000, '2026-08-05 19:14:04.044', '2026-08-23 19:14:04.044', 'CLOSED', '2026-09-04 19:14:04.045', '2026-09-04 19:14:04.045');
 
 
+--
+-- Data for Name: InfluencerProfile; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."InfluencerProfile" VALUES ('cmtnc1h0l00017drmgk03kxo8', 'cmtnc1h0l00007drmef4r8uxa', 'annaäter', 'Testar Göteborgs lunchställen varje vardag. Kort, snabbt, ärligt.', 'Göteborg', NULL, '{RESTAURANG,MAT_OCH_DRYCK,LIVSSTIL}', 200000, 450000, 'acct_demo_annaäter', true, '2026-09-04 19:14:04.005', '2026-09-04 19:14:04.005');
 INSERT INTO public."InfluencerProfile" VALUES ('cmtnc1h0s00057drm5cfznkc1', 'cmtnc1h0s00047drmnw69zsq9', 'Kocken Erik', 'Utbildad kock som recenserar fine dining och nya öppningar.', 'Göteborg', NULL, '{FINE_DINING,RESTAURANG}', 500000, 1200000, 'acct_demo_Kocken Erik', true, '2026-09-04 19:14:04.013', '2026-09-04 19:14:04.013');
@@ -633,20 +757,35 @@ INSERT INTO public."InfluencerProfile" VALUES ('cmtnc1h12000g7drm4s421lw4', 'cmt
 INSERT INTO public."InfluencerProfile" VALUES ('cmtnc1h15000j7drm6onhdad5', 'cmtnc1h15000i7drmk8erycri', 'oskarpakrogen', 'Barer, cocktails och afterwork. 21+.', 'Göteborg', NULL, '{BAR,NOJE}', 250000, 550000, 'acct_demo_oskarpakrogen', true, '2026-09-04 19:14:04.026', '2026-09-04 19:14:04.026');
 
 
+--
+-- Data for Name: Application; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: AuditEvent; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: BankIdSession; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: Match; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."Match" VALUES ('cmtnc1h1m000y7drmh0pllpfn', 'cmtnc1h1e000q7drmk72tm4sx', 'cmtnc1h0l00017drmgk03kxo8', 'IN_CONVERSATION', 94, 'Täcker alla nischer kampanjen efterfrågar', '2026-09-04 19:14:04.043', '2026-09-04 19:14:04.043');
 INSERT INTO public."Match" VALUES ('cmtnc1h1s00147drmk6g5qaxj', 'cmtnc1h1p00107drmngu00i0a', 'cmtnc1h0s00057drm5cfznkc1', 'CONTRACTED', 88, 'Finns på plats i Göteborg och gör mat i samma stil', '2026-09-04 19:14:04.048', '2026-09-04 19:14:04.048');
 
 
+--
+-- Data for Name: Contract; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."Contract" VALUES ('cmtnc1h1z00167drmhc6olick', 'cmtnc1h1s00147drmk6g5qaxj', 'cmtnc1h1p00107drmngu00i0a', 'cmtnc1h0s00057drm5cfznkc1', 350000, 1200, '{INSTAGRAM_REEL}', '2026-08-23 19:14:04.044', 7, '# Samarbetsavtal
 
@@ -703,31 +842,53 @@ Parterna behandlar personuppgifter enligt dataskyddsförordningen (EU) 2016/679.
 
 Svensk rätt tillämpas. Tvist avgörs av svensk allmän domstol med Stockholms tingsrätt som första instans.
 
+---
 
 Avtalet undertecknas av båda parter med svenskt BankID. Signaturerna loggas med tidsstämpel och avtalstextens kontrollsumma.', 'COMPLETED', '2026-08-15 19:14:04.049', '2026-08-15 19:14:04.049', '2026-08-28 19:14:04.049', '2026-08-30 19:14:04.044', '2026-09-04 19:14:04.056', '2026-09-04 19:14:04.056');
 
 
+--
+-- Data for Name: Delivery; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: Message; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: Payment; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."Payment" VALUES ('cmtnc1h2300187drmqgpkqhat', 'cmtnc1h1z00167drmhc6olick', 350000, 42000, 308000, 'sek', NULL, NULL, 'RELEASED', '2026-08-17 19:14:04.058', '2026-08-30 19:14:04.044', NULL, '2026-09-04 19:14:04.059', '2026-09-04 19:14:04.059');
 
 
+--
+-- Data for Name: ProcessedWebhook; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: Review; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."Review" VALUES ('cmtnc1h2600197drmw6jit5q6', 'cmtnc1h1z00167drmhc6olick', 'BUSINESS', 'cmtnc1h1b000n7drmbnles470', 'cmtnc1h0s00057drm5cfznkc1', 'cmtnc1h1b000o7drmtfw3df98', 4.7, 5, 5, 4, 'Kom när vi kom överens om, förstod direkt vad vi ville visa och filmen låg uppe samma kväll. Vi fick fler bordsbokningar dagen efter.', '2026-08-31 19:14:04.044', '2026-08-31 19:14:04.044', '2026-09-13 19:14:04.044');
 INSERT INTO public."Review" VALUES ('cmtnc1h26001a7drmnngytxkb', 'cmtnc1h1z00167drmhc6olick', 'INFLUENCER', 'cmtnc1h0s00047drmnw69zsq9', 'cmtnc1h0s00057drm5cfznkc1', 'cmtnc1h1b000o7drmtfw3df98', 4.7, 4, 5, 5, 'Tydlig brief och de hade förberett allt när jag kom. Betalningen låg spärrad från början, så jag behövde aldrig fundera på om pengarna skulle komma.', '2026-08-31 19:14:04.044', '2026-08-31 19:14:04.044', '2026-09-13 19:14:04.044');
 
 
+--
+-- Data for Name: Signature; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 
 
+--
+-- Data for Name: SocialAccount; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."SocialAccount" VALUES ('cmtnc1h0l00027drmlkf06mwq', 'cmtnc1h0l00017drmgk03kxo8', 'TIKTOK', 'annaater', NULL, 48000, 39000, 0.071, false, NULL, NULL, NULL, '2026-09-04 19:14:04.003', '2026-09-04 19:14:04.005', '2026-09-04 19:14:04.005');
 INSERT INTO public."SocialAccount" VALUES ('cmtnc1h0l00037drmzah35vy3', 'cmtnc1h0l00017drmgk03kxo8', 'INSTAGRAM', 'annaater', NULL, 21000, 9000, 0.048, false, NULL, NULL, NULL, '2026-09-04 19:14:04.003', '2026-09-04 19:14:04.005', '2026-09-04 19:14:04.005');
@@ -740,8 +901,28 @@ INSERT INTO public."SocialAccount" VALUES ('cmtnc1h12000h7drmtekfgzsc', 'cmtnc1h
 INSERT INTO public."SocialAccount" VALUES ('cmtnc1h15000k7drmk77yxw5f', 'cmtnc1h15000j7drm6onhdad5', 'TIKTOK', 'oskarpakrogen', NULL, 29000, 24000, 0.058, false, NULL, NULL, NULL, '2026-09-04 19:14:04.025', '2026-09-04 19:14:04.026', '2026-09-04 19:14:04.026');
 
 
+--
+-- Data for Name: Swipe; Type: TABLE DATA; Schema: public; Owner: -
+--
 
 INSERT INTO public."Swipe" VALUES ('cmtnc1h1k000v7drmrnomvo5d', 'cmtnc1h1e000q7drmk72tm4sx', 'cmtnc1h0l00017drmgk03kxo8', 'INFLUENCER', 'LIKE', '2026-09-04 19:14:04.041');
 INSERT INTO public."Swipe" VALUES ('cmtnc1h1k000w7drmqytvqleq', 'cmtnc1h1e000q7drmk72tm4sx', 'cmtnc1h0l00017drmgk03kxo8', 'BUSINESS', 'LIKE', '2026-09-04 19:14:04.041');
 INSERT INTO public."Swipe" VALUES ('cmtnc1h1q00117drmaft7lu5m', 'cmtnc1h1p00107drmngu00i0a', 'cmtnc1h0s00057drm5cfznkc1', 'INFLUENCER', 'LIKE', '2026-09-04 19:14:04.047');
 INSERT INTO public."Swipe" VALUES ('cmtnc1h1q00127drmp5vm3t73', 'cmtnc1h1p00107drmngu00i0a', 'cmtnc1h0s00057drm5cfznkc1', 'BUSINESS', 'LIKE', '2026-09-04 19:14:04.047');
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- Data for Name: BusinessSocial; Type: TABLE DATA; Schema: public; Owner: -
+-- Kontot kreatören ska tagga. Skrivs in i avtalet när det skapas.
+--
+
+INSERT INTO public."BusinessSocial" VALUES ('cmtnc1h18000m7drmsoc1', 'cmtnc1h18000m7drm8vy9nwoe', 'TIKTOK', 'restaurangkajutan');
+INSERT INTO public."BusinessSocial" VALUES ('cmtnc1h18000m7drmsoc2', 'cmtnc1h18000m7drm8vy9nwoe', 'INSTAGRAM', 'kajutan_gbg');
+INSERT INTO public."BusinessSocial" VALUES ('cmtnc1h1b000o7drmsoc1', 'cmtnc1h1b000o7drmtfw3df98', 'INSTAGRAM', 'bagerisolrosen');
+
+UPDATE public."BusinessProfile" SET "websiteUrl" = 'https://kajutan.se' WHERE id = 'cmtnc1h18000m7drm8vy9nwoe';
+UPDATE public."BusinessProfile" SET "websiteUrl" = 'https://bagerisolrosen.se' WHERE id = 'cmtnc1h1b000o7drmtfw3df98';

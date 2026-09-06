@@ -27,6 +27,22 @@ function input(overrides: Partial<ContractTermsInput> = {}): ContractTermsInput 
 }
 
 describe('renderContractTerms', () => {
+  it('namnger kontot kreatören ska tagga, i fast ordning', () => {
+    const terms = renderContractTerms(
+      input({
+        businessAccounts: [
+          { platform: 'INSTAGRAM', handle: 'kajutan_gbg' },
+          { platform: 'TIKTOK', handle: 'kajutan' },
+        ],
+      }),
+    );
+    expect(terms).toContain('TikTok @kajutan, Instagram @kajutan_gbg');
+  });
+
+  it('utelämnar taggningen helt när företaget saknar konton', () => {
+    expect(renderContractTerms(input())).not.toContain('ska tagga');
+  });
+
   it('får med båda parter och avtalsnumret', () => {
     const terms = renderContractTerms(input());
     expect(terms).toContain('Restaurang Kajutan');

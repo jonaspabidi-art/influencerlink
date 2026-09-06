@@ -131,6 +131,11 @@ const businesses = [
     address: 'Kungsportsavenyen 12, 411 36 Göteborg',
     description: 'Västkustkök med råvaror från Fiskhamnen. 60 sittplatser.',
     categories: ['RESTAURANG', 'FINE_DINING'] as Category[],
+    websiteUrl: 'https://kajutan.se',
+    socials: [
+      { platform: 'TIKTOK' as const, handle: 'restaurangkajutan' },
+      { platform: 'INSTAGRAM' as const, handle: 'kajutan_gbg' },
+    ],
   },
   {
     personalNumber: '198012126666',
@@ -141,6 +146,8 @@ const businesses = [
     address: 'Andra Långgatan 4, 413 03 Göteborg',
     description: 'Surdegsbageri och kafé i Linné. Öppnar 07 varje dag.',
     categories: ['BAGERI', 'CAFE'] as Category[],
+    websiteUrl: 'https://bagerisolrosen.se',
+    socials: [{ platform: 'INSTAGRAM' as const, handle: 'bagerisolrosen' }],
   },
 ];
 
@@ -221,6 +228,8 @@ async function main(): Promise<void> {
             address: seed.address,
             description: seed.description,
             categories: seed.categories,
+            websiteUrl: seed.websiteUrl,
+            socials: { create: seed.socials },
           },
         },
       },

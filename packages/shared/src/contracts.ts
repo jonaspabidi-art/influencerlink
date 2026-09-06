@@ -1,4 +1,4 @@
-import type { DeliverableKind } from './domain.js';
+import { PLATFORMS, type DeliverableKind, type Platform } from './domain.js';
 import { formatSek, splitFee, type Ore } from './money.js';
 
 /** Leverabler skrivna som de ska stå i avtalet. */
@@ -29,6 +29,26 @@ export interface ContractTermsInput {
   dueDate: Date;
   reviewDays: number;
   extraTerms: string;
+  /**
+   * Uppdragsgivarens egna konton. Kreatören måste veta vilket konto hon ska
+   * tagga, och den uppgiften hör hemma i avtalet – inte i ett chattmeddelande
+   * som försvinner uppåt i tråden.
+   */
+  businessAccounts?: { platform: Platform; handle: string }[];
+}
+
+/** Konton i fast ordning. Avtalstexten hashas – den får inte variera. */
+function renderAccounts(accounts: { platform: Platform; handle: string }[]): string {
+  const labels: Record<Platform, string> = {
+    TIKTOK: 'TikTok',
+    INSTAGRAM: 'Instagram',
+    YOUTUBE: 'YouTube',
+  };
+  return accounts
+    .slice()
+    .sort((a, b) => PLATFORMS.indexOf(a.platform) - PLATFORMS.indexOf(b.platform))
+    .map((account) => `${labels[account.platform]} @${account.handle}`)
+    .join(', ');
 }
 
 const dateFormatter = new Intl.DateTimeFormat('sv-SE', {
@@ -44,6 +64,7 @@ const dateFormatter = new Intl.DateTimeFormat('sv-SE', {
  */
 export function renderContractTerms(input: ContractTermsInput): string {
   const { platformFee, net } = splitFee(input.fee, input.platformFeeBps);
+  const accounts = renderAccounts(input.businessAccounts ?? []);
   const deliverableList = input.deliverables
     .map((kind, index) => `${index + 1}. ${describeDeliverable(kind)}`)
     .join('\n');
@@ -88,7 +109,11 @@ Angivna belopp är exklusive mervärdesskatt. Uppdragstagaren ansvarar själv f�
 ## 4. Marknadsföringsrättslig märkning
 
 Uppdragstagaren ska tydligt märka allt material som reklam i enlighet med marknadsföringslagen (2008:486) och Konsumentverkets vägledning, till exempel med "Reklam för ${input.businessName}" eller "Samarbete". Märkningen ska synas utan att mottagaren behöver klicka vidare.
-
+${
+    accounts
+      ? `\nUppdragstagaren ska tagga uppdragsgivarens konto i inlägget: ${accounts}.\n`
+      : ''
+  }
 ## 5. Rättigheter till materialet
 
 Uppdragstagaren behåller upphovsrätten till materialet. Uppdragsgivaren får en icke-exklusiv rätt att återpublicera materialet i sina egna kanaler i sex (6) månader från publiceringen, med angivande av uppdragstagarens användarnamn. All annan användning, inklusive betald annonsering, kräver skriftligt medgivande.

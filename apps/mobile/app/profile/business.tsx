@@ -1,4 +1,4 @@
-import { CATEGORIES, type Category } from '@pacta/shared';
+import { CATEGORIES, PLATFORMS, type Category, type Platform } from '@pacta/shared';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ import {
   Loading,
   ScrollScreen,
 } from '../../src/components/ui';
-import { CATEGORY_LABELS } from '../../src/format';
+import { CATEGORY_LABELS, PLATFORM_LABELS } from '../../src/format';
 import { colors, spacing, type } from '../../src/theme';
 import type { OwnBusinessProfile } from '../../src/types';
 
@@ -40,6 +40,13 @@ export default function EditBusinessProfile() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  // Ett fält per plattform, tomt betyder "har inget konto där".
+  const [handles, setHandles] = useState<Record<Platform, string>>({
+    TIKTOK: '',
+    INSTAGRAM: '',
+    YOUTUBE: '',
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -55,7 +62,30 @@ export default function EditBusinessProfile() {
     setCategories(loaded.categories);
     setLogoUrl(loaded.logoUrl);
     setPhotos(loaded.photos);
+    setWebsiteUrl(loaded.websiteUrl ?? '');
+    setHandles({
+      TIKTOK: loaded.socials.find((social) => social.platform === 'TIKTOK')?.handle ?? '',
+      INSTAGRAM: loaded.socials.find((social) => social.platform === 'INSTAGRAM')?.handle ?? '',
+      YOUTUBE: loaded.socials.find((social) => social.platform === 'YOUTUBE')?.handle ?? '',
+    });
   }, [loaded]);
+
+  /**
+   * "@bolaget", "bolaget" och "https://www.tiktok.com/@bolaget" ska alla ge
+   * "bolaget" – folk klistrar in hela adressen lika ofta som de skriver namnet.
+   */
+  const cleanHandle = (value: string): string => {
+    const withoutProtocol = value.trim().replace(/^https?:\/\//i, '').replace(/[?#].*$/, '');
+    const last = withoutProtocol.split('/').filter(Boolean).pop() ?? '';
+    return last.replace(/^@/, '');
+  };
+
+  /** Utan protokoll blir det ingen giltig adress – lägg på det åt dem. */
+  const cleanWebsite = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
 
   const toggleCategory = (category: Category) => {
     setSaved(false);
@@ -77,6 +107,10 @@ export default function EditBusinessProfile() {
     }
     if (city.trim().length < 2) return setError('Ange vilken stad ni finns i.');
     if (categories.length < 1) return setError('Välj minst en nisch.');
+    const website = cleanWebsite(websiteUrl);
+    if (website && !/^https?:\/\/[^\s.]+\.[^\s]{2,}$/i.test(website)) {
+      return setError('Kontrollera hemsideadressen.');
+    }
 
     setSaving(true);
     try {
@@ -89,6 +123,11 @@ export default function EditBusinessProfile() {
         categories,
         logoUrl,
         photos,
+        websiteUrl: website || null,
+        socials: PLATFORMS.map((platform) => ({
+          platform,
+          handle: cleanHandle(handles[platform]),
+        })).filter((social) => social.handle.length > 0),
       });
       await replaceToken(result.accessToken);
       await profile.refetch();
@@ -166,6 +205,37 @@ export default function EditBusinessProfile() {
               }}
               multiline
             />
+          </Card>
+
+          <Card>
+            <Label>ERA EGNA KANALER</Label>
+            <Body>
+              Kreatören ska tagga rätt konto – det skrivs in i avtalet. Hemsidan visas på er
+              profil.
+            </Body>
+            <Field
+              label="Hemsida"
+              value={websiteUrl}
+              onChangeText={(value) => {
+                setSaved(false);
+                setWebsiteUrl(value);
+              }}
+              placeholder="exempel.se"
+              keyboardType="url"
+            />
+            {PLATFORMS.map((platform) => (
+              <Field
+                key={platform}
+                label={PLATFORM_LABELS[platform]}
+                value={handles[platform]}
+                onChangeText={(value) => {
+                  setSaved(false);
+                  setHandles((current) => ({ ...current, [platform]: value }));
+                }}
+                placeholder="@erakonto"
+                keyboardType="url"
+              />
+            ))}
           </Card>
 
           <Card>

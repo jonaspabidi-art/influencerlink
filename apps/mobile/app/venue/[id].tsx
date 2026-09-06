@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
-import { GridIcon } from '../../src/components/icons';
+import { GridIcon, LinkIcon } from '../../src/components/icons';
 import {
   Body,
   Card,
@@ -15,10 +15,17 @@ import {
   ScrollScreen,
   Tag,
 } from '../../src/components/ui';
-import { CATEGORY_LABELS, describeCompensation, formatSek } from '../../src/format';
+import { CATEGORY_LABELS, PLATFORM_LABELS, describeCompensation, formatSek } from '../../src/format';
 import { resolveMediaUrl } from '../../src/media';
 import { colors, radius, spacing, type } from '../../src/theme';
 import type { ProfileReviews, VenueProfile } from '../../src/types';
+
+/** Kontots adress hos plattformen. YouTube använder @handtag i url:en numera. */
+const PROFILE_URLS = {
+  TIKTOK: (handle: string) => `https://www.tiktok.com/@${handle}`,
+  INSTAGRAM: (handle: string) => `https://www.instagram.com/${handle}`,
+  YOUTUBE: (handle: string) => `https://www.youtube.com/@${handle}`,
+} as const;
 
 /**
  * Företaget, så som kreatören ser det.
@@ -92,6 +99,31 @@ export default function VenueProfileScreen() {
             </View>
           </Card>
 
+          {data.websiteUrl || data.socials.length > 0 ? (
+            <View style={styles.section}>
+              <Label>KANALER</Label>
+              {/*
+                Kontot står också i avtalet – det är det kreatören ska tagga.
+                Här är det till för att hon ska hinna titta innan hon tackar ja.
+              */}
+              {data.websiteUrl ? (
+                <LinkRow
+                  label="Hemsida"
+                  value={data.websiteUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+                  url={data.websiteUrl}
+                />
+              ) : null}
+              {data.socials.map((social) => (
+                <LinkRow
+                  key={social.platform}
+                  label={PLATFORM_LABELS[social.platform]}
+                  value={`@${social.handle}`}
+                  url={PROFILE_URLS[social.platform](social.handle)}
+                />
+              ))}
+            </View>
+          ) : null}
+
           {data.photos.length > 0 ? (
             <View style={styles.section}>
               <View style={styles.sectionHead}>
@@ -150,6 +182,24 @@ export default function VenueProfileScreen() {
   );
 }
 
+/** En klickbar rad: vad det är, vad det heter, och vart den går. */
+function LinkRow({ label, value, url }: { label: string; value: string; url: string }) {
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`Öppna ${label}`}
+      onPress={() => void Linking.openURL(url)}
+      style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+    >
+      <LinkIcon size={16} color={colors.muted} />
+      <Text style={styles.linkLabel}>{label}</Text>
+      <Text style={styles.linkValue} numberOfLines={1}>
+        {value}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   content: { paddingTop: 0, gap: spacing.md },
   secondary: { ...type.secondary, color: colors.muted },
@@ -161,6 +211,19 @@ const styles = StyleSheet.create({
   section: { gap: spacing.sm },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sectionTitle: { ...type.sectionTitle, color: colors.text },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.control,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  linkLabel: { ...type.secondary, color: colors.muted },
+  linkValue: { ...type.bodySmall, color: colors.primary, flex: 1, textAlign: 'right' },
   photoRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.base },
   photo: { width: 220, height: 165, borderRadius: radius.card, backgroundColor: colors.photo },
 

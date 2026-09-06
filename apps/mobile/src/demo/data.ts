@@ -56,6 +56,8 @@ export interface DemoBusiness {
   logoUrl: string | null;
   photos: string[];
   categories: Category[];
+  websiteUrl: string | null;
+  socials: { platform: Platform; handle: string }[];
 }
 
 export interface DemoUser {
@@ -217,6 +219,11 @@ export const DEMO_BUSINESSES: DemoBusiness[] = [
     logoUrl: null,
     photos: [],
     categories: ['RESTAURANG', 'FINE_DINING'],
+    websiteUrl: 'https://kajutan.se',
+    socials: [
+      { platform: 'TIKTOK', handle: 'restaurangkajutan' },
+      { platform: 'INSTAGRAM', handle: 'kajutan_gbg' },
+    ],
   },
   {
     id: 'biz_solrosen',
@@ -229,6 +236,8 @@ export const DEMO_BUSINESSES: DemoBusiness[] = [
     logoUrl: null,
     photos: [],
     categories: ['BAGERI', 'CAFE'],
+    websiteUrl: 'https://bagerisolrosen.se',
+    socials: [{ platform: 'INSTAGRAM', handle: 'bagerisolrosen' }],
   },
 ];
 

@@ -191,8 +191,17 @@ export const businessProfileInputSchema = z.object({
   description: z.string().max(600).default(''),
   categories: z.array(categorySchema).min(1).max(6),
   logoUrl: mediaUrlSchema.nullish(),
-  /** Bilder på stället, i visningsordning. */
+  /** Bilder på verksamheten, i visningsordning. */
   photos: z.array(mediaUrlSchema).max(8).default([]),
+  websiteUrl: z.string().url().max(300).nullish(),
+  /**
+   * Företagets egna konton. Ingen inloggning – handtaget är det kreatören ska
+   * tagga, och det skrivs in i avtalet.
+   */
+  socials: z
+    .array(z.object({ platform: platformSchema, handle: z.string().min(1).max(64) }))
+    .max(3)
+    .default([]),
 });
 export type BusinessProfileInput = z.infer<typeof businessProfileInputSchema>;
 

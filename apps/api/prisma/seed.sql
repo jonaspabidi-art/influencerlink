@@ -200,3 +200,15 @@ INSERT INTO public."Swipe" VALUES ('cmtnc1h1q00127drmp5vm3t73', 'cmtnc1h1p00107d
 --
 -- PostgreSQL database dump complete
 --
+
+--
+-- Data for Name: BusinessSocial; Type: TABLE DATA; Schema: public; Owner: -
+-- Kontot kreatören ska tagga. Skrivs in i avtalet när det skapas.
+--
+
+INSERT INTO public."BusinessSocial" VALUES ('cmtnc1h18000m7drmsoc1', 'cmtnc1h18000m7drm8vy9nwoe', 'TIKTOK', 'restaurangkajutan');
+INSERT INTO public."BusinessSocial" VALUES ('cmtnc1h18000m7drmsoc2', 'cmtnc1h18000m7drm8vy9nwoe', 'INSTAGRAM', 'kajutan_gbg');
+INSERT INTO public."BusinessSocial" VALUES ('cmtnc1h1b000o7drmsoc1', 'cmtnc1h1b000o7drmtfw3df98', 'INSTAGRAM', 'bagerisolrosen');
+
+UPDATE public."BusinessProfile" SET "websiteUrl" = 'https://kajutan.se' WHERE id = 'cmtnc1h18000m7drm8vy9nwoe';
+UPDATE public."BusinessProfile" SET "websiteUrl" = 'https://bagerisolrosen.se' WHERE id = 'cmtnc1h1b000o7drmtfw3df98';

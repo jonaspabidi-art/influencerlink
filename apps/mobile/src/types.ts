@@ -109,6 +109,10 @@ export interface OwnBusinessProfile {
   /** Bilder på verksamheten, i visningsordning. */
   photos: string[];
   categories: Category[];
+  /** Hemsidan, om de har en. Kreatören vill se vad hon tackar ja till. */
+  websiteUrl: string | null;
+  /** Företagets egna konton – det är dem kreatören ska tagga. */
+  socials: { platform: Platform; handle: string }[];
 }
 
 /** Företaget som kreatören ser det. */
@@ -121,6 +125,8 @@ export interface VenueProfile {
   logoUrl: string | null;
   photos: string[];
   categories: Category[];
+  websiteUrl: string | null;
+  socials: { platform: Platform; handle: string }[];
   openCampaigns: {
     id: string;
     title: string;

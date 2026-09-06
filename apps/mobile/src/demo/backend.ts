@@ -794,6 +794,8 @@ route('GET', '/businesses/:id', ({ params }) => {
     logoUrl: business.logoUrl,
     photos: business.photos,
     categories: business.categories,
+    websiteUrl: business.websiteUrl,
+    socials: business.socials,
     openCampaigns: state.campaigns
       .filter((campaign) => campaign.businessId === business.id && campaign.status === 'ACTIVE')
       .slice(0, 5)
@@ -947,6 +949,8 @@ route('GET', '/me/business-profile', () => {
     logoUrl: business.logoUrl,
     photos: business.photos,
     categories: business.categories,
+    websiteUrl: business.websiteUrl,
+    socials: business.socials,
   };
 });
 
@@ -964,6 +968,10 @@ route('PUT', '/me/business-profile', ({ body }) => {
     logoUrl: typeof body.logoUrl === 'string' ? body.logoUrl : null,
     photos: Array.isArray(body.photos) ? (body.photos as string[]) : [],
     categories: (body.categories as Category[]) ?? [],
+    websiteUrl: typeof body.websiteUrl === 'string' ? body.websiteUrl : null,
+    socials: Array.isArray(body.socials)
+      ? (body.socials as { platform: Platform; handle: string }[])
+      : [],
   };
   state.businesses = [...state.businesses.filter((item) => item.id !== business.id), business];
   user.profileId = business.id;
@@ -1330,6 +1338,7 @@ route('POST', '/contracts', ({ body }) => {
       dueDate: new Date(String(body.dueDate ?? new Date().toISOString())),
       reviewDays: Number(body.reviewDays ?? 7),
       extraTerms: String(body.extraTerms ?? ''),
+      businessAccounts: business.socials,
     }),
     signedByInfluencerAt: null,
     signedByBusinessAt: null,

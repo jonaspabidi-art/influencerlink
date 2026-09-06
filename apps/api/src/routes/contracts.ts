@@ -76,7 +76,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
       const match = await prisma.match.findUnique({
         where: { id: request.body.matchId },
         include: {
-          campaign: { include: { business: true } },
+          campaign: { include: { business: { include: { socials: true } } } },
           influencer: { include: { user: true } },
           contracts: { where: { status: { not: 'CANCELLED' } }, select: { id: true } },
         },
@@ -104,6 +104,10 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         dueDate: new Date(request.body.dueDate),
         reviewDays: request.body.reviewDays,
         extraTerms: request.body.extraTerms,
+        businessAccounts: match.campaign.business.socials.map((social) => ({
+          platform: social.platform,
+          handle: social.handle,
+        })),
       });
 
       const contract = await prisma.contract.create({

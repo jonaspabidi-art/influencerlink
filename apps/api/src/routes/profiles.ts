@@ -66,6 +66,8 @@ const ownBusinessSchema = z.object({
   description: z.string(),
   logoUrl: z.string().nullable(),
   photos: z.array(z.string()),
+  websiteUrl: z.string().nullable(),
+  socials: z.array(z.object({ platform: platformSchema, handle: z.string() })),
   categories: z.array(categorySchema),
 });
 
@@ -77,6 +79,8 @@ const publicBusinessSchema = z.object({
   description: z.string(),
   logoUrl: z.string().nullable(),
   photos: z.array(z.string()),
+  websiteUrl: z.string().nullable(),
+  socials: z.array(z.object({ platform: platformSchema, handle: z.string() })),
   categories: z.array(categorySchema),
   /** Publicerade kampanjer, så kreatören ser vad stället söker just nu. */
   openCampaigns: z.array(
@@ -649,6 +653,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         categories: body.categories,
         logoUrl: body.logoUrl ?? null,
         photos: body.photos,
+        websiteUrl: body.websiteUrl ?? null,
       };
       const profile = await prisma.businessProfile.upsert({
         where: { userId: request.user.sub },
@@ -656,13 +661,28 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         update: data,
       });
 
+      /*
+       * Listan ersätter den tidigare. Ett konto som tagits bort i formuläret
+       * ska inte ligga kvar och pekas ut som det kreatören ska tagga.
+       */
+      await prisma.$transaction([
+        prisma.businessSocial.deleteMany({ where: { businessId: profile.id } }),
+        prisma.businessSocial.createMany({
+          data: body.socials.map((social) => ({
+            businessId: profile.id,
+            platform: social.platform,
+            handle: social.handle.replace(/^@/, ''),
+          })),
+        }),
+      ]);
+
       await prisma.user.update({
         where: { id: request.user.sub },
         data: { onboardingComplete: true },
       });
 
       return {
-        profile: toPublicBusiness(profile),
+        profile: toPublicBusiness({ ...profile, socials: body.socials }),
         accessToken: server.jwt.sign(await buildSessionPayload(prisma, request.user.sub)),
       };
     },
@@ -677,6 +697,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
     async (request) => {
       const profile = await prisma.businessProfile.findUnique({
         where: { userId: request.user.sub },
+        include: { socials: true },
       });
       if (!profile) throw notFound('Företagsprofilen hittades inte.');
       return {
@@ -688,6 +709,11 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         description: profile.description,
         logoUrl: profile.logoUrl,
         photos: profile.photos,
+        websiteUrl: profile.websiteUrl,
+        socials: profile.socials.map((social) => ({
+          platform: social.platform,
+          handle: social.handle,
+        })),
         categories: profile.categories,
       };
     },
@@ -706,6 +732,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       const profile = await prisma.businessProfile.findUnique({
         where: { id: request.params.id },
         include: {
+          socials: true,
           campaigns: {
             where: { status: 'ACTIVE' },
             orderBy: { createdAt: 'desc' },
@@ -924,6 +951,8 @@ function toPublicBusiness(profile: {
   description: string;
   logoUrl: string | null;
   photos: string[];
+  websiteUrl: string | null;
+  socials: { platform: Platform; handle: string }[];
   categories: Category[];
 }) {
   return {
@@ -934,6 +963,11 @@ function toPublicBusiness(profile: {
     description: profile.description,
     logoUrl: profile.logoUrl,
     photos: profile.photos,
+    websiteUrl: profile.websiteUrl,
+    socials: profile.socials.map((social) => ({
+      platform: social.platform,
+      handle: social.handle,
+    })),
     categories: profile.categories,
   };
 }
