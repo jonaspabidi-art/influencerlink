@@ -18,7 +18,7 @@ function input(overrides: Partial<ContractTermsInput> = {}): ContractTermsInput 
     campaignBrief: 'Vi lanserar en ny lunchmeny med råvaror från Västkusten.',
     deliverables: ['TIKTOK_VIDEO', 'INSTAGRAM_STORY'],
     fee: 400_000,
-    platformFeeBps: 1200,
+    feeSplit: { businessFeeBps: 1000, creatorFeeBps: 1000 },
     dueDate: new Date('2026-05-20T00:00:00Z'),
     reviewDays: 7,
     extraTerms: '',
@@ -52,9 +52,18 @@ describe('renderContractTerms', () => {
     expect(terms).toContain('ctr_123');
   });
 
-  it('redovisar arvode, avgift och nettoutbetalning', () => {
+  it('redovisar båda avgiftsdelarna, vad företaget betalar och vad kreatören får', () => {
     const terms = renderContractTerms(input()).replace(/\s/g, ' ');
-    expect(terms).toContain('4 000 kr');
+    expect(terms).toContain('4 000 kr'); // arvode
+    expect(terms).toContain('400 kr'); // avgift per part
+    expect(terms).toContain('4 400 kr'); // uppdragsgivaren betalar in
+    expect(terms).toContain('3 600 kr'); // utbetalas till uppdragstagaren
+  });
+
+  it('räknar ett avtal från tiden före den delade avgiften som då', () => {
+    const terms = renderContractTerms(
+      input({ feeSplit: { businessFeeBps: 0, creatorFeeBps: 1200 } }),
+    ).replace(/\s/g, ' ');
     expect(terms).toContain('480 kr');
     expect(terms).toContain('3 520 kr');
   });

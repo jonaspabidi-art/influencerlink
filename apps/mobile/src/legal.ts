@@ -11,9 +11,10 @@ export const LEGAL = {
   orgNumber: '[ORGANISATIONSNUMMER]',
   contactEmail: '[KONTAKT-E-POST]',
   /** Datum då dokumenten senast ändrades. */
-  updated: '2026-09-05',
-  /** Vår andel av arvodet, i procent. */
-  platformFeePercent: 12,
+  updated: '2026-09-06',
+  /** Avgiften är delad: företaget betalar sin del ovanpå, kreatören sin av arvodet. */
+  businessFeePercent: 10,
+  creatorFeePercent: 10,
 };
 
 export interface LegalSection {

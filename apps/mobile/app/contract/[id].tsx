@@ -184,9 +184,29 @@ export default function ContractDetail() {
 
       <Card>
         <DetailRow label="Arvode" value={formatSek(data.fee)} />
-        <DetailRow label="Plattformsavgift 12 %" value={`−${formatSek(data.platformFee)}`} />
-        <Divider />
-        <DetailRow label="Till kreatören" value={formatSek(data.payout)} emphasis />
+        {/*
+          Avgiften är delad, så parterna har olika rader att bry sig om.
+          Var och en ser sin egen – summan de betalar eller får.
+        */}
+        {isBusiness ? (
+          <>
+            <DetailRow
+              label="Förmedlingsavgift 10 %"
+              value={`+${formatSek(data.businessFee)}`}
+            />
+            <Divider />
+            <DetailRow label="Du betalar in" value={formatSek(data.charge)} emphasis />
+          </>
+        ) : (
+          <>
+            <DetailRow
+              label="Förmedlingsavgift 10 %"
+              value={`−${formatSek(data.creatorFee)}`}
+            />
+            <Divider />
+            <DetailRow label="Du får" value={formatSek(data.payout)} emphasis />
+          </>
+        )}
         <Divider />
         <DetailRow label="Deadline" value={formatDate(data.dueDate)} />
         <DetailRow

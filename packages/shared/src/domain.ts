@@ -82,8 +82,19 @@ export const DELIVERABLE_KINDS = [
 ] as const;
 export type DeliverableKind = (typeof DELIVERABLE_KINDS)[number];
 
-/** Plattformsavgift i baspunkter (1200 = 12 %) som dras av vid utbetalning. */
-export const PLATFORM_FEE_BPS = 1200;
+/**
+ * Förmedlingsavgiften är delad: företaget betalar sin del ovanpå arvodet och
+ * kreatören får sin dragen vid utbetalning. Båda ser samma procentsats, och
+ * kreatören får mer i handen än när hon bar hela avgiften ensam.
+ */
+export const BUSINESS_FEE_BPS = 1000;
+export const CREATOR_FEE_BPS = 1000;
+
+/**
+ * Den odelade avgiften, som gällde före den delade. Avtal tecknade då har den
+ * sparad på sig och ska räknas om precis som när de signerades.
+ */
+export const LEGACY_PLATFORM_FEE_BPS = 1200;
 
 /** All valuta hanteras i minsta enhet (öre) för att undvika flyttalsfel. */
 export const CURRENCY = 'sek';

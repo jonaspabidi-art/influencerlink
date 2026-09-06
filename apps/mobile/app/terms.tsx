@@ -35,7 +35,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Ersättning och avgift',
     paragraphs: [
-      `Vi tar ${LEGAL.platformFeePercent} % av arvodet för förmedlingen. Avgiften dras när utbetalningen görs och framgår av avtalet innan ni signerar.`,
+      `Förmedlingsavgiften delas mellan parterna. Företaget betalar ${LEGAL.businessFeePercent} % ovanpå arvodet, och ${LEGAL.creatorFeePercent} % dras från kreatörens utbetalning. Båda beloppen står i avtalet innan ni signerar.`,
       'Ingår mat, produkter eller en upplevelse i ersättningen anges värdet i avtalet. Det är kreatörens ansvar att hantera det skattemässigt.',
       'Kreatören ansvarar själv för skatter och avgifter på sin ersättning. Har kreatören inget företag kan utbetalningen gå via en löneförmedlare, och de villkoren visas innan valet görs.',
     ],

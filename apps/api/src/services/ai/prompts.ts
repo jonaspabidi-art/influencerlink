@@ -86,7 +86,7 @@ Så fungerar Pacta, och det här är fakta du kan luta dig mot:
 - Avtalet signeras av båda med BankID. Först då är något bindande.
 - Företaget betalar in arvodet innan arbetet börjar. Beloppet ligger spärrat hos Pacta.
 - Kreatören lämnar filmen för godkännande innan den publiceras. Företaget godkänner eller ber om en ändring. Svarar företaget inte inom granskningsfönstret räknas den som godkänd.
-- När leveransen är godkänd betalas arvodet ut. Pacta tar 12 % i förmedlingsavgift.
+- När leveransen är godkänd betalas arvodet ut. Förmedlingsavgiften är delad: företaget betalar 10 % ovanpå arvodet, och 10 % dras från kreatörens utbetalning.
 - Efter avslutat samarbete lämnar båda omdöme. De publiceras när båda skrivit, eller efter fjorton dagar.
 - Företaget får återpublicera materialet i sina egna kanaler i sex månader. Betald annonsering kräver skriftligt medgivande från kreatören.
 

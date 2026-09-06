@@ -5,6 +5,7 @@ import {
   contractInputSchema,
   contractStatusSchema,
   daysLeftToReviewDraft,
+  DEFAULT_FEE_SPLIT,
   deliverableKindSchema,
   deliveryProofInputSchema,
   draftReviewSchema,
@@ -18,6 +19,7 @@ import {
   problemSchema,
   splitFee,
   summariseMetrics,
+  type FeeSplit,
 } from '@pacta/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
@@ -41,8 +43,17 @@ const contractDetailSchema = z.object({
   influencerId: z.string(),
   influencerName: z.string(),
   status: contractStatusSchema,
+  /** Det avtalade arvodet. */
   fee: z.number().int(),
+  /** Företagets del av avgiften, ovanpå arvodet. */
+  businessFee: z.number().int(),
+  /** Vad företaget betalar in: arvode plus deras avgift. */
+  charge: z.number().int(),
+  /** Kreatörens del, dragen från arvodet. */
+  creatorFee: z.number().int(),
+  /** Hela förmedlingsavgiften – båda delarna. */
   platformFee: z.number().int(),
+  /** Vad kreatören får utbetalt. */
   payout: z.number().int(),
   deliverables: z.array(deliverableKindSchema),
   dueDate: z.string(),
@@ -100,7 +111,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         campaignBrief: match.campaign.brief,
         deliverables: request.body.deliverables,
         fee: request.body.fee,
-        platformFeeBps: 1200,
+        feeSplit: DEFAULT_FEE_SPLIT,
         dueDate: new Date(request.body.dueDate),
         reviewDays: request.body.reviewDays,
         extraTerms: request.body.extraTerms,
@@ -620,7 +631,8 @@ type ContractRow = {
   influencerId: string;
   status: 'DRAFT' | 'SENT' | 'PARTIALLY_SIGNED' | 'ACTIVE' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED';
   fee: number;
-  platformFeeBps: number;
+  businessFeeBps: number;
+  creatorFeeBps: number;
   deliverables: DeliverableKind[];
   dueDate: Date;
   reviewDays: number;
@@ -633,6 +645,11 @@ type ContractRow = {
   influencer: { displayName: string; userId: string };
   payment: { status: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED' } | null;
 };
+
+/** Avgiftsfördelningen som sparades på avtalet när det tecknades. */
+function feeSplitOf(contract: { businessFeeBps: number; creatorFeeBps: number }): FeeSplit {
+  return { businessFeeBps: contract.businessFeeBps, creatorFeeBps: contract.creatorFeeBps };
+}
 
 async function loadContractForParty(
   services: Services,
@@ -654,7 +671,7 @@ async function loadContractForParty(
 }
 
 function toContractDetail(contract: ContractRow, role: string, _userId: string) {
-  const breakdown = splitFee(contract.fee, contract.platformFeeBps);
+  const breakdown = splitFee(contract.fee, feeSplitOf(contract));
   const mySignature =
     role === 'INFLUENCER' ? contract.signedByInfluencerAt : contract.signedByBusinessAt;
 
@@ -667,7 +684,10 @@ function toContractDetail(contract: ContractRow, role: string, _userId: string) 
     influencerId: contract.influencerId,
     influencerName: contract.influencer.displayName,
     status: contract.status,
-    fee: breakdown.gross,
+    fee: breakdown.fee,
+    businessFee: breakdown.businessFee,
+    charge: breakdown.charge,
+    creatorFee: breakdown.creatorFee,
     platformFee: breakdown.platformFee,
     payout: breakdown.net,
     deliverables: contract.deliverables,

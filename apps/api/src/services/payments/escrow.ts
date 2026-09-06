@@ -6,8 +6,9 @@ import type { PaymentProvider } from './types.js';
 
 /**
  * Skapar (eller återanvänder) escrow-betalningen för ett kontrakt.
- * Företaget betalar in hela arvodet till plattformen; pengarna släpps
- * först när leveransen godkänts.
+ *
+ * Företaget betalar in arvodet plus sin del av förmedlingsavgiften; pengarna
+ * släpps först när leveransen godkänts. Kreatörens del dras vid utbetalningen.
  */
 export async function createEscrow(
   prisma: PrismaClient,
@@ -43,10 +44,13 @@ export async function createEscrow(
     });
   }
 
-  const breakdown = splitFee(contract.fee, contract.platformFeeBps);
+  const breakdown = splitFee(contract.fee, {
+    businessFeeBps: contract.businessFeeBps,
+    creatorFeeBps: contract.creatorFeeBps,
+  });
   const intent = await payments.createEscrowIntent({
     contractId: contract.id,
-    amount: breakdown.gross,
+    amount: breakdown.charge,
     customerId,
     description: `${contract.campaign.title} – avtal ${contract.id}`,
   });
@@ -55,14 +59,14 @@ export async function createEscrow(
     where: { contractId: contract.id },
     create: {
       contractId: contract.id,
-      amount: breakdown.gross,
+      amount: breakdown.charge,
       platformFee: breakdown.platformFee,
       payout: breakdown.net,
       stripePaymentIntentId: intent.paymentIntentId,
       status: 'PENDING',
     },
     update: {
-      amount: breakdown.gross,
+      amount: breakdown.charge,
       platformFee: breakdown.platformFee,
       payout: breakdown.net,
       stripePaymentIntentId: intent.paymentIntentId,
@@ -75,10 +79,10 @@ export async function createEscrow(
     action: 'payment.intent_created',
     entityType: 'Payment',
     entityId: payment.id,
-    metadata: { amount: breakdown.gross, contractId: contract.id },
+    metadata: { amount: breakdown.charge, contractId: contract.id },
   });
 
-  return { clientSecret: intent.clientSecret, amount: breakdown.gross, paymentId: payment.id };
+  return { clientSecret: intent.clientSecret, amount: breakdown.charge, paymentId: payment.id };
 }
 
 /** Markerar betalningen som mottagen. Anropas av Stripe-webhooken. */

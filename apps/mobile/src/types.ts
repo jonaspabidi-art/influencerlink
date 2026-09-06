@@ -259,8 +259,17 @@ export interface Contract {
   influencerId: string;
   influencerName: string;
   status: ContractStatus;
+  /** Det avtalade arvodet. */
   fee: number;
+  /** Företagets del av avgiften, ovanpå arvodet. */
+  businessFee: number;
+  /** Vad företaget betalar in. */
+  charge: number;
+  /** Kreatörens del, dragen från arvodet. */
+  creatorFee: number;
+  /** Hela förmedlingsavgiften. */
   platformFee: number;
+  /** Vad kreatören får utbetalt. */
   payout: number;
   deliverables: DeliverableKind[];
   dueDate: string;

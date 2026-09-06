@@ -208,7 +208,7 @@ export default function Login() {
 
       <View style={styles.footnote}>
         <LockIcon size={14} color={colors.positive} />
-        <Text style={styles.footnoteText}>Plattformsavgift 12 %. Inga avgifter innan avtal.</Text>
+        <Text style={styles.footnoteText}>Förmedlingsavgift 10 %. Inga avgifter innan avtal.</Text>
       </View>
 
       {/* Måste gå att nå utan konto – både granskare och besökare läser dem här. */}

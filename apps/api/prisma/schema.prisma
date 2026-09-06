@@ -397,8 +397,10 @@ model Contract {
 
   /// Avtalat arvode brutto, i öre.
   fee            Int
-  /// Plattformsavgift i baspunkter vid tecknandet, sparas för spårbarhet.
-  platformFeeBps Int               @default(1200)
+  /// Avgiftsfördelningen vid tecknandet, i baspunkter. Sparas per avtal så att
+  /// en framtida prisändring aldrig räknar om ett redan signerat avtal.
+  businessFeeBps Int               @default(1000)
+  creatorFeeBps  Int               @default(1000)
   deliverables   DeliverableKind[]
   dueDate        DateTime
   reviewDays     Int               @default(7)

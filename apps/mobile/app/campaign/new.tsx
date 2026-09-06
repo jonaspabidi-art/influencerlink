@@ -4,6 +4,7 @@ import {
   PLATFORMS,
   type Category,
   type CompensationType,
+  splitFee,
   type DeliverableKind,
   type Platform,
 } from '@pacta/shared';
@@ -68,7 +69,6 @@ const STARTERS = [
 
 const PROMPT_MAX = 1000;
 const DEFAULT_RUN_DAYS = 30;
-const PLATFORM_FEE_BPS = 1200;
 
 export default function NewCampaign() {
   const router = useRouter();
@@ -253,7 +253,11 @@ export default function NewCampaign() {
   // --- Steg 2: utkastet ----------------------------------------------------
 
   const feeTotal = kronorToOre(Number(budget) || 0) * Math.max(1, Number(slots) || 1);
-  const platformFee = Math.floor((feeTotal * PLATFORM_FEE_BPS) / 10_000);
+  // Avgiften är delad, så summan de betalar in är större än arvodet. Det ska
+  // stå här och inte komma som en överraskning i avtalet.
+  const money = splitFee(feeTotal);
+  // Per kreatör, inte totalen: "kreatören får" ska vara det hon faktiskt får.
+  const perCreator = splitFee(kronorToOre(Number(budget) || 0));
 
   return (
     <ScrollScreen contentStyle={styles.content}>
@@ -384,17 +388,18 @@ export default function NewCampaign() {
             <Text style={styles.summaryValue}>{formatSek(feeTotal)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Plattformsavgift 12 %</Text>
-            <Text style={styles.summaryValue}>{formatSek(platformFee)}</Text>
+            <Text style={styles.summaryLabel}>Förmedlingsavgift 10 %</Text>
+            <Text style={styles.summaryValue}>{formatSek(money.businessFee)}</Text>
           </View>
           <Divider />
           <View style={styles.summaryRow}>
             <Text style={styles.summaryTotalLabel}>Du betalar in</Text>
-            <Text style={styles.summaryTotal}>{formatSek(feeTotal)}</Text>
+            <Text style={styles.summaryTotal}>{formatSek(money.charge)}</Text>
           </View>
           <Text style={styles.summaryNote}>
             Först när avtalet är signerat. Beloppet ligger spärrat hos oss tills du godkänt
-            leveransen.
+            leveransen. Varje kreatör får {formatSek(perCreator.net)} utbetalt – vi tar 10 % av
+            vardera part.
           </Text>
         </Card>
       ) : null}

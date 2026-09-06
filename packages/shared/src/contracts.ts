@@ -1,5 +1,5 @@
 import { PLATFORMS, type DeliverableKind, type Platform } from './domain.js';
-import { formatSek, splitFee, type Ore } from './money.js';
+import { formatSek, splitFee, type FeeSplit, type Ore } from './money.js';
 
 /** Leverabler skrivna som de ska stå i avtalet. */
 const DELIVERABLE_LABELS: Record<DeliverableKind, string> = {
@@ -25,7 +25,8 @@ export interface ContractTermsInput {
   campaignBrief: string;
   deliverables: DeliverableKind[];
   fee: Ore;
-  platformFeeBps: number;
+  /** Avgiftsfördelningen som gällde när avtalet tecknades. */
+  feeSplit: FeeSplit;
   dueDate: Date;
   reviewDays: number;
   extraTerms: string;
@@ -63,7 +64,7 @@ const dateFormatter = new Intl.DateTimeFormat('sv-SE', {
  * aldrig innehålla något som varierar mellan två anrop (som dagens datum).
  */
 export function renderContractTerms(input: ContractTermsInput): string {
-  const { platformFee, net } = splitFee(input.fee, input.platformFeeBps);
+  const money = splitFee(input.fee, input.feeSplit);
   const accounts = renderAccounts(input.businessAccounts ?? []);
   const deliverableList = input.deliverables
     .map((kind, index) => `${index + 1}. ${describeDeliverable(kind)}`)
@@ -99,10 +100,12 @@ Materialet ska vara publicerat senast **${dateFormatter.format(input.dueDate)}**
 | Post | Belopp |
 | --- | --- |
 | Arvode | ${formatSek(input.fee)} |
-| Plattformsavgift (${(input.platformFeeBps / 100).toFixed(1)} %) | −${formatSek(platformFee)} |
-| **Utbetalas till uppdragstagaren** | **${formatSek(net)}** |
+| Förmedlingsavgift, uppdragsgivaren (${percent(input.feeSplit.businessFeeBps)} %) | +${formatSek(money.businessFee)} |
+| **Uppdragsgivaren betalar in** | **${formatSek(money.charge)}** |
+| Förmedlingsavgift, uppdragstagaren (${percent(input.feeSplit.creatorFeeBps)} %) | −${formatSek(money.creatorFee)} |
+| **Utbetalas till uppdragstagaren** | **${formatSek(money.net)}** |
 
-Uppdragsgivaren betalar in hela arvodet till Pacta när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har ${input.reviewDays} dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
+Uppdragsgivaren betalar in arvodet och sin del av förmedlingsavgiften till Pacta när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har ${input.reviewDays} dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
 
 Angivna belopp är exklusive mervärdesskatt. Uppdragstagaren ansvarar själv för skatt och eventuella sociala avgifter på ersättningen.
 
@@ -137,6 +140,11 @@ ${input.extraTerms.trim() ? `\n## 9. Särskilda villkor\n\n${input.extraTerms.tr
 ---
 
 Avtalet undertecknas av båda parter med svenskt BankID. Signaturerna loggas med tidsstämpel och avtalstextens kontrollsumma.`;
+}
+
+/** 1000 baspunkter → "10,0". Kommatecken, eftersom avtalet är på svenska. */
+function percent(bps: number): string {
+  return (bps / 100).toFixed(1).replace('.', ',');
 }
 
 /** "5560000000" → "556000-0000" */

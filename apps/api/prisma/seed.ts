@@ -3,7 +3,13 @@
  * kopplade konton, tre kampanjer och ett samarbete som redan hunnit bli
  * matchning. Kör med `npm run db:seed -w @pacta/api`.
  */
-import { overallRating, renderContractTerms, reviewDeadline, splitFee } from '@pacta/shared';
+import {
+  DEFAULT_FEE_SPLIT,
+  overallRating,
+  renderContractTerms,
+  reviewDeadline,
+  splitFee,
+} from '@pacta/shared';
 import { PrismaClient, type Category, type Platform } from '@prisma/client';
 import { createHmac } from 'node:crypto';
 
@@ -408,7 +414,7 @@ async function seedCompletedCollaboration(input: {
         campaignBrief: campaign.brief,
         deliverables: ['INSTAGRAM_REEL'],
         fee,
-        platformFeeBps: 1200,
+        feeSplit: DEFAULT_FEE_SPLIT,
         dueDate,
         reviewDays: 7,
         extraTerms: '',
@@ -416,11 +422,11 @@ async function seedCompletedCollaboration(input: {
     },
   });
 
-  const breakdown = splitFee(fee, 1200);
+  const breakdown = splitFee(fee, DEFAULT_FEE_SPLIT);
   await prisma.payment.create({
     data: {
       contractId: contract.id,
-      amount: breakdown.gross,
+      amount: breakdown.charge,
       platformFee: breakdown.platformFee,
       payout: breakdown.net,
       status: 'RELEASED',

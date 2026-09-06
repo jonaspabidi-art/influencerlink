@@ -98,7 +98,8 @@ interface Contract {
   influencerId: string;
   status: 'SENT' | 'PARTIALLY_SIGNED' | 'ACTIVE' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED';
   fee: number;
-  platformFeeBps: number;
+  businessFeeBps: number;
+  creatorFeeBps: number;
   deliverables: DeliverableKind[];
   dueDate: string;
   reviewDays: number;
@@ -137,7 +138,12 @@ interface State {
 
 /** Så länge låtsas BankID-dialogen pågå innan den blir klar. */
 const DEMO_BANKID_MS = 1400;
-const PLATFORM_FEE_BPS = 1200;
+const FEE_SPLIT = { businessFeeBps: 1000, creatorFeeBps: 1000 };
+
+/** Avgiftsfördelningen som avtalet tecknades med. */
+function feeSplitOf(contract: { businessFeeBps: number; creatorFeeBps: number }) {
+  return { businessFeeBps: contract.businessFeeBps, creatorFeeBps: contract.creatorFeeBps };
+}
 
 const STORAGE_KEY = 'pacta.demo';
 
@@ -315,7 +321,7 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
   const campaign = campaignById(contract.campaignId);
   const business = businessById(campaign.businessId);
   const influencer = influencerById(contract.influencerId);
-  const breakdown = splitFee(contract.fee, contract.platformFeeBps);
+  const breakdown = splitFee(contract.fee, feeSplitOf(contract));
   const mine = role === 'INFLUENCER' ? contract.signedByInfluencerAt : contract.signedByBusinessAt;
 
   return {
@@ -327,7 +333,10 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
     influencerId: contract.influencerId,
     influencerName: influencer.displayName,
     status: contract.status,
-    fee: breakdown.gross,
+    fee: breakdown.fee,
+    businessFee: breakdown.businessFee,
+    charge: breakdown.charge,
+    creatorFee: breakdown.creatorFee,
     platformFee: breakdown.platformFee,
     payout: breakdown.net,
     deliverables: contract.deliverables,
@@ -985,7 +994,7 @@ route('GET', '/me/payouts/status', () => {
   const sum = (status: Contract['paymentStatus']) =>
     mine
       .filter((contract) => contract.paymentStatus === status)
-      .reduce((total, contract) => total + splitFee(contract.fee, contract.platformFeeBps).net, 0);
+      .reduce((total, contract) => total + splitFee(contract.fee, feeSplitOf(contract)).net, 0);
 
   return {
     connected: profile.stripeAccountId !== null,
@@ -1320,7 +1329,7 @@ route('POST', '/contracts', ({ body }) => {
     influencerId: influencer.id,
     status: 'SENT',
     fee: Number(body.fee ?? campaign.budgetPerCreator),
-    platformFeeBps: PLATFORM_FEE_BPS,
+    ...FEE_SPLIT,
     deliverables,
     dueDate: String(body.dueDate ?? new Date().toISOString()),
     reviewDays: Number(body.reviewDays ?? 7),
@@ -1334,7 +1343,7 @@ route('POST', '/contracts', ({ body }) => {
       campaignBrief: campaign.brief,
       deliverables,
       fee: Number(body.fee ?? campaign.budgetPerCreator),
-      platformFeeBps: PLATFORM_FEE_BPS,
+      feeSplit: FEE_SPLIT,
       dueDate: new Date(String(body.dueDate ?? new Date().toISOString())),
       reviewDays: Number(body.reviewDays ?? 7),
       extraTerms: String(body.extraTerms ?? ''),
@@ -1399,7 +1408,7 @@ route('POST', '/contracts/:id/approve', ({ params }) => {
   contract.status = 'COMPLETED';
   contract.completedAt = new Date().toISOString();
   contract.paymentStatus = 'RELEASED';
-  return { status: contract.status, payout: splitFee(contract.fee, contract.platformFeeBps).net };
+  return { status: contract.status, payout: splitFee(contract.fee, feeSplitOf(contract)).net };
 });
 
 // Omdömen ---------------------------------------------------------------------
