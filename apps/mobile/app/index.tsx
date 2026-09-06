@@ -19,6 +19,9 @@ export default function Index() {
 
   if (!user) return <Redirect href="/login" />;
 
+  // Plattformsvyn har ingen onboarding och ingen egen profil att fylla i.
+  if (user.role === 'ADMIN') return <Redirect href="/admin" />;
+
   if (!user.onboardingComplete) {
     return (
       <Redirect href={user.role === 'BUSINESS' ? '/onboarding/business' : '/onboarding/influencer'} />

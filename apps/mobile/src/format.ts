@@ -1,4 +1,5 @@
 import type { Category, ContractStatus, DeliverableKind, Platform } from '@pacta/shared';
+import type { StatusTone } from './components/ui';
 
 export { formatSek, kronorToOre, oreToKronor } from '@pacta/shared';
 
@@ -78,6 +79,17 @@ export const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
   DELIVERED: 'Levererat – väntar',
   COMPLETED: 'Klart och utbetalt',
   CANCELLED: 'Avbrutet',
+};
+
+/** Färgtonen som hör till varje avtalsläge. */
+export const CONTRACT_STATUS_TONES: Record<ContractStatus, StatusTone> = {
+  DRAFT: 'pending',
+  SENT: 'pending',
+  PARTIALLY_SIGNED: 'pending',
+  ACTIVE: 'active',
+  DELIVERED: 'active',
+  COMPLETED: 'done',
+  CANCELLED: 'cancelled',
 };
 
 /** Vad som händer härnäst, för den som läser. */

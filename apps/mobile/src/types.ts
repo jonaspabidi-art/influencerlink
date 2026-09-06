@@ -415,3 +415,145 @@ export interface ExpertOrder {
   deliveredAt: string | null;
   paymentStatus: PaymentStatus;
 }
+
+// --- Plattformsvyn (ADMIN) --------------------------------------------------
+
+export interface AdminOverview {
+  businesses: number;
+  influencers: number;
+  activeCampaigns: number;
+  openContracts: number;
+  /** Summan av arvodena i signerade avtal, i öre. */
+  signedVolume: number;
+  /** Vad plattformen tjänat på dem. */
+  platformRevenue: number;
+  escrowHeld: number;
+  openExpertOrders: number;
+}
+
+export interface AdminBusinessRow {
+  id: string;
+  companyName: string;
+  orgNumber: string;
+  city: string;
+  campaigns: number;
+  contracts: number;
+}
+
+export interface AdminBusiness {
+  id: string;
+  companyName: string;
+  orgNumber: string;
+  city: string;
+  address: string;
+  description: string;
+  websiteUrl: string | null;
+  contactName: string;
+  createdAt: string;
+  campaigns: {
+    id: string;
+    title: string;
+    status: Campaign['status'];
+    slots: number;
+    slotsFilled: number;
+    budgetPerCreator: number;
+    contracts: number;
+  }[];
+}
+
+export interface AdminInfluencerRow {
+  id: string;
+  displayName: string;
+  city: string;
+  followers: number;
+  /** Om siffrorna kommer från plattformen eller är påhittade. */
+  statsVerified: boolean;
+  payoutsReady: boolean;
+  contracts: number;
+}
+
+export interface AdminInfluencer {
+  id: string;
+  displayName: string;
+  bio: string;
+  city: string;
+  contactName: string;
+  /** Maskerat. Hela numret finns bara som hash. */
+  personalNumberMask: string | null;
+  priceMin: number;
+  priceTarget: number;
+  payoutsReady: boolean;
+  createdAt: string;
+  rating: RatingSummary;
+  socials: {
+    platform: string;
+    handle: string;
+    followers: number;
+    avgViews: number;
+    statsSource: string;
+    /** Sant om kontot är kopplat med inloggning. Nyckeln visas aldrig. */
+    connected: boolean;
+  }[];
+  contracts: {
+    id: string;
+    campaignTitle: string;
+    businessName: string;
+    status: ContractStatus;
+    fee: number;
+    payout: number;
+  }[];
+}
+
+export interface AdminContractRow {
+  id: string;
+  campaignTitle: string;
+  businessName: string;
+  influencerName: string;
+  status: ContractStatus;
+  fee: number;
+  paymentStatus: string | null;
+  createdAt: string;
+}
+
+export interface AdminContract {
+  id: string;
+  campaignId: string;
+  campaignTitle: string;
+  businessId: string;
+  businessName: string;
+  influencerId: string;
+  influencerName: string;
+  status: ContractStatus;
+  fee: number;
+  charge: number;
+  platformFee: number;
+  payout: number;
+  dueDate: string;
+  terms: string;
+  signedByBusinessAt: string | null;
+  signedByInfluencerAt: string | null;
+  deliveredAt: string | null;
+  completedAt: string | null;
+  deliveryUrls: string[];
+  payment: {
+    status: string;
+    amount: number;
+    payout: number;
+    escrowedAt: string | null;
+    releasedAt: string | null;
+  } | null;
+  usageRights: {
+    status: string;
+    amount: number;
+    creatorShare: number;
+    paymentStatus: string;
+  } | null;
+  views: number;
+}
+
+/** Ett uppdrag i kön, sett från vår sida. */
+export interface AdminExpertOrder extends ExpertOrder {
+  businessId: string;
+  companyName: string;
+  city: string;
+}
