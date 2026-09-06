@@ -14,9 +14,14 @@ import {
   reviewDeadline,
   splitFee,
   summarizeRatings,
+  EXPERT_ORDER_CAPACITY,
+  EXPERT_ORDER_PRICE,
+  hasCapacity,
+  occupiesCapacity,
   usageRightsPrice,
   USAGE_RIGHTS_MONTHS,
   type CampaignCandidate,
+  type ExpertOrderStatus,
   type Category,
   type DeliverableKind,
   type InfluencerCandidate,
@@ -137,6 +142,22 @@ interface DemoUsageRights {
   respondedAt: string | null;
 }
 
+/** Ett uppdrag där Pacta bygger kampanjen åt företaget. */
+interface DemoExpertOrder {
+  id: string;
+  businessId: string;
+  status: ExpertOrderStatus;
+  goal: string;
+  timing: string;
+  budget: string;
+  notes: string;
+  price: number;
+  campaignId: string | null;
+  requestedAt: string;
+  deliveredAt: string | null;
+  paymentStatus: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED';
+}
+
 interface State {
   users: DemoUser[];
   influencers: DemoInfluencer[];
@@ -149,6 +170,7 @@ interface State {
   contracts: Contract[];
   reviews: DemoReview[];
   usageRights: DemoUsageRights[];
+  expertOrders: DemoExpertOrder[];
   accounts: DemoAccountRecord[];
   orders: BankIdOrder[];
   sessionUserId: string | null;
@@ -189,6 +211,7 @@ const STATE_ARRAYS = [
   'contracts',
   'reviews',
   'usageRights',
+  'expertOrders',
   'accounts',
   'orders',
 ] as const;
@@ -238,6 +261,7 @@ function freshState(): State {
     contracts: [],
     reviews: DEMO_REVIEWS.map((item) => ({ ...item, scores: { ...item.scores } })),
     usageRights: [],
+    expertOrders: [],
     accounts: [],
     orders: [],
     sessionUserId: null,
@@ -860,6 +884,68 @@ route('POST', '/contracts/:id/usage-rights/pay', ({ params }) => {
     item.contractId === updated.contractId ? updated : item,
   );
   return { clientSecret: 'demo', amount: rights.amount };
+});
+
+// Pacta gör det åt er ---------------------------------------------------------
+
+const openExpertOrders = () =>
+  state.expertOrders.filter((order) => occupiesCapacity(order.status));
+
+route('GET', '/expert-orders/availability', () => {
+  const business = businessById(requireProfileId(currentUser()));
+  return {
+    available: hasCapacity(openExpertOrders().length),
+    price: EXPERT_ORDER_PRICE,
+    hasOpenOrder: openExpertOrders().some((order) => order.businessId === business.id),
+  };
+});
+
+route('GET', '/expert-orders/mine', () => {
+  const business = businessById(requireProfileId(currentUser()));
+  return state.expertOrders.filter((order) => order.businessId === business.id);
+});
+
+route('POST', '/expert-orders', ({ body }) => {
+  const business = businessById(requireProfileId(currentUser()));
+  if (openExpertOrders().some((order) => order.businessId === business.id)) {
+    throw new DemoError(409, 'conflict', 'Ni har redan ett uppdrag på gång hos oss.');
+  }
+  if (!hasCapacity(openExpertOrders().length)) {
+    throw new DemoError(
+      409,
+      'conflict',
+      `Vi är fullbokade just nu och tar emot ${EXPERT_ORDER_CAPACITY} uppdrag åt gången.`,
+    );
+  }
+  const order: DemoExpertOrder = {
+    id: nextId('exp'),
+    businessId: business.id,
+    status: 'REQUESTED',
+    goal: String(body.goal ?? ''),
+    timing: String(body.timing ?? ''),
+    budget: String(body.budget ?? ''),
+    notes: String(body.notes ?? ''),
+    price: EXPERT_ORDER_PRICE,
+    campaignId: null,
+    requestedAt: new Date().toISOString(),
+    deliveredAt: null,
+    paymentStatus: 'PENDING',
+  };
+  state.expertOrders = [...state.expertOrders, order];
+  return order;
+});
+
+route('POST', '/expert-orders/:id/approve', ({ params }) => {
+  const order = state.expertOrders.find((item) => item.id === params[0]);
+  if (!order) throw new DemoError(404, 'not_found', 'Uppdraget hittades inte.');
+  if (order.status !== 'DELIVERED') {
+    throw new DemoError(400, 'bad_request', 'Uppdraget är inte levererat än.');
+  }
+  const updated: DemoExpertOrder = { ...order, status: 'APPROVED', paymentStatus: 'RELEASED' };
+  state.expertOrders = state.expertOrders.map((item) =>
+    item.id === updated.id ? updated : item,
+  );
+  return { clientSecret: 'demo', amount: order.price };
 });
 
 route('GET', '/contracts/:id/drafts', () => []);

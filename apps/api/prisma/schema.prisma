@@ -252,6 +252,7 @@ model BusinessProfile {
   reviews   Review[]
 
   @@index([city])
+  expertOrders ExpertOrder[]
 }
 
 /// Företagets eget konto på en plattform.
@@ -305,6 +306,7 @@ model Campaign {
   contracts    Contract[]
 
   @@index([status, city])
+  expertOrder ExpertOrder?
 }
 
 /// En swipe per part och kampanj-/influencerpar. Ömsesidig LIKE skapar en Match.
@@ -756,4 +758,53 @@ model UsageRights {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Var uppdraget står. Bara REQUESTED och IN_PROGRESS tar en plats i kön.
+enum ExpertOrderStatus {
+  REQUESTED
+  IN_PROGRESS
+  DELIVERED
+  APPROVED
+  CANCELLED
+}
+
+/// "Låt en Pacta-expert skapa kampanjen."
+///
+/// Vi bygger kampanjen åt företaget och levererar den till deras konto. De
+/// publicerar och betalar i samma steg – betalning vid leverans, så att den
+/// som beställt något de inte sett kan ångra sig utan att ha betalat.
+model ExpertOrder {
+  id String @id @default(cuid())
+
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  status ExpertOrderStatus @default(REQUESTED)
+
+  /// Svaren på de fyra frågorna.
+  goal   String
+  timing String
+  /// Fritext med flit: "vet inte" är ett giltigt svar på en budgetfråga.
+  budget String
+  notes  String
+
+  /// Priset som gällde vid beställningen, i öre.
+  price Int
+
+  /// Kampanjen vi byggt, satt när uppdraget levereras.
+  campaignId String?   @unique
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  requestedAt DateTime  @default(now())
+  deliveredAt DateTime?
+  approvedAt  DateTime?
+
+  paymentStatus         PaymentStatus @default(PENDING)
+  stripePaymentIntentId String?       @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
 }

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { DemoBanner } from '../../src/components/DemoBanner';
+import { ExpertOrderStatus } from '../../src/components/ExpertOrderStatus';
 import { PlusIcon } from '../../src/components/icons';
 import {
   Button,
@@ -66,6 +67,7 @@ export default function BusinessCampaigns() {
       <Screen>
         <Header title="Kampanjer" large subtitle="Inget samarbete ännu" />
         <View style={styles.emptyBody}>
+          <ExpertOrderStatus />
           <Card>
             <Text style={styles.emptyTitle}>Skriv två meningar, få en färdig kampanj</Text>
             <Text style={styles.emptyText}>
@@ -102,11 +104,14 @@ export default function BusinessCampaigns() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <Button
-            label="Nytt samarbete"
-            icon={<PlusIcon size={18} color={colors.ink} />}
-            onPress={() => router.push('/campaign/new')}
-          />
+          <View style={styles.header}>
+            <ExpertOrderStatus />
+            <Button
+              label="Nytt samarbete"
+              icon={<PlusIcon size={18} color={colors.ink} />}
+              onPress={() => router.push('/campaign/new')}
+            />
+          </View>
         }
         ListFooterComponent={
           <View style={styles.footer}>
@@ -156,6 +161,7 @@ export default function BusinessCampaigns() {
 }
 
 const styles = StyleSheet.create({
+  header: { gap: spacing.md },
   list: { gap: 10, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
   row: {
     backgroundColor: colors.surface,

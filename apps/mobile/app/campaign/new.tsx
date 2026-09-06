@@ -8,9 +8,10 @@ import {
   type DeliverableKind,
   type Platform,
 } from '@pacta/shared';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { ImagePickerField } from '../../src/components/ImagePickerField';
 import { SparkIcon } from '../../src/components/icons';
@@ -38,7 +39,7 @@ import {
   formatSek,
 } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
-import type { Campaign } from '../../src/types';
+import type { Campaign, ExpertAvailability } from '../../src/types';
 
 interface CampaignDraft {
   title: string;
@@ -72,6 +73,10 @@ const DEFAULT_RUN_DAYS = 30;
 
 export default function NewCampaign() {
   const router = useRouter();
+  const expert = useQuery({
+    queryKey: ['expert-availability'],
+    queryFn: () => api.get<ExpertAvailability>('/expert-orders/availability'),
+  });
   const [step, setStep] = useState<1 | 2>(1);
 
   const [prompt, setPrompt] = useState('');
@@ -244,6 +249,19 @@ export default function NewCampaign() {
             />
             <Text style={styles.footnote}>Tar några sekunder. Inget publiceras än.</Text>
             <Button label="Fyll i själv" variant="secondary" onPress={() => setStep(2)} />
+            {/*
+              Tredje sättet att svara på frågan skärmen redan ställer, inte en
+              extra ruta. Döljs när vi är fullbokade – ett erbjudande vi inte
+              kan hålla är värre än inget erbjudande.
+            */}
+            {expert.data?.available ? (
+              <Button
+                label="Låt en Pacta-expert skapa kampanjen"
+                variant="secondary"
+                icon={<SparkIcon size={18} color={colors.text} />}
+                onPress={() => router.push('/campaign/expert')}
+              />
+            ) : null}
           </View>
         </View>
       </ScrollScreen>
@@ -251,6 +269,9 @@ export default function NewCampaign() {
   }
 
   // --- Steg 2: utkastet ----------------------------------------------------
+
+  // "Fastnat" är tom brief eller ingen budget – inte att man skriver långsamt.
+  const stalled = brief.trim().length < 40 || Number(budget) <= 0;
 
   const feeTotal = kronorToOre(Number(budget) || 0) * Math.max(1, Number(slots) || 1);
   // Avgiften är delad, så summan de betalar in är större än arvodet. Det ska
@@ -379,6 +400,23 @@ export default function NewCampaign() {
         </View>
       </Card>
 
+      {/*
+        Bara för den som klickade "Fyll i själv", såg fälten och stannade upp.
+        Den som fyllt i ordentligt ser aldrig raden – ett erbjudande intill
+        publiceringsknappen konkurrerar med det vi vill att de gör.
+      */}
+      {stalled && expert.data?.available ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Låt en Pacta-expert skapa kampanjen"
+          onPress={() => router.push('/campaign/expert')}
+        >
+          <Text style={styles.expertHint}>
+            Fastnat? Låt en Pacta-expert skriva den åt er.
+          </Text>
+        </Pressable>
+      ) : null}
+
       {compensationType !== 'PRODUCT' ? (
         <Card tone="raised">
           <View style={styles.summaryRow}>
@@ -415,6 +453,7 @@ export default function NewCampaign() {
 }
 
 const styles = StyleSheet.create({
+  expertHint: { ...type.bodySmall, color: colors.primary, textAlign: 'center' },
   step1Content: { paddingTop: 0, flexGrow: 1 },
   content: { paddingTop: 0 },
   stepCounter: { ...type.label, color: colors.muted },

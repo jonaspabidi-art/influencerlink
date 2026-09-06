@@ -1,4 +1,5 @@
 import type {
+  ExpertOrderStatus,
   Category,
   CompensationType,
   ContractStatus,
@@ -389,4 +390,28 @@ export interface DemoAccount {
   displayName: string;
   onboardingComplete: boolean;
   summary: string;
+}
+
+/** Om vi tar emot fler uppdrag just nu. */
+export interface ExpertAvailability {
+  available: boolean;
+  price: number;
+  /** Sant om företaget redan har ett uppdrag på gång. */
+  hasOpenOrder: boolean;
+}
+
+/** Ett uppdrag där vi bygger kampanjen åt företaget. */
+export interface ExpertOrder {
+  id: string;
+  status: ExpertOrderStatus;
+  goal: string;
+  timing: string;
+  budget: string;
+  notes: string;
+  price: number;
+  /** Kampanjen vi levererat, när den finns. */
+  campaignId: string | null;
+  requestedAt: string;
+  deliveredAt: string | null;
+  paymentStatus: PaymentStatus;
 }

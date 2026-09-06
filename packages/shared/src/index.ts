@@ -1,6 +1,7 @@
 export * from './contracts.js';
 export * from './domain.js';
 export * from './drafts.js';
+export * from './expert.js';
 export * from './links.js';
 export * from './matching.js';
 export * from './media.js';

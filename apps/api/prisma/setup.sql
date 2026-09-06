@@ -693,6 +693,39 @@ CREATE UNIQUE INDEX "UsageRights_stripePaymentIntentId_key" ON "UsageRights"("st
 
 ALTER TABLE "UsageRights" ADD CONSTRAINT "UsageRights_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- === 20260916000000_expert_orders ===
+
+-- "Låt en Pacta-expert skapa kampanjen": beställning, kö och leverans.
+CREATE TYPE "ExpertOrderStatus" AS ENUM ('REQUESTED', 'IN_PROGRESS', 'DELIVERED', 'APPROVED', 'CANCELLED');
+
+CREATE TABLE "ExpertOrder" (
+    "id" TEXT NOT NULL,
+    "businessId" TEXT NOT NULL,
+    "status" "ExpertOrderStatus" NOT NULL DEFAULT 'REQUESTED',
+    "goal" TEXT NOT NULL,
+    "timing" TEXT NOT NULL,
+    "budget" TEXT NOT NULL,
+    "notes" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "campaignId" TEXT,
+    "requestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deliveredAt" TIMESTAMP(3),
+    "approvedAt" TIMESTAMP(3),
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
+    "stripePaymentIntentId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ExpertOrder_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "ExpertOrder_campaignId_key" ON "ExpertOrder"("campaignId");
+CREATE UNIQUE INDEX "ExpertOrder_stripePaymentIntentId_key" ON "ExpertOrder"("stripePaymentIntentId");
+CREATE INDEX "ExpertOrder_status_idx" ON "ExpertOrder"("status");
+
+ALTER TABLE "ExpertOrder" ADD CONSTRAINT "ExpertOrder_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "BusinessProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ExpertOrder" ADD CONSTRAINT "ExpertOrder_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -765,6 +798,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         'f0dbf8249d082a5750f0a242e36f405cf2e8aaf953a6cf66aa8d1b2ca89d3527',
         now(), '20260915000000_usage_rights', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '2badf99a1d481e466e1636e837bc6483d3db480d10734c3b28244de8bd671499',
+        now(), '20260916000000_expert_orders', now(), 1);
 
 -- === Demodata ===
 
