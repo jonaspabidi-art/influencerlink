@@ -189,6 +189,8 @@ export interface Match {
   };
   influencer: { id: string; displayName: string; avatarUrl: string | null; city: string };
   contractId: string | null;
+  /** Vad kreatören begärt, om hon sökt med ett eget pris. */
+  proposedFee: number | null;
   lastMessage: string | null;
   counterpartRating: RatingSummary;
 }

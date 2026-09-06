@@ -335,10 +335,11 @@ export default function NewCampaign() {
           {compensationType !== 'PRODUCT' ? (
             <View style={styles.moneyField}>
               <Field
-                label="Arvode (kr)"
+                label="Riktbudget (kr)"
                 value={budget}
                 onChangeText={setBudget}
                 keyboardType="numeric"
+                hint="Per kreatör. Slutligt arvode avtalas med var och en."
               />
             </View>
           ) : null}
@@ -360,6 +361,7 @@ export default function NewCampaign() {
               value={slots}
               onChangeText={setSlots}
               keyboardType="numeric"
+              hint="Ni kan samarbeta med flera i samma kampanj."
             />
           </View>
           <View style={styles.moneyField}>

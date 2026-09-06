@@ -39,6 +39,11 @@ const matchSchema = z.object({
     city: z.string(),
   }),
   contractId: z.string().nullable(),
+  /**
+   * Vad kreatören begärt för uppdraget, om hon sökt med ett eget pris.
+   * Företaget ska se det när avtalet skrivs – annars försvinner hennes bud.
+   */
+  proposedFee: z.number().int().nullable(),
   lastMessage: z.string().nullable(),
   /** Motpartens betyg – företagets för influencern, och tvärtom. */
   counterpartRating: ratingSummarySchema,
@@ -78,6 +83,31 @@ export async function matchRoutes(app: FastifyInstance, services: Services): Pro
         orderBy: { updatedAt: 'desc' },
       });
 
+      /*
+       * Sökte kreatören med ett eget pris hör det hemma här. Företaget såg det
+       * i ansökningslistan men tappade det så fort matchningen uppstod, och
+       * avtalet föreslog kampanjens budget som om buden aldrig funnits.
+       */
+      const applications =
+        matches.length === 0
+          ? []
+          : await prisma.application.findMany({
+              where: {
+                OR: matches.map((match) => ({
+                  campaignId: match.campaignId,
+                  influencerId: match.influencerId,
+                })),
+                proposedFee: { not: null },
+              },
+              select: { campaignId: true, influencerId: true, proposedFee: true },
+            });
+      const proposals = new Map(
+        applications.map((application) => [
+          `${application.campaignId}:${application.influencerId}`,
+          application.proposedFee,
+        ]),
+      );
+
       const counterpartIsInfluencer = request.user.role === 'BUSINESS';
       const ratings = await ratingsFor(
         prisma,
@@ -110,6 +140,7 @@ export async function matchRoutes(app: FastifyInstance, services: Services): Pro
           city: match.influencer.city,
         },
         contractId: match.contracts[0]?.id ?? null,
+        proposedFee: proposals.get(`${match.campaignId}:${match.influencerId}`) ?? null,
         lastMessage: match.messages[0]?.body ?? null,
         counterpartRating:
           ratings.get(

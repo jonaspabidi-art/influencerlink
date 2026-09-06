@@ -19,6 +19,12 @@ export interface InfluencerCandidate {
   priceTarget: Ore;
 }
 
+/**
+ * Hur långt över budgeten en kreatör får ligga och ändå visas.
+ * Femtio procent: en förhandling brukar rymma det, mer sällan.
+ */
+export const BUDGET_TOLERANCE = 0.5;
+
 export interface CampaignCandidate {
   id: string;
   title: string;
@@ -105,7 +111,12 @@ export function geoScore(campaign: CampaignCandidate, influencer: InfluencerCand
  * det noll – då är matchningen ekonomiskt omöjlig oavsett hur bra den ser ut.
  */
 export function budgetScore(campaign: CampaignCandidate, influencer: InfluencerCandidate): number {
-  if (campaign.budgetPerCreator < influencer.priceMin) return 0;
+  // Över budget ger låg poäng, inte noll: kandidaten är fortfarande möjlig,
+  // bara dyrare än tänkt, och ska hamna längre ned snarare än försvinna.
+  if (campaign.budgetPerCreator < influencer.priceMin) {
+    const over = influencer.priceMin / Math.max(1, campaign.budgetPerCreator) - 1;
+    return clamp01(0.3 * (1 - over / BUDGET_TOLERANCE));
+  }
   if (influencer.priceTarget <= influencer.priceMin) return 1;
   const span = influencer.priceTarget - influencer.priceMin;
   return clamp01((campaign.budgetPerCreator - influencer.priceMin) / span);
@@ -143,10 +154,30 @@ export function checkEligibility(
   if (campaign.platforms.length > 0 && sharedPlatforms(campaign, influencer).length === 0) {
     blockers.push('Influencern publicerar inte på någon av kampanjens plattformar.');
   }
-  if (campaign.budgetPerCreator < influencer.priceMin) {
-    blockers.push('Budgeten ligger under influencerns lägsta arvode.');
+  /*
+   * Budgeten är en riktpunkt, inte ett tak.
+   *
+   * Företaget anger vad det tänkt sig, men arvodet förhandlas per kreatör och
+   * kreatören kan föreslå ett eget. Att stänga ute någon som normalt tar
+   * femtusen när budgeten står på fyra vore att låsa en förhandling som inte
+   * börjat. Först när avståndet är så stort att ingen förhandling räddar det
+   * blir det ett hinder.
+   */
+  if (influencer.priceMin > campaign.budgetPerCreator * (1 + BUDGET_TOLERANCE)) {
+    blockers.push('Kreatörens lägsta arvode ligger långt över budgeten.');
   }
   return { eligible: blockers.length === 0, blockers };
+}
+
+/**
+ * Kreatören begär mer än budgeten, men inom räckhåll för en förhandling.
+ * Visas som en upplysning på kortet i stället för att kandidaten försvinner.
+ */
+export function isAboveBudget(
+  campaign: CampaignCandidate,
+  influencer: InfluencerCandidate,
+): boolean {
+  return influencer.priceMin > campaign.budgetPerCreator;
 }
 
 /**

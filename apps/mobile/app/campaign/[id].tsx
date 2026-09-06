@@ -147,7 +147,7 @@ export default function CampaignDetail() {
       </View>
 
       <Card>
-        <Label>ERSÄTTNING</Label>
+        <Label>ERSÄTTNING (RIKTBUDGET)</Label>
         <Text style={styles.amount}>
           {describeCompensation(
             data.compensationType,
@@ -158,7 +158,11 @@ export default function CampaignDetail() {
         </Text>
         <Divider />
         <Text style={styles.secondary}>
-          Minst {data.minFollowers.toLocaleString('sv-SE')} följare · {' '}
+          Arvodet avtalas med varje kreatör för sig – riktbudgeten styr vilka vi föreslår.
+        </Text>
+        <Text style={styles.secondary}>
+          {data.slotsFilled} av {data.slots} platser tillsatta · minst{' '}
+          {data.minFollowers.toLocaleString('sv-SE')} följare ·{' '}
           {data.platforms.map((platform) => PLATFORM_LABELS[platform]).join(', ')}
         </Text>
       </Card>

@@ -202,9 +202,11 @@ export default function MatchDetail() {
                 onChangeText={setFee}
                 keyboardType="numeric"
                 hint={
-                  campaign.data
-                    ? `Kampanjens budget är ${formatSek(campaign.data.budgetPerCreator)}.`
-                    : undefined
+                  match.proposedFee !== null
+                    ? `${counterpart} har begärt ${formatSek(match.proposedFee)}. Kampanjens riktbudget är ${formatSek(campaign.data?.budgetPerCreator ?? 0)}.`
+                    : campaign.data
+                      ? `Kampanjens riktbudget är ${formatSek(campaign.data.budgetPerCreator)}. Arvodet avtalas per kreatör.`
+                      : undefined
                 }
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -223,7 +225,14 @@ export default function MatchDetail() {
             <Button
               label="Skicka avtal"
               onPress={() => {
-                setFee(String(oreToKronor(campaign.data?.budgetPerCreator ?? 0)));
+                // Kreatörens eget bud går före kampanjens riktbudget. Hon har
+                // sagt vad hon vill ha; att föreslå något annat utan att veta
+                // om det är ett sätt att tappa bort förhandlingen.
+                setFee(
+                  String(
+                    oreToKronor(match.proposedFee ?? campaign.data?.budgetPerCreator ?? 0),
+                  ),
+                );
                 setShowContractForm(true);
               }}
             />

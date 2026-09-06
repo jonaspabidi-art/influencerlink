@@ -130,6 +130,22 @@ TikTok-klienten ligger i `services/social/tiktok.ts` och beskrivs i
 `lib/oauthstate.ts` och inte med sessionstokenen: ett state som gick att
 verifiera som en session vore en inloggning på vift.
 
+## Budget och arvode
+
+Kampanjens `budgetPerCreator` är en riktpunkt, inte ett pris. Arvodet avtalas
+med varje kreatör för sig, och en kampanj med flera platser kan mycket väl
+landa på olika belopp för olika personer.
+
+Två följder i koden. `checkEligibility` stänger inte längre ute den som normalt
+tar mer än budgeten – först vid `BUDGET_TOLERANCE` över den, eftersom en
+förhandling sällan rymmer mer. Den som ligger strax över får låg poäng i stället
+för noll, och hamnar längre ned i listan i stället för att försvinna.
+
+Och sökte kreatören med ett eget pris följer det med matchningen hela vägen till
+avtalet, som förifylls med hennes bud. Tidigare syntes budet i ansökningslistan
+och tappades så fort matchningen uppstod – avtalet föreslog kampanjens budget
+som om hon aldrig sagt något.
+
 ## Rådgivaren
 
 Företagaren har sällan gjort det här förut. `POST /assistant/ask` samlar ihop

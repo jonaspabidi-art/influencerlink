@@ -62,8 +62,17 @@ describe('geoScore', () => {
 });
 
 describe('budgetScore', () => {
-  it('ger noll när budgeten understiger lägsta arvodet', () => {
-    expect(budgetScore(campaign, influencer({ priceMin: 500_000 }))).toBe(0);
+  // Budgeten är en riktpunkt. Den som ligger strax över ska hamna längre ned i
+  // listan, inte falla ur den – arvodet förhandlas ändå per kreatör.
+  it('ger låg men positiv poäng strax över budgeten', () => {
+    // Budgeten är 4 000 kr, kreatören tar minst 4 400.
+    const score = budgetScore(campaign, influencer({ priceMin: 440_000 }));
+    expect(score).toBeGreaterThan(0);
+    expect(score).toBeLessThan(0.3);
+  });
+
+  it('ger noll när arvodet ligger långt över budgeten', () => {
+    expect(budgetScore(campaign, influencer({ priceMin: 700_000 }))).toBe(0);
   });
 
   it('ger full poäng när budgeten når riktpriset', () => {

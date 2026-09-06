@@ -461,6 +461,11 @@ function publicMatch(match: Match, viewerRole: 'INFLUENCER' | 'BUSINESS') {
       city: influencer.city,
     },
     contractId: contract?.id ?? null,
+    proposedFee:
+      state.applications.find(
+        (application) =>
+          application.campaignId === campaign.id && application.influencerId === influencer.id,
+      )?.proposedFee ?? null,
     lastMessage: messages[messages.length - 1]?.body ?? null,
     counterpartRating:
       viewerRole === 'BUSINESS'
