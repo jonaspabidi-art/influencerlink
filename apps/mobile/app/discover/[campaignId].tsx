@@ -50,7 +50,7 @@ export default function Discover() {
         productValue={
           campaign.data?.compensationType === 'FIXED' ? 0 : (campaign.data?.productValue ?? 0)
         }
-        escrowNote="Ni betalar först när avtalet är signerat. Beloppet ligger spärrat tills ni godkänt leveransen."
+        escrowNote="Ni betalar först när avtalet är signerat. Beloppet ligger hos Pacta tills ni godkänt leveransen."
         primaryLabel={`Skriv till ${newMatch.card.influencer.displayName}`}
         onPrimary={() => {
           const matchId = newMatch.id;

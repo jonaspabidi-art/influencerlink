@@ -310,14 +310,14 @@ export default function ContractDetail() {
           </View>
           <View style={styles.trustSteps}>
             <TrustStep label="Avtal signeras" done={signedBoth} />
-            <TrustStep label={`${formatSek(data.fee)} spärras`} done={escrowed} />
+            <TrustStep label={`${formatSek(data.fee)} in till Pacta`} done={escrowed} />
             <TrustStep label="Utbetalning" done={data.paymentStatus === 'RELEASED'} />
           </View>
         </Card>
       ) : (
         <Card>
           <TimelineStep title="Båda signerade" detail={data.signedByBusinessAt ? formatDate(data.signedByBusinessAt) : ''} />
-          <TimelineStep title={`${formatSek(data.fee)} spärrades`} detail="Betalt av företaget" />
+          <TimelineStep title={`${formatSek(data.fee)} in till Pacta`} detail="Betalt av företaget" />
           <TimelineStep
             title="Leverans godkänd"
             detail={data.completedAt ? formatDate(data.completedAt) : ''}
@@ -432,8 +432,8 @@ function ActionCard({
       <Card tone="primary">
         <Text style={styles.actionTitle}>Din tur att signera</Text>
         <Body>
-          När båda signerat betalar företaget in {formatSek(contract.fee)} till det spärrade
-          kontot.
+          När båda signerat betalar företaget in {formatSek(contract.fee)} till Pacta, där de
+          ligger tills leveransen är godkänd.
         </Body>
         <Button label="Signera med BankID" onPress={onSign} />
       </Card>
@@ -454,7 +454,7 @@ function ActionCard({
       <Card tone="primary">
         <Text style={styles.actionTitle}>Betala in arvodet</Text>
         <Body>
-          Beloppet ligger spärrat hos oss och betalas ut till kreatören först när du godkänt
+          Beloppet ligger kvar hos oss och betalas ut till kreatören först när du godkänt
           leveransen.
         </Body>
         <Button label={`Betala ${formatSek(contract.fee)}`} onPress={onPay} loading={busy} />

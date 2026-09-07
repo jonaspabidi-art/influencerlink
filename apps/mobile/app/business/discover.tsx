@@ -198,7 +198,7 @@ export default function BusinessDiscover() {
               <View style={styles.trust}>
                 <LockIcon size={14} color={colors.positive} />
                 <Text style={styles.secondary}>
-                  Inget kostar något förrän ett avtal signerats. Arvodet ligger spärrat tills ni
+                  Inget kostar något förrän ett avtal signerats. Arvodet ligger hos oss tills ni
                   godkänt leveransen.
                 </Text>
               </View>

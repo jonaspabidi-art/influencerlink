@@ -657,7 +657,7 @@ export async function adminRoutes(app: FastifyInstance, services: Services): Pro
    * Tar bort en kampanj.
    *
    * Bara om den aldrig lett till ett avtal. Ett signerat avtal är ett åtagande
-   * mellan två parter och kan ha pengar spärrade – att radera kampanjen under
+   * mellan två parter och kan ha pengar innestående – att radera kampanjen under
    * det hade tagit med sig avtalet, betalningen och omdömena i fallet. En
    * kampanj som hunnit så långt stängs i stället.
    */

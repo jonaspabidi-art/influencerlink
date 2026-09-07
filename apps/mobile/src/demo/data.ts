@@ -387,7 +387,7 @@ export const DEMO_REVIEWS: DemoReview[] = [
   review('rev_2', 'ctr_h2', 'Ny kvällsmeny', 'BUSINESS', 'Petra Sandell', 'inf_anna', 'biz_kajutan', [5, 4, 5],
     'Bra kontakt hela vägen. Filmen blev något kortare än vi tänkt oss, men den gjorde jobbet.', -22),
   review('rev_3', 'ctr_h1', 'Helgbrunch i Linné', 'INFLUENCER', 'Anna Karlsson', 'inf_anna', 'biz_solrosen', [5, 5, 5],
-    'Tydlig brief och allt var förberett när jag kom. Pengarna låg spärrade från start, det gör stor skillnad.', -40),
+    'Tydlig brief och allt var förberett när jag kom. Arvodet fanns hos Pacta från start, det gör stor skillnad.', -40),
   review('rev_4', 'ctr_h3', 'Smakmeny i höst', 'BUSINESS', 'Petra Sandell', 'inf_erik', 'biz_kajutan', [4, 5, 5],
     'Kunnig och grundlig. Tog längre tid än vi räknat med, men resultatet var värt det.', -33),
   review('rev_5', 'ctr_h3', 'Smakmeny i höst', 'INFLUENCER', 'Erik Lindberg', 'inf_erik', 'biz_kajutan', [4, 4, 4],

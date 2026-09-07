@@ -466,7 +466,7 @@ async function seedCompletedCollaboration(input: {
         rating: overallRating(fromInfluencer),
         ...fromInfluencer,
         comment:
-          'Tydlig brief och de hade förberett allt när jag kom. Betalningen låg spärrad från början, så jag behövde aldrig fundera på om pengarna skulle komma.',
+          'Tydlig brief och de hade förberett allt när jag kom. Arvodet fanns hos Pacta från början, så jag behövde aldrig fundera på om pengarna skulle komma.',
         createdAt: publishedAt,
         publishedAt,
         visibleAt,

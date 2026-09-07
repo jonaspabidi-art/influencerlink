@@ -18,7 +18,7 @@ Två sorters användare möts i samma app:
 
 **Restaurangen** skapar en kampanj ("kom och ät på vår bekostnad, gör en TikTok
 om vår nya lunchmeny, du får 4 000 kr"), swipar bland kreatörer, skickar avtal,
-betalar in arvodet till ett spärrat konto och godkänner leveransen.
+betalar in arvodet till plattformens betaltjänst och godkänner leveransen.
 
 **Influencern** kopplar TikTok, Instagram eller YouTube, swipar bland kampanjer
 nära sig, signerar avtal och får pengarna utbetalda när restaurangen godkänt.
@@ -131,7 +131,7 @@ ljus variant eller en annan primärfärg gör appen mer inbjudande — visa det.
 6. **Kampanjguiden ser inte ut som det den är.** Att skriva två meningar och få
    tillbaka en färdig kampanj är produktens bästa idé, men skärmen är ett
    textfält och en knapp.
-7. **Ingenting visar att pengarna är trygga.** Att arvodet ligger spärrat tills
+7. **Ingenting visar att pengarna är trygga.** Att arvodet ligger hos Pacta tills
    jobbet är godkänt är det som får båda parter att våga. Det syns knappt.
 
 ## Ramar

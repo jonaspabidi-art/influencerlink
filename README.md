@@ -25,7 +25,7 @@ slipper skriva in siffror själv.
 
 **När båda swipat höger** uppstår en matchning med chatt. Restaurangen skickar
 ett avtal, båda signerar med BankID, restaurangen betalar in arvodet till ett
-spärrat konto, influencern levererar och pengarna släpps vid godkännande.
+betaltjänsten, influencern levererar och pengarna betalas ut vid godkännande.
 
 **När samarbetet är klart** betygsätter parterna varandra. Se Omdömen nedan.
 

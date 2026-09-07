@@ -58,7 +58,7 @@ export default function InfluencerSwipe() {
             ? 0
             : newMatch.card.campaign.productValue
         }
-        escrowNote="Arvodet betalas in till ett spärrat konto när avtalet är signerat och betalas ut när leveransen godkänts."
+        escrowNote="Företaget betalar in arvodet när avtalet är signerat. Pengarna ligger hos Pacta tills din leverans är godkänd, och betalas då ut till dig."
         primaryLabel={`Skriv till ${newMatch.card.campaign.businessName}`}
         onPrimary={() => {
           const matchId = newMatch.id;
@@ -120,7 +120,7 @@ export default function InfluencerSwipe() {
           />
         )}
         onSwipe={(card, direction) => swipe.mutate({ campaignId: card.campaign.id, direction })}
-        trustText="Arvodet spärras hos Pacta"
+        trustText="Arvodet ligger tryggt hos Pacta"
         onExhausted={() => void feed.refetch()}
       />
     </Screen>

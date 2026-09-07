@@ -23,7 +23,7 @@ import type { Contract, PayoutStatus } from '../../src/types';
 /** Stegen i förklaringen av hur pengarna når kreatören. */
 const PAYOUT_STEPS = [
   'Ni signerar avtalet med BankID.',
-  'Företaget betalar in arvodet. Beloppet ligger spärrat hos oss.',
+  'Företaget betalar in arvodet. Vi håller pengarna åt er båda tills leveransen är godkänd.',
   'Du levererar, företaget godkänner och pengarna är hos dig inom 1–2 bankdagar.',
 ];
 
@@ -69,8 +69,8 @@ export default function Wallet() {
           <Text style={styles.heroAmount}>{formatSek(data?.pendingPayout ?? 0)}</Text>
           <Text style={styles.secondary}>
             {pendingContracts.length === 0
-              ? 'Inget spärrat just nu'
-              : `${pendingContracts.length} ${pendingContracts.length === 1 ? 'avtal' : 'avtal'}, spärrat tills leveransen godkänts`}
+              ? 'Inget på gång just nu'
+              : `${pendingContracts.length} ${pendingContracts.length === 1 ? 'avtal' : 'avtal'}, betalas ut när leveransen godkänts`}
           </Text>
         </View>
         <Divider />

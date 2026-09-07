@@ -4,7 +4,7 @@
 Pacta är en svensk marknadsplats där restauranger och innehållskreatörer hittar
 varandra och ingår betalda samarbeten. Båda parter swipar; vid ömsesidigt intresse uppstår
 en matchning med chatt. Legitimering och avtalssignering sker med BankID. Arvodet betalas in
-till ett spärrat konto (escrow) hos plattformen och betalas ut när restaurangen godkänt
+till plattformens betaltjänst (escrow) och betalas ut när restaurangen godkänt
 leveransen. Plattformen tar 12 %.
 
 Detta bunt täcker de skärmar som avgör produktkänslan: influencerns kortlek (Upptäck) inkl.
@@ -157,7 +157,7 @@ Kort (surface, border, radius 12, overflow hidden):
    Göteborg" 13 positive · brief 14/1.5 (text, 82 % opacitet) · leverabeltaggar.
 3. Fot (1 px topborder, padding 12/16): plattformsrutor 28 × 28 radius 5 (aktiv full
    opacitet, inaktiv muted) och "Sista ansökan 17 sep." 13 muted.
-Under kortleken: trygghetsrad (hänglås + "Arvodet spärras hos Pacta") och de två
+Under kortleken: trygghetsrad (hänglås + "Arvodet ligger tryggt hos Pacta") och de två
 svepknapparna (64 rund outline med kryss, 76 rund primary med bock).
 Flikrad: Upptäck / Matchningar / Avtal / Plånbok.
 
@@ -231,7 +231,7 @@ nyckeltalsrutor ARVODE 4 000 kr och BESÖK 300 kr), samt en rad-lista: Antal kre
 Lägsta följarantal 5 000, Plattformar TikTok, Instagram.
 Summering (raised, radius 12): "Arvode 4 000 kr × 3 → 12 000 kr", "Plattformsavgift 12 % →
 1 440 kr", avdelare, "Du betalar in **13 440 kr**" (20/700 accent), och escrow-noten
-"Först när avtalet är signerat. Beloppet ligger spärrat hos oss tills du godkänt leveransen."
+"Först när avtalet är signerat. Beloppet ligger kvar hos oss tills du godkänt leveransen."
 Fast fot (1 px topborder): primär "Publicera och hitta influencers".
 
 ### 12. Avtalsvyn — läge "Väntar på signaturer"
@@ -245,7 +245,7 @@ rad med tom 18 px ring + "Amanda Lindh" / "Väntar på signatur".
 "Signera med BankID". Åtgärden byts med status: signera → betala in arvodet → rapportera
 leverans → godkänn och betala ut.
 Trygghetsband (raised): hänglås + "Så hanteras pengarna" och tre steg som 3 px staplar
-(klart = positive, kommande = border) med etiketter Avtal signeras / 4 000 kr spärras /
+(klart = positive, kommande = border) med etiketter Avtal signeras / 4 000 kr in till Pacta /
 Utbetalning.
 Nederst avtalstexten: versal etikett, 13/1.6 muted utdrag, "Läs hela avtalet" 14/600 primary.
 
@@ -255,17 +255,17 @@ Utbetalningskort (1 px positiv kant): "Utbetalt till dig 26 sep." 13 muted,
 "3 520 kr" 34/700 positive, "Till konto ●●●● 4471, Swedbank" 13 muted.
 Ekonomikort som ovan plus Besök 300 kr, betalt på plats och Levererat 23 sep.
 Tidslinje med fyra avklarade steg (positiv bock + 2 px linje): Båda signerade /
-4 000 kr spärrades / Leverans godkänd (25 sep., av Sävenäs) / 3 520 kr utbetalt.
+4 000 kr in till Pacta / Leverans godkänd (25 sep., av Sävenäs) / 3 520 kr utbetalt.
 Två sekundära knappar: "Hämta kvitto (PDF)", "Läs hela avtalet".
 
 ### 14. Plånboken
 "Plånbok" 24/700. Toppkort: "På väg till dig" 13 muted + "3 520 kr" 38/700 accent +
-"1 avtal, spärrat tills leveransen godkänts" 13 muted, avdelare, "Utbetalt totalt"
+"1 avtal, betalas ut när leveransen godkänts" 13 muted, avdelare, "Utbetalt totalt"
 15 muted / "11 200 kr" 20/700.
 Kontostatuskort: positiv bock + "Utbetalningskontot är klart" / "Swedbank ●●●● 4471" +
 "Ändra" 14/600 primary.
 Förklaringskort (raised): hänglås + "Så får du dina pengar" och tre numrerade rader
-(01/02/03 i mono muted): avtal signeras · restaurangen betalar in, spärrat · du levererar,
+(01/02/03 i mono muted): avtal signeras · restaurangen betalar in, vi håller pengarna · du levererar,
 restaurangen godkänner, pengar inom 1–2 bankdagar.
 "SENASTE": lista med motpart, "Utbetalt 2 sep." och belopp 15/700 nowrap.
 

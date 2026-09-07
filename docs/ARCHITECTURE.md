@@ -159,7 +159,7 @@ inget svar, eftersom företaget betalar utifrån det. Underlaget säger också o
 kreatörs siffror är hämtade från plattformen eller uppgivna av henne själv, så
 att ett råd som vilar på ogranskade tal kan säga det.
 
-Plattformens egna regler – den delade avgiften, spärrade pengar, BankID,
+Plattformens egna regler – den delade avgiften, pengar som ligger hos Pacta, BankID,
 godkännande före publicering, fjorton dagars omdömesfönster – står i
 systemprompten, så att svaren om hur det går till stämmer med vad koden gör.
 

@@ -210,7 +210,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
     },
   );
 
-  /** Företaget betalar in arvodet till spärrat konto. */
+  /** Företaget betalar in arvodet, som hålls av betaltjänsten till godkänd leverans. */
   server.post(
     '/contracts/:id/payment',
     {

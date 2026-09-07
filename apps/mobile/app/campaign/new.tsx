@@ -479,7 +479,7 @@ export default function NewCampaign() {
             <Text style={styles.summaryTotal}>{formatSek(money.charge)}</Text>
           </View>
           <Text style={styles.summaryNote}>
-            Först när avtalet är signerat. Beloppet ligger spärrat hos oss tills du godkänt
+            Först när avtalet är signerat. Beloppet ligger kvar hos oss tills du godkänt
             leveransen. Varje kreatör får {formatSek(perCreator.net)} utbetalt – vi tar 10 % av
             vardera part.
           </Text>

@@ -5,8 +5,8 @@ import { LEGAL, type LegalSection } from '../src/legal';
  * Användarvillkor.
  *
  * Beskriver hur tjänsten faktiskt fungerar: vi är mellanhand, avtalet ingås
- * mellan restaurang och kreatör, och pengarna ligger spärrade tills jobbet är
- * godkänt. Ändras det flödet ska texten ändras med det.
+ * mellan restaurang och kreatör, och pengarna hålls av betaltjänsten tills
+ * jobbet är godkänt. Ändras det flödet ska texten ändras med det.
  */
 const SECTIONS: LegalSection[] = [
   {
@@ -29,7 +29,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'Ett företag publicerar en kampanj. Kreatörer och företag visar intresse, och när båda gjort det uppstår en matchning där ni kommer överens om detaljerna.',
       'När ni är överens skapas ett avtal som båda signerar med BankID. Avtalet innehåller vad som ska levereras, när, och vad ersättningen är.',
-      'Företaget betalar in ersättningen innan arbetet börjar. Beloppet ligger spärrat hos vår betaltjänst och betalas ut till kreatören när leveransen är godkänd.',
+      'Företaget betalar in ersättningen innan arbetet börjar. Beloppet hålls av vår betaltjänst och betalas ut till kreatören när leveransen är godkänd.',
     ],
   },
   {
@@ -66,7 +66,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Avbokning',
     paragraphs: [
       'Innan ett avtal signerats kan vem som helst dra sig ur utan kostnad.',
-      'Efter signering gäller det ni kommit överens om i avtalet. Kommer ni inte överens om ett avbrutet samarbete kan vi hjälpa till att medla, men beslutet om spärrade pengar följer avtalet.',
+      'Efter signering gäller det ni kommit överens om i avtalet. Kommer ni inte överens om ett avbrutet samarbete kan vi hjälpa till att medla, men beslutet om innestående pengar följer avtalet.',
     ],
   },
   {

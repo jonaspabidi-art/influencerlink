@@ -481,7 +481,7 @@ export function DetailRow({
   );
 }
 
-/** Trygghetsraden: hänglås plus en mening om att pengarna ligger spärrade. */
+/** Trygghetsraden: hänglås plus en mening om att pengarna ligger tryggt hos oss. */
 export function TrustBar({ text }: { text: string }) {
   return (
     <View style={styles.trustBar}>
