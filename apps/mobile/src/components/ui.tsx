@@ -613,12 +613,15 @@ export function Photo({
   name,
   style,
   children,
+  fallback,
 }: {
   uri?: string | null;
-  /** Namnet initialerna hämtas ur när bild saknas. */
+  /** Namnet den färgade ytans ton hämtas ur när bild saknas. */
   name?: string;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
+  /** Visas i stället för bilden när den saknas eller inte gick att hämta. */
+  fallback?: ReactNode;
 }) {
   /*
    * En adress som finns är inte samma sak som en bild som går att visa.
@@ -642,7 +645,9 @@ export function Photo({
           resizeMode="cover"
           onError={() => setFailed(true)}
         />
-      ) : null}
+      ) : (
+        fallback
+      )}
       {children}
     </View>
   );

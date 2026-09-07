@@ -281,13 +281,15 @@ export default function SocialAccounts() {
                 onPress={() => void Linking.openURL(item.url)}
                 style={styles.itemPress}
               >
-                <Photo uri={item.thumbnailUrl} style={styles.thumb}>
-                  {item.thumbnailUrl ? null : (
+                <Photo
+                  uri={item.thumbnailUrl}
+                  style={styles.thumb}
+                  fallback={
                     <Text style={styles.thumbFallback}>
                       {PLATFORM_LABELS[item.platform].slice(0, 2).toUpperCase()}
                     </Text>
-                  )}
-                </Photo>
+                  }
+                />
                 <View style={styles.itemText}>
                   <Text style={styles.itemTitle} numberOfLines={2}>
                     {item.title || item.url}

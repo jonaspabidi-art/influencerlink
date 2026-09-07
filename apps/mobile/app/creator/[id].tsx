@@ -139,7 +139,23 @@ export default function CreatorProfile() {
                     onPress={() => void Linking.openURL(item.url)}
                     style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
                   >
-                    <Photo uri={item.thumbnailUrl} name={item.title || data.displayName} style={styles.tilePhoto} />
+                    {/*
+                      Utan bild står texten i rutan i stället. TikToks
+                      omslagsadresser slutar gälla, och en färgad ruta utan
+                      innehåll ser ut som ett fel snarare än som en video.
+                    */}
+                    <Photo
+                      uri={item.thumbnailUrl}
+                      name={item.title || data.displayName}
+                      style={styles.tilePhoto}
+                      fallback={
+                        item.title ? (
+                          <Text style={styles.tileFallback} numberOfLines={4}>
+                            {item.title}
+                          </Text>
+                        ) : null
+                      }
+                    />
                     <View style={styles.tileFooter}>
                       {/*
                         Visningarna är det företaget jämför med. Saknas de –
@@ -182,6 +198,11 @@ const styles = StyleSheet.create({
   sectionTitle: { ...type.sectionTitle, color: colors.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tile: { width: '31%', borderRadius: radius.control, overflow: 'hidden' },
+  tileFallback: {
+    ...type.secondary,
+    color: colors.muted,
+    padding: spacing.sm,
+  },
   tilePhoto: { aspectRatio: 9 / 16, borderRadius: radius.control },
   pressed: { opacity: 0.75 },
   tileFooter: { paddingTop: 4 },
