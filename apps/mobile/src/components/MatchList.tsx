@@ -6,7 +6,7 @@ import { api } from '../api';
 import { formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { Match } from '../types';
-import { Avatar, Button, ErrorState, Header, Loading, Photo, Rating, Screen } from './ui';
+import { Avatar, Button, ErrorState, Header, Loading, Logo, Photo, Rating, Screen } from './ui';
 
 /** Matchningslistan. Samma komponent för båda rollerna, olika motpart. */
 export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
@@ -74,44 +74,42 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
             {/*
-              Kreatören har många företag och många kampanjer, och känner igen
-              samarbetet på bilden hon svepte på – därför kampanjbilden, med
-              logotypen som reserv. Företaget har få kampanjer och många
-              kreatörer, och känner i stället igen personen.
+              Vem överst, vad under. Porträttet säger vem man pratar med, och
+              kampanjbilden under vilket uppdrag det gäller – rubriken ensam
+              räcker inte för att skilja två samarbeten åt.
             */}
-            {role === 'INFLUENCER' ? (
-              <Photo
-                uri={item.campaign.imageUrl ?? item.campaign.businessLogoUrl}
-                name={item.campaign.businessName}
-                style={styles.thumb}
-              />
-            ) : (
-              <Avatar uri={item.influencer.avatarUrl} name={item.influencer.displayName} size={52} />
-            )}
-            <View style={styles.rowText}>
-              {/*
-                Tre rader: vem, vilken kampanj, vad som sagts. Kampanjen satt
-                tidigare inklämd efter betyget och kapades bort – då står det
-                att man matchat, men inte på vad, vilket är det man undrar.
-                Betyget flyttat längst ned, där det får plats utan att korta
-                av namnet.
-              */}
-              <Text style={styles.title} numberOfLines={1}>
-                {role === 'INFLUENCER' ? item.campaign.businessName : item.influencer.displayName}
-              </Text>
-              <Text style={styles.campaign} numberOfLines={1}>
-                {item.campaign.title}
-              </Text>
-              <View style={styles.metaRow}>
-                {item.counterpartRating.count > 0 ? (
-                  <Rating summary={item.counterpartRating} size={11} showCount={false} />
-                ) : null}
-                <Text style={styles.lastMessage} numberOfLines={1}>
-                  {item.lastMessage ?? item.matchReason}
+            <View style={styles.rowTop}>
+              {role === 'INFLUENCER' ? (
+                <Logo uri={item.campaign.businessLogoUrl} name={item.campaign.businessName} size={44} />
+              ) : (
+                <Avatar uri={item.influencer.avatarUrl} name={item.influencer.displayName} size={44} />
+              )}
+              <View style={styles.rowText}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {role === 'INFLUENCER' ? item.campaign.businessName : item.influencer.displayName}
                 </Text>
+                <Text style={styles.campaign} numberOfLines={1}>
+                  {item.campaign.title}
+                </Text>
+                <View style={styles.metaRow}>
+                  {item.counterpartRating.count > 0 ? (
+                    <Rating summary={item.counterpartRating} size={11} showCount={false} />
+                  ) : null}
+                  <Text style={styles.lastMessage} numberOfLines={1}>
+                    {item.lastMessage ?? item.matchReason}
+                  </Text>
+                </View>
               </View>
+              <Text style={styles.amount}>{formatSek(item.campaign.budgetPerCreator)}</Text>
             </View>
-            <Text style={styles.amount}>{formatSek(item.campaign.budgetPerCreator)}</Text>
+
+            {item.campaign.imageUrl ? (
+              <Photo
+                uri={item.campaign.imageUrl}
+                name={item.campaign.title}
+                style={styles.banner}
+              />
+            ) : null}
           </Pressable>
         )}
       />
@@ -122,8 +120,6 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
 const styles = StyleSheet.create({
   list: { gap: 10, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.card,
@@ -131,8 +127,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
   },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  banner: { height: 104, borderRadius: radius.control },
   pressed: { opacity: 0.9 },
-  thumb: { width: 52, height: 52, borderRadius: radius.control },
   rowText: { flex: 1, gap: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   campaign: { ...type.secondary, color: colors.text },

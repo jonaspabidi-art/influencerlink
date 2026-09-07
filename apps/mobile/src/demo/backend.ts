@@ -381,6 +381,7 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
     campaignTitle: campaign.title,
     campaignImageUrl: campaign.imageUrl ?? null,
     businessLogoUrl: business.logoUrl,
+    influencerAvatarUrl: influencer.avatarUrl,
     businessId: business.id,
     businessName: business.companyName,
     influencerId: contract.influencerId,

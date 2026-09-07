@@ -7,7 +7,7 @@ import { formatDate, formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { Contract, PendingReview } from '../types';
 import { StarIcon } from './icons';
-import { Button, ErrorState, Header, Loading, Photo, Screen } from './ui';
+import { Avatar, Button, ErrorState, Header, Loading, Logo, Photo, Screen } from './ui';
 
 /** Statusetiketter i den ordning avtalet faktiskt rör sig. */
 const STATUS_LABELS: Record<Contract['status'], string> = {
@@ -97,28 +97,37 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             onPress={() => router.push(`/contract/${item.id}`)}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
-            {/* Samma bild som på kortet man svepte på – rubriken ensam räcker
-                inte för att skilja två uppdrag åt. */}
-            <Photo
-              uri={item.campaignImageUrl ?? item.businessLogoUrl}
-              name={item.campaignTitle}
-              style={styles.thumb}
-            />
-            <View style={styles.rowText}>
-              <Text style={styles.title} numberOfLines={2}>
-                {item.campaignTitle}
-              </Text>
-              <Text style={styles.secondary}>
-                {role === 'BUSINESS' ? item.influencerName : item.businessName} · deadline{' '}
-                {formatDate(item.dueDate)}
-              </Text>
-              <Text style={[styles.status, { color: STATUS_COLORS[item.status] }]}>
-                {STATUS_LABELS[item.status]}
+            {/* Vem överst, vilket uppdrag under. */}
+            <View style={styles.rowTop}>
+              {role === 'BUSINESS' ? (
+                <Avatar uri={item.influencerAvatarUrl} name={item.influencerName} size={44} />
+              ) : (
+                <Logo uri={item.businessLogoUrl} name={item.businessName} size={44} />
+              )}
+              <View style={styles.rowText}>
+                <Text style={styles.title} numberOfLines={2}>
+                  {item.campaignTitle}
+                </Text>
+                <Text style={styles.secondary}>
+                  {role === 'BUSINESS' ? item.influencerName : item.businessName} · deadline{' '}
+                  {formatDate(item.dueDate)}
+                </Text>
+                <Text style={[styles.status, { color: STATUS_COLORS[item.status] }]}>
+                  {STATUS_LABELS[item.status]}
+                </Text>
+              </View>
+              <Text style={styles.amount}>
+                {formatSek(role === 'BUSINESS' ? item.fee : item.payout)}
               </Text>
             </View>
-            <Text style={styles.amount}>
-              {formatSek(role === 'BUSINESS' ? item.fee : item.payout)}
-            </Text>
+
+            {item.campaignImageUrl ? (
+              <Photo
+                uri={item.campaignImageUrl}
+                name={item.campaignTitle}
+                style={styles.banner}
+              />
+            ) : null}
           </Pressable>
         )}
       />
@@ -165,8 +174,6 @@ export { STATUS_LABELS as CONTRACT_STATUS_LABELS };
 const styles = StyleSheet.create({
   list: { gap: 10, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.card,
@@ -175,7 +182,8 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   pressed: { opacity: 0.9 },
-  thumb: { width: 52, height: 52, borderRadius: radius.control },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  banner: { height: 104, borderRadius: radius.control },
   rowText: { flex: 1, gap: 2 },
   title: { ...type.listTitle, fontSize: 16, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },

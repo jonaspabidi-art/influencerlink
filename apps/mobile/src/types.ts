@@ -275,6 +275,7 @@ export interface Contract {
   /** Kampanjbilden, så listan går att känna igen på annat än rubriken. */
   campaignImageUrl: string | null;
   businessLogoUrl: string | null;
+  influencerAvatarUrl: string | null;
   businessId: string;
   businessName: string;
   influencerId: string;

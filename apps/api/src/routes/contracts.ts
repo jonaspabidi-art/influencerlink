@@ -60,6 +60,7 @@ const contractDetailSchema = z.object({
   /** Kampanjbilden, så listorna går att känna igen på annat än rubriken. */
   campaignImageUrl: z.string().nullable(),
   businessLogoUrl: z.string().nullable(),
+  influencerAvatarUrl: z.string().nullable(),
   businessId: z.string(),
   businessName: z.string(),
   influencerId: z.string(),
@@ -771,7 +772,7 @@ type ContractRow = {
     businessId: string;
     business: { companyName: string; userId: string; logoUrl: string | null };
   };
-  influencer: { displayName: string; userId: string };
+  influencer: { displayName: string; avatarUrl: string | null; userId: string };
   payment: { status: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED' } | null;
 };
 
@@ -831,6 +832,7 @@ function toContractDetail(contract: ContractRow, role: string, _userId: string) 
     campaignTitle: contract.campaign.title,
     campaignImageUrl: contract.campaign.imageUrl,
     businessLogoUrl: contract.campaign.business.logoUrl,
+    influencerAvatarUrl: contract.influencer.avatarUrl,
     businessId: contract.campaign.businessId,
     businessName: contract.campaign.business.companyName,
     influencerId: contract.influencerId,
