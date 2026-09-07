@@ -79,21 +79,27 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
               <Avatar uri={item.influencer.avatarUrl} name={item.influencer.displayName} size={44} />
             )}
             <View style={styles.rowText}>
-              <Text style={styles.title}>
+              {/*
+                Tre rader: vem, vilken kampanj, vad som sagts. Kampanjen satt
+                tidigare inklämd efter betyget och kapades bort – då står det
+                att man matchat, men inte på vad, vilket är det man undrar.
+                Betyget flyttat längst ned, där det får plats utan att korta
+                av namnet.
+              */}
+              <Text style={styles.title} numberOfLines={1}>
                 {role === 'INFLUENCER' ? item.campaign.businessName : item.influencer.displayName}
               </Text>
+              <Text style={styles.campaign} numberOfLines={1}>
+                {item.campaign.title}
+              </Text>
               <View style={styles.metaRow}>
-                <Rating summary={item.counterpartRating} size={11} showCount={false} />
                 {item.counterpartRating.count > 0 ? (
-                  <Text style={styles.secondary}>·</Text>
+                  <Rating summary={item.counterpartRating} size={11} showCount={false} />
                 ) : null}
-                <Text style={styles.meta} numberOfLines={1}>
-                  {item.campaign.title}
+                <Text style={styles.lastMessage} numberOfLines={1}>
+                  {item.lastMessage ?? item.matchReason}
                 </Text>
               </View>
-              <Text style={styles.lastMessage} numberOfLines={1}>
-                {item.lastMessage ?? item.matchReason}
-              </Text>
             </View>
             <Text style={styles.amount}>{formatSek(item.campaign.budgetPerCreator)}</Text>
           </Pressable>
@@ -117,11 +123,12 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.9 },
   rowText: { flex: 1, gap: 2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  campaign: { ...type.secondary, color: colors.text },
   meta: { ...type.secondary, color: colors.muted, flexShrink: 1 },
-  title: { ...type.listTitle, fontSize: 16, color: colors.text },
+  title: { ...type.listTitle, fontSize: 16, color: colors.text, flexShrink: 1 },
   secondary: { ...type.secondary, color: colors.muted },
-  lastMessage: { ...type.secondary, color: colors.dim },
+  lastMessage: { ...type.secondary, color: colors.dim, flexShrink: 1 },
   amount: { fontFamily: type.rowTitle.fontFamily, fontSize: 15, color: colors.accent },
 
   emptyBody: { flex: 1, paddingHorizontal: spacing.base },

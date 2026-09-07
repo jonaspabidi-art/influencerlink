@@ -92,6 +92,10 @@ export function SwipeDeck<T>({
   );
 
   const pan = Gesture.Pan()
+    // Svepet får först ta över när fingret rört sig en bit i sidled. Utan det
+    // slukar panoreringen varje tryck, och knapparna inne i kortet – som
+    // genvägen till motpartens profil – blir omöjliga att träffa.
+    .activeOffsetX([-12, 12])
     .onUpdate((event) => {
       translateX.value = event.translationX;
       translateY.value = event.translationY;

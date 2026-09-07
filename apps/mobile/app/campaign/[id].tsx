@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
+import { useAuth } from '../../src/auth';
 import { ImagePickerField } from '../../src/components/ImagePickerField';
 import {
   Avatar,
@@ -13,6 +14,7 @@ import {
   Header,
   Label,
   Loading,
+  Photo,
   ScrollScreen,
   Tag,
 } from '../../src/components/ui';
@@ -24,7 +26,7 @@ import {
   formatDate,
   formatSek,
 } from '../../src/format';
-import { colors, spacing, type } from '../../src/theme';
+import { colors, radius, spacing, type } from '../../src/theme';
 import type { Campaign } from '../../src/types';
 
 interface Application {
@@ -39,6 +41,7 @@ interface Application {
 export default function CampaignDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const campaign = useQuery({
@@ -113,20 +116,31 @@ export default function CampaignDetail() {
 
   const data = campaign.data;
   const pending = (applications.data ?? []).filter((item) => item.status === 'PENDING');
+  /*
+   * Samma skärm, två läsare. Företaget sköter sin kampanj här – byter bild,
+   * letar kreatörer, behandlar ansökningar. Kreatören läser den som en
+   * uppdragsbeskrivning och ska varken kunna ändra bilden eller se vilka andra
+   * som sökt.
+   */
+  const isOwner = user?.role === 'BUSINESS';
 
   return (
     <ScrollScreen contentStyle={styles.content}>
       <Header title="Kampanj" onBack={() => router.back()} />
 
-      <Card>
-        <ImagePickerField
-          label="Kampanjbild"
-          value={data.imageUrl}
-          onChange={(url) => setImage.mutate(url)}
-          aspect={[4, 3]}
-          hint="Fyller kortet kreatörerna swipar på."
-        />
-      </Card>
+      {isOwner ? (
+        <Card>
+          <ImagePickerField
+            label="Kampanjbild"
+            value={data.imageUrl}
+            onChange={(url) => setImage.mutate(url)}
+            aspect={[4, 3]}
+            hint="Fyller kortet kreatörerna swipar på."
+          />
+        </Card>
+      ) : data.imageUrl ? (
+        <Photo uri={data.imageUrl} name={data.businessName} style={styles.hero} />
+      ) : null}
 
       <View style={styles.titleBlock}>
         <Text style={styles.title}>{data.title}</Text>
@@ -180,7 +194,7 @@ export default function CampaignDetail() {
         </View>
       </Card>
 
-      {data.status === 'ACTIVE' ? (
+      {isOwner && data.status === 'ACTIVE' ? (
         <>
           <Button label="Hitta influencers" onPress={() => router.push(`/discover/${data.id}`)} />
           <Button
@@ -191,6 +205,7 @@ export default function CampaignDetail() {
         </>
       ) : null}
 
+      {isOwner ? (
       <Card>
         <Label>ANSÖKNINGAR</Label>
         {applications.isLoading ? <Text style={styles.secondary}>Hämtar …</Text> : null}
@@ -241,22 +256,38 @@ export default function CampaignDetail() {
           </View>
         ))}
       </Card>
+      ) : null}
 
-      <Card>
-        <Label>STATUS</Label>
-        <View style={styles.tagRow}>
-          {(['ACTIVE', 'PAUSED', 'CLOSED'] as const).map((status) => (
-            <Chip
-              key={status}
-              label={
-                status === 'ACTIVE' ? 'Publicerad' : status === 'PAUSED' ? 'Pausad' : 'Avslutad'
-              }
-              selected={data.status === status}
-              onPress={() => setStatus.mutate(status)}
-            />
-          ))}
-        </View>
-      </Card>
+      {isOwner ? (
+        <Card>
+          <Label>STATUS</Label>
+          <View style={styles.tagRow}>
+            {(['ACTIVE', 'PAUSED', 'CLOSED'] as const).map((status) => (
+              <Chip
+                key={status}
+                label={
+                  status === 'ACTIVE' ? 'Publicerad' : status === 'PAUSED' ? 'Pausad' : 'Avslutad'
+                }
+                selected={data.status === status}
+                onPress={() => setStatus.mutate(status)}
+              />
+            ))}
+          </View>
+        </Card>
+      ) : (
+        // Kreatören kommer hit från kortleken, chatten eller ett avtal. Vägen
+        // vidare är företaget, inte kampanjen – där ligger deras övriga uppdrag.
+        <Button
+          label={`Se allt ${data.businessName} söker`}
+          variant="secondary"
+          onPress={() =>
+            router.push({
+              pathname: '/venue/[id]',
+              params: { id: data.businessId, name: data.businessName },
+            })
+          }
+        />
+      )}
     </ScrollScreen>
   );
 }
@@ -264,6 +295,7 @@ export default function CampaignDetail() {
 const styles = StyleSheet.create({
   content: { paddingTop: 0 },
   venueLink: { ...type.secondary, color: colors.primary },
+  hero: { height: 200, borderRadius: radius.card },
   titleBlock: { gap: 6 },
   title: { fontFamily: type.cardTitle.fontFamily, fontSize: 23, lineHeight: 27.6, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },

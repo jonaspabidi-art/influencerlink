@@ -123,7 +123,17 @@ export default function Discover() {
       <SwipeDeck
         items={cards}
         keyExtractor={(card) => card.influencer.id}
-        renderCard={(card) => <InfluencerSwipeCard card={card} />}
+        renderCard={(card) => (
+          <InfluencerSwipeCard
+            card={card}
+            onOpenProfile={() =>
+              router.push({
+                pathname: '/creator/[id]',
+                params: { id: card.influencer.id, name: card.influencer.displayName },
+              })
+            }
+          />
+        )}
         onSwipe={(card, direction) =>
           swipe.mutate({ influencerId: card.influencer.id, direction })
         }

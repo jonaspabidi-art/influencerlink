@@ -8,7 +8,7 @@ import { UsageRightsOffer } from '../../src/components/UsageRightsOffer';
 import { DraftReview } from '../../src/components/DraftReview';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
-import { CheckIcon, LockIcon, StarIcon } from '../../src/components/icons';
+import { CheckIcon, ChevronRightIcon, LockIcon, StarIcon } from '../../src/components/icons';
 import { ReviewCard } from '../../src/components/ReviewList';
 import {
   Body,
@@ -149,9 +149,37 @@ export default function ContractDetail() {
         }
       />
 
+      {/*
+        Både kampanjen och motparten går att öppna härifrån. Ett avtal utan väg
+        tillbaka till briefen tvingar en att minnas vad man kommit överens om.
+      */}
       <View style={styles.titleBlock}>
-        <Text style={styles.title}>{data.campaignTitle}</Text>
-        <Text style={styles.counterpart}>{counterpart}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Öppna kampanjen ${data.campaignTitle}`}
+          onPress={() => router.push(`/campaign/${data.campaignId}`)}
+          style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+        >
+          <Text style={styles.title}>{data.campaignTitle}</Text>
+          <ChevronRightIcon size={20} color={colors.muted} />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Öppna ${counterpart}s profil`}
+          onPress={() =>
+            router.push({
+              pathname: isBusiness ? '/creator/[id]' : '/venue/[id]',
+              params: {
+                id: isBusiness ? data.influencerId : data.businessId,
+                name: counterpart,
+              },
+            })
+          }
+          style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+        >
+          <Text style={styles.counterpart}>{counterpart}</Text>
+          <ChevronRightIcon size={16} color={colors.muted} />
+        </Pressable>
       </View>
 
       {data.status === 'COMPLETED' ? (
@@ -550,6 +578,8 @@ function TimelineStep({
 
 const styles = StyleSheet.create({
   content: { paddingTop: 0 },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  pressed: { opacity: 0.7 },
   titleBlock: { gap: 6 },
   title: { fontFamily: type.cardTitle.fontFamily, fontSize: 23, lineHeight: 27.6, letterSpacing: -0.23, color: colors.text },
   counterpart: { ...type.bodySmall, color: colors.muted },

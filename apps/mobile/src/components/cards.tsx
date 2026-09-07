@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Category, Platform } from '@pacta/shared';
 import {
   CATEGORY_LABELS,
@@ -11,7 +12,7 @@ import {
 } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { CampaignCard, InfluencerCard } from '../types';
-import { SparkIcon } from './icons';
+import { ChevronRightIcon, SparkIcon } from './icons';
 import { Avatar, Logo, MatchPill, Photo, Rating, StatBox, Tag } from './ui';
 
 /** Förkortningar i plattformsrutorna längst ned på korten. */
@@ -29,7 +30,14 @@ const ALL_PLATFORMS: Platform[] = ['TIKTOK', 'INSTAGRAM', 'YOUTUBE'];
  * Kompositionen är det viktigaste i designen: bildytan har `flex: 1` och all
  * text är intrinsisk. Kort brief ger större bild i stället för ett hål i mitten.
  */
-export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
+export function CampaignSwipeCard({
+  card,
+  onOpenProfile,
+}: {
+  card: CampaignCard;
+  /** Öppnar företagets profil, där kreatören ser deras övriga kampanjer. */
+  onOpenProfile?: () => void;
+}) {
   const { campaign } = card;
   const spotsLeft = Math.max(0, campaign.slots - campaign.slotsFilled);
 
@@ -47,19 +55,20 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
             icon={card.aiReviewed ? <SparkIcon size={13} color={colors.accent} /> : undefined}
           />
         </View>
-        <View style={styles.photoFooter}>
-          <Logo uri={campaign.businessLogoUrl} name={campaign.businessName} />
-          <View style={styles.photoFooterText}>
-            <Text style={styles.name}>{campaign.businessName}</Text>
-            <View style={styles.metaRow}>
-              <Rating summary={card.rating} size={12} />
-              {card.rating.count > 0 ? <Text style={styles.secondary}>·</Text> : null}
-              <Text style={styles.meta} numberOfLines={1}>
-                {campaign.city} · {spotsLeft} {spotsLeft === 1 ? 'ledig plats' : 'lediga platser'}
-              </Text>
-            </View>
+        <Identity
+          onPress={onOpenProfile}
+          label={`Öppna ${campaign.businessName}s profil`}
+          avatar={<Logo uri={campaign.businessLogoUrl} name={campaign.businessName} />}
+        >
+          <Text style={styles.name}>{campaign.businessName}</Text>
+          <View style={styles.metaRow}>
+            <Rating summary={card.rating} size={12} />
+            {card.rating.count > 0 ? <Text style={styles.secondary}>·</Text> : null}
+            <Text style={styles.meta} numberOfLines={1}>
+              {campaign.city} · {spotsLeft} {spotsLeft === 1 ? 'ledig plats' : 'lediga platser'}
+            </Text>
           </View>
-        </View>
+        </Identity>
       </Photo>
 
       <View style={styles.body}>
@@ -103,7 +112,14 @@ export function CampaignSwipeCard({ card }: { card: CampaignCard }) {
 }
 
 /** Kreatörskortet i företagets kortlek. Samma mekanik, andra innehåll. */
-export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
+export function InfluencerSwipeCard({
+  card,
+  onOpenProfile,
+}: {
+  card: InfluencerCard;
+  /** Öppnar kreatörens profil, med hela rutnätet och omdömena. */
+  onOpenProfile?: () => void;
+}) {
   const { influencer } = card;
   const niches = influencer.categories
     .map((category) => CATEGORY_LABELS[category as Category] ?? category)
@@ -123,20 +139,21 @@ export function InfluencerSwipeCard({ card }: { card: InfluencerCard }) {
             icon={card.aiReviewed ? <SparkIcon size={13} color={colors.accent} /> : undefined}
           />
         </View>
-        <View style={styles.photoFooter}>
-          <Avatar uri={influencer.avatarUrl} name={influencer.displayName} />
-          <View style={styles.photoFooterText}>
-            <Text style={styles.nameLarge}>{influencer.displayName}</Text>
-            <View style={styles.metaRow}>
-              <Rating summary={card.rating} size={12} />
-              {card.rating.count > 0 ? <Text style={styles.secondary}>·</Text> : null}
-              <Text style={styles.meta} numberOfLines={1}>
-                {influencer.city}
-                {niches ? ` · ${niches}` : ''}
-              </Text>
-            </View>
+        <Identity
+          onPress={onOpenProfile}
+          label={`Öppna ${influencer.displayName}s profil`}
+          avatar={<Avatar uri={influencer.avatarUrl} name={influencer.displayName} />}
+        >
+          <Text style={styles.nameLarge}>{influencer.displayName}</Text>
+          <View style={styles.metaRow}>
+            <Rating summary={card.rating} size={12} />
+            {card.rating.count > 0 ? <Text style={styles.secondary}>·</Text> : null}
+            <Text style={styles.meta} numberOfLines={1}>
+              {influencer.city}
+              {niches ? ` · ${niches}` : ''}
+            </Text>
           </View>
-        </View>
+        </Identity>
       </Photo>
 
       <View style={styles.body}>
@@ -203,6 +220,47 @@ function PlatformRow({ active }: { active: Platform[] }) {
 }
 
 /** Används av swipe-decken när kompensationen ska visas i en rad. */
+/**
+ * Namnraden längst ned på bildytan, som genväg till profilen.
+ *
+ * Ligger på kortet i stället för som egen knapp under det: det är namnet man
+ * vill trycka på när man undrar vem motparten är. Pilen finns för att det inte
+ * ska vara en gissning att raden går att trycka på.
+ */
+function Identity({
+  avatar,
+  children,
+  onPress,
+  label,
+}: {
+  avatar: ReactNode;
+  children: ReactNode;
+  onPress?: () => void;
+  label: string;
+}) {
+  if (!onPress) {
+    return (
+      <View style={styles.photoFooter}>
+        {avatar}
+        <View style={styles.photoFooterText}>{children}</View>
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      hitSlop={8}
+      style={({ pressed }) => [styles.photoFooter, pressed && styles.identityPressed]}
+    >
+      {avatar}
+      <View style={styles.photoFooterText}>{children}</View>
+      <ChevronRightIcon size={18} color={colors.ink} />
+    </Pressable>
+  );
+}
+
 export function compensationLine(card: CampaignCard): string {
   return describeCompensation(
     card.campaign.compensationType,
@@ -218,6 +276,7 @@ const styles = StyleSheet.create({
   // Bildytan flexar, texten är intrinsisk – därför inget hål vid kort brief.
   photo: { flex: 1, minHeight: 168 },
   pillSlot: { position: 'absolute', top: 14, right: 14 },
+  identityPressed: { opacity: 0.85 },
   photoFooter: {
     position: 'absolute',
     left: 0,

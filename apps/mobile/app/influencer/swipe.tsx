@@ -114,7 +114,17 @@ export default function InfluencerSwipe() {
       <SwipeDeck
         items={cards}
         keyExtractor={(card) => card.campaign.id}
-        renderCard={(card) => <CampaignSwipeCard card={card} />}
+        renderCard={(card) => (
+          <CampaignSwipeCard
+            card={card}
+            onOpenProfile={() =>
+              router.push({
+                pathname: '/venue/[id]',
+                params: { id: card.campaign.businessId, name: card.campaign.businessName },
+              })
+            }
+          />
+        )}
         onSwipe={(card, direction) => swipe.mutate({ campaignId: card.campaign.id, direction })}
         trustText="Arvodet spärras hos Pacta"
         onExhausted={() => void feed.refetch()}
