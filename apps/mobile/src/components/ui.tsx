@@ -615,6 +615,7 @@ export function Photo({
   children,
   fallback,
   fit = 'cover',
+  insetBottom = 0,
 }: {
   uri?: string | null;
   /** Namnet den färgade ytans ton hämtas ur när bild saknas. */
@@ -629,6 +630,16 @@ export function Photo({
    * kanterna, eftersom företaget valt bilden för att den visar rätten.
    */
   fit?: 'cover' | 'contain';
+  /**
+   * Höjden på det som ligger ovanpå bildytans nederkant, t.ex. namnraden på
+   * ett swipe-kort. Bilden ska rymmas ovanför den.
+   *
+   * Utan det här räknar contain på hela ytan och lägger nederkanten av bilden
+   * bakom den ogenomskinliga raden – vilket ser ut precis som beskärningen man
+   * försökte bli av med, fast med suddiga kanter på sidorna. Den suddade
+   * bakgrunden fyller fortfarande hela ytan.
+   */
+  insetBottom?: number;
 }) {
   /*
    * En adress som finns är inte samma sak som en bild som går att visa.
@@ -657,7 +668,10 @@ export function Photo({
           ) : null}
           <Image
             source={{ uri: resolved }}
-            style={StyleSheet.absoluteFill}
+            style={[
+              StyleSheet.absoluteFill,
+              fit === 'contain' && insetBottom > 0 ? { bottom: insetBottom } : null,
+            ]}
             resizeMode={fit}
             onError={() => setFailed(true)}
           />

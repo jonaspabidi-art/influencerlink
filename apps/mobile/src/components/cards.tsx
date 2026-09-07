@@ -1,5 +1,12 @@
-import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+} from 'react-native';
 import type { Category, Platform } from '@pacta/shared';
 import {
   CATEGORY_LABELS,
@@ -53,6 +60,10 @@ export function CampaignSwipeCard({
   const spotsLeft = Math.max(0, campaign.slots - campaign.slotsFilled);
   const compact = useWindowDimensions().height < COMPACT_HEIGHT;
 
+  // Namnraden ligger ovanpå bildens nederkant. Bilden ska rymmas ovanför den,
+  // och hur hög den är beror på användarens textstorlek – därför mätt.
+  const [identityHeight, setIdentityHeight] = useState(0);
+
   return (
     <View style={styles.card}>
       {/* Tonen följer företaget, så alla deras kort hänger ihop. */}
@@ -67,6 +78,7 @@ export function CampaignSwipeCard({
         name={campaign.businessName}
         style={compact ? styles.photoCompact : styles.photo}
         fit={campaign.imageUrl ? 'contain' : 'cover'}
+        insetBottom={identityHeight}
       >
         <View style={styles.pillSlot}>
           <MatchPill
@@ -78,6 +90,7 @@ export function CampaignSwipeCard({
           onPress={onOpenProfile}
           label={`Öppna ${campaign.businessName}s profil`}
           avatar={<Logo uri={campaign.businessLogoUrl} name={campaign.businessName} />}
+          onMeasure={setIdentityHeight}
         >
           <Text style={styles.name}>{campaign.businessName}</Text>
           <View style={styles.metaRow}>
@@ -265,15 +278,22 @@ function Identity({
   children,
   onPress,
   label,
+  onMeasure,
 }: {
   avatar: ReactNode;
   children: ReactNode;
   onPress?: () => void;
   label: string;
+  /** Rapporterar radens höjd, så bilden bakom kan hålla sig ovanför den. */
+  onMeasure?: (height: number) => void;
 }) {
+  const measure = onMeasure
+    ? (event: LayoutChangeEvent) => onMeasure(event.nativeEvent.layout.height)
+    : undefined;
+
   if (!onPress) {
     return (
-      <View style={styles.photoFooter}>
+      <View style={styles.photoFooter} onLayout={measure}>
         {avatar}
         <View style={styles.photoFooterText}>{children}</View>
       </View>
@@ -285,6 +305,7 @@ function Identity({
       accessibilityLabel={label}
       onPress={onPress}
       hitSlop={8}
+      onLayout={measure}
       style={({ pressed }) => [styles.photoFooter, pressed && styles.identityPressed]}
     >
       {avatar}
