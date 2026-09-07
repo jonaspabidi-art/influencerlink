@@ -5,12 +5,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { CampaignSwipeCard } from '../../src/components/cards';
 import { SwipeDeck, type SwipeDirection } from '../../src/components/SwipeDeck';
-import { SlidersIcon } from '../../src/components/icons';
 import {
   Button,
   ErrorState,
   Header,
-  IconButton,
   Loading,
   Logo,
   Screen,
@@ -105,19 +103,6 @@ export default function InfluencerSwipe() {
         title="Upptäck"
         large
         subtitle={`${cards.length} ${cards.length === 1 ? 'kampanj' : 'kampanjer'} som passar dig`}
-        right={
-          /*
-            Kortleken styrs av profilen: stad, nischer och lägsta arvode avgör
-            vilka kampanjer som når hit. Knappen gick tidigare till onboardingen
-            och såg ut som att man skulle skapa kontot en gång till.
-          */
-          <IconButton
-            label="Justera vad du ser"
-            onPress={() => router.push('/profile/edit')}
-          >
-            <SlidersIcon size={17} color={colors.muted} />
-          </IconButton>
-        }
       />
       <SwipeDeck
         items={cards}
