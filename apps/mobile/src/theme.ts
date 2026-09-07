@@ -149,6 +149,12 @@ export const HEIGHTS = {
   buttonPrimary: 52,
   buttonSecondary: 52,
   buttonCompact: 48,
-  swipeSkip: 64,
-  swipeLike: 76,
+  /*
+   * Svepknapparna. Mindre än i handoffen, med flit: de tog tillsammans med
+   * trygghetsraden drygt en åttondel av skärmen, och de punkterna gör mer nytta
+   * i kampanjbilden. 56 respektive 64 ligger fortfarande med god marginal över
+   * de 44 punkter en träffyta behöver.
+   */
+  swipeSkip: 56,
+  swipeLike: 64,
 } as const;

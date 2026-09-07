@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
@@ -14,9 +14,8 @@ import Animated, {
 import { HEIGHTS, colors, radius, spacing, type } from '../theme';
 import { CheckIcon, CloseIcon, LockIcon } from './icons';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-/** Hur långt kortet måste dras för att räknas som ett svep. */
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
+/** Andel av skärmbredden kortet måste dras för att räknas som ett svep. */
+const SWIPE_THRESHOLD_RATIO = 0.28;
 /** Hastighet som räknas som ett svep även vid kort dragning. */
 const FLICK_VELOCITY = 900;
 /** Kortet flyger ut på 420 ms, nytt kort centreras efter 650 ms (handoffen). */
@@ -54,6 +53,12 @@ export function SwipeDeck<T>({
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
+  // Bredden läses per rendering, inte en gång vid start: annars sitter tröskeln
+  // kvar på porträttbredden efter en vridning, och på webben efter varje
+  // fönsterändring.
+  const { width } = useWindowDimensions();
+  const threshold = width * SWIPE_THRESHOLD_RATIO;
+
   const current = items[index];
   const next = items[index + 1];
 
@@ -81,14 +86,14 @@ export function SwipeDeck<T>({
   const swipeProgrammatically = useCallback(
     (direction: SwipeDirection) => {
       translateX.value = withTiming(
-        direction === 'LIKE' ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5,
+        direction === 'LIKE' ? width * 1.5 : -width * 1.5,
         { duration: FLY_OUT_MS },
         (finished) => {
           if (finished) runOnJS(commit)(direction);
         },
       );
     },
-    [commit, translateX],
+    [commit, translateX, width],
   );
 
   const pan = Gesture.Pan()
@@ -101,13 +106,13 @@ export function SwipeDeck<T>({
       translateY.value = event.translationY;
     })
     .onEnd((event) => {
-      const passedThreshold = Math.abs(event.translationX) > SWIPE_THRESHOLD;
+      const passedThreshold = Math.abs(event.translationX) > threshold;
       const flicked = Math.abs(event.velocityX) > FLICK_VELOCITY;
 
       if (passedThreshold || flicked) {
         const direction: SwipeDirection = event.translationX > 0 ? 'LIKE' : 'PASS';
         translateX.value = withTiming(
-          Math.sign(event.translationX || 1) * SCREEN_WIDTH * 1.5,
+          Math.sign(event.translationX || 1) * width * 1.5,
           { duration: FLY_OUT_MS },
           (finished) => {
             if (finished) runOnJS(commit)(direction);
@@ -123,21 +128,21 @@ export function SwipeDeck<T>({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { rotate: `${interpolate(translateX.value, [-SCREEN_WIDTH, SCREEN_WIDTH], [-12, 12])}deg` },
+      { rotate: `${interpolate(translateX.value, [-width, width], [-12, 12])}deg` },
     ],
     borderColor: interpolateColor(
       translateX.value,
-      [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+      [-threshold, 0, threshold],
       [colors.danger, colors.border, colors.positive],
     ),
   }));
 
   const likeStampStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [30, SWIPE_THRESHOLD], [0, 1], 'clamp'),
+    opacity: interpolate(translateX.value, [30, threshold], [0, 1], 'clamp'),
   }));
 
   const passStampStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, -30], [1, 0], 'clamp'),
+    opacity: interpolate(translateX.value, [-threshold, -30], [1, 0], 'clamp'),
   }));
 
   if (!current) return null;
@@ -174,7 +179,7 @@ export function SwipeDeck<T>({
           onPress={() => swipeProgrammatically('PASS')}
           style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
         >
-          <CloseIcon size={26} color={colors.muted} />
+          <CloseIcon size={24} color={colors.muted} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -182,7 +187,7 @@ export function SwipeDeck<T>({
           onPress={() => swipeProgrammatically('LIKE')}
           style={({ pressed }) => [styles.likeButton, pressed && styles.pressed]}
         >
-          <CheckIcon size={30} color={colors.ink} />
+          <CheckIcon size={26} color={colors.ink} />
         </Pressable>
       </View>
     </View>
@@ -236,8 +241,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingTop: 14,
-    paddingBottom: 4,
+    paddingTop: 10,
+    paddingBottom: 2,
     paddingHorizontal: spacing.lg,
   },
   trustText: { ...type.secondary, color: colors.muted },
@@ -247,8 +252,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xl,
-    paddingTop: 4,
-    paddingBottom: 14,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
   skipButton: {
     width: HEIGHTS.swipeSkip,

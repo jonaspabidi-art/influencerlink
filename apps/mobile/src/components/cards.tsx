@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { Category, Platform } from '@pacta/shared';
 import {
   CATEGORY_LABELS,
@@ -25,6 +25,17 @@ const PLATFORM_SHORT: Record<Platform, string> = {
 const ALL_PLATFORMS: Platform[] = ['TIKTOK', 'INSTAGRAM', 'YOUTUBE'];
 
 /**
+ * Under den här skärmhöjden ryms inte allt på kortet.
+ *
+ * Kortet kan inte rulla – det ska svepas. Texten är intrinsisk och bilden tar
+ * resten, så på en liten telefon växer innehållet ut under kortkanten och
+ * plattformsraden försvinner tyst. Hellre färre rader som syns än fler som
+ * klipps: på kompakta skärmar faller briefen till en rad och leverabelraden
+ * bort.
+ */
+const COMPACT_HEIGHT = 720;
+
+/**
  * Kampanjkortet i influencerns kortlek.
  *
  * Kompositionen är det viktigaste i designen: bildytan har `flex: 1` och all
@@ -40,14 +51,22 @@ export function CampaignSwipeCard({
 }) {
   const { campaign } = card;
   const spotsLeft = Math.max(0, campaign.slots - campaign.slotsFilled);
+  const compact = useWindowDimensions().height < COMPACT_HEIGHT;
 
   return (
     <View style={styles.card}>
       {/* Tonen följer företaget, så alla deras kort hänger ihop. */}
+      {/*
+        Hela bilden, inte en beskuren remsa. Företaget valde bilden för att den
+        visar vad samarbetet gäller; en cover-beskärning i en hög yta klipper
+        bort halva rätten. Bakom ligger samma bild suddad, så kanterna inte blir
+        två grå fält.
+      */}
       <Photo
         uri={campaign.imageUrl ?? campaign.businessLogoUrl}
         name={campaign.businessName}
-        style={styles.photo}
+        style={compact ? styles.photoCompact : styles.photo}
+        fit={campaign.imageUrl ? 'contain' : 'cover'}
       >
         <View style={styles.pillSlot}>
           <MatchPill
@@ -72,7 +91,9 @@ export function CampaignSwipeCard({
       </Photo>
 
       <View style={styles.body}>
-        <Text style={styles.title}>{campaign.title}</Text>
+        <Text style={styles.title} numberOfLines={2}>
+          {campaign.title}
+        </Text>
 
         <View style={styles.amountRow}>
           <Text style={styles.amount}>
@@ -87,20 +108,25 @@ export function CampaignSwipeCard({
 
         <View style={styles.reasonRow}>
           <View style={styles.dot} />
-          <Text style={styles.reason} numberOfLines={2}>
+          <Text style={styles.reason} numberOfLines={1}>
             {card.reason}
           </Text>
         </View>
 
-        <Text style={styles.brief} numberOfLines={4}>
+        <Text style={styles.brief} numberOfLines={compact ? 1 : 2}>
           {campaign.brief}
         </Text>
 
-        <View style={styles.tagRow}>
-          {campaign.deliverables.slice(0, 3).map((deliverable) => (
-            <Tag key={deliverable} label={DELIVERABLE_LABELS[deliverable]} />
-          ))}
-        </View>
+        {/*
+          Leverablerna som en rad i stället för taggrutor. Tre taggar lade sig
+          på två rader och åt fyrtio punkter ur bildytan – och bilden är det
+          enda på kortet som inte går att läsa snabbare.
+        */}
+        {compact ? null : (
+          <Text style={styles.deliverables} numberOfLines={1}>
+            {campaign.deliverables.map((kind) => DELIVERABLE_LABELS[kind]).join(' · ')}
+          </Text>
+        )}
       </View>
 
       <View style={styles.cardFooter}>
@@ -129,10 +155,15 @@ export function InfluencerSwipeCard({
   // Bildytan visar helst kreatörens eget innehåll. Utan uppvisade inlägg
   // faller den tillbaka på profilbilden, som tidigare.
   const hero = influencer.showcase.find((item) => item.thumbnailUrl)?.thumbnailUrl ?? null;
+  const compact = useWindowDimensions().height < COMPACT_HEIGHT;
 
   return (
     <View style={styles.card}>
-      <Photo uri={hero ?? influencer.avatarUrl} name={influencer.displayName} style={styles.photo}>
+      <Photo
+        uri={hero ?? influencer.avatarUrl}
+        name={influencer.displayName}
+        style={compact ? styles.photoCompact : styles.photo}
+      >
         <View style={styles.pillSlot}>
           <MatchPill
             score={card.score}
@@ -173,20 +204,22 @@ export function InfluencerSwipeCard({
           ) : (
             <View style={styles.dot} />
           )}
-          <Text style={card.aiReviewed ? styles.reasonAi : styles.reason} numberOfLines={2}>
+          <Text style={card.aiReviewed ? styles.reasonAi : styles.reason} numberOfLines={1}>
             {card.reason}
           </Text>
         </View>
 
-        <Text style={styles.brief} numberOfLines={3}>
+        <Text style={styles.brief} numberOfLines={compact ? 1 : 2}>
           {influencer.bio}
         </Text>
 
-        <View style={styles.tagRow}>
-          {influencer.categories.slice(0, 3).map((category) => (
-            <Tag key={category} label={CATEGORY_LABELS[category as Category] ?? category} />
-          ))}
-        </View>
+        {compact ? null : (
+          <View style={styles.tagRow}>
+            {influencer.categories.slice(0, 3).map((category) => (
+              <Tag key={category} label={CATEGORY_LABELS[category as Category] ?? category} />
+            ))}
+          </View>
+        )}
       </View>
 
       <View style={styles.cardFooter}>
@@ -273,8 +306,15 @@ export function compensationLine(card: CampaignCard): string {
 const styles = StyleSheet.create({
   card: { flex: 1 },
 
-  // Bildytan flexar, texten är intrinsisk – därför inget hål vid kort brief.
-  photo: { flex: 1, minHeight: 168 },
+  /*
+   * Bildytan flexar, texten är intrinsisk – därför inget hål vid kort brief.
+   *
+   * Minsta höjden är satt så att en kampanjbild går att se som en bild och inte
+   * som en remsa. Allt annat på kortet är nedbantat till en rad var för att
+   * bilden ska få de punkterna i stället.
+   */
+  photo: { flex: 1, minHeight: 200 },
+  photoCompact: { flex: 1, minHeight: 120 },
   pillSlot: { position: 'absolute', top: 14, right: 14 },
   identityPressed: { opacity: 0.85 },
   photoFooter: {
@@ -295,7 +335,7 @@ const styles = StyleSheet.create({
   nameLarge: { fontFamily: type.rowTitle.fontFamily, fontSize: 18, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },
 
-  body: { padding: spacing.base, gap: spacing.md },
+  body: { paddingHorizontal: spacing.base, paddingVertical: 14, gap: 10 },
   title: { ...type.cardTitle, color: colors.text },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   amount: { ...type.amount, color: colors.accent },
@@ -307,13 +347,14 @@ const styles = StyleSheet.create({
   reasonAi: { ...type.secondary, color: colors.accent, flex: 1 },
 
   brief: { ...type.bodySmall, color: colors.text, opacity: 0.82 },
+  deliverables: { ...type.secondary, color: colors.muted },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statRow: { flexDirection: 'row', gap: spacing.sm },
 
   cardFooter: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingVertical: spacing.md,
+    paddingVertical: 10,
     paddingHorizontal: spacing.base,
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../src/api';
 import { SparkIcon } from '../src/components/icons';
@@ -37,13 +38,19 @@ interface Advice {
  */
 export default function Insights() {
   const insights = useQuery(insightsQuery());
+  const [asked, setAsked] = useState(false);
 
-  // Rådet vilar på uträkningen och cachas på servern, så en omhämtning här
-  // kostar sällan ett modellanrop. Men den ska inte ske i onödan heller.
+  /*
+   * Rådet hämtas först när hon ber om det.
+   *
+   * Skärmen är läsbar utan det – siffrorna står där de står. Att starta ett
+   * modellanrop bara för att någon öppnat skärmen är att svara på en fråga
+   * ingen ställt, och det syns som en spinner mitt i det som redan är klart.
+   */
   const advice = useQuery({
     queryKey: ['insights', 'advice'],
     queryFn: () => api.post<Advice>('/me/insights/advice'),
-    enabled: insights.isSuccess,
+    enabled: asked,
     staleTime: 30 * 60_000,
     retry: false,
   });
@@ -86,15 +93,27 @@ export default function Insights() {
           <SparkIcon size={18} color={colors.accent} />
           <Text style={styles.headTitle}>Vad du bör göra först</Text>
         </View>
-        {advice.isLoading ? (
+
+        {!asked ? (
+          <>
+            <Body>
+              Vi läser igenom siffrorna ovan och säger vilket steg som är värt att ta först.
+              Vi räknar inte om något – rådet bygger på det du redan ser.
+            </Body>
+            <Button label="Fråga Pacta" onPress={() => setAsked(true)} />
+          </>
+        ) : advice.isFetching ? (
           <Loading label="Läser igenom ditt läge" />
         ) : advice.data?.advice ? (
           <Text style={styles.advice}>{advice.data.advice}</Text>
         ) : (
-          <Body>
-            Vi kunde inte skriva ihop ett råd just nu. Siffrorna ovan gäller ändå – de är
-            räknade, inte hämtade härifrån.
-          </Body>
+          <>
+            <Body>
+              Vi kunde inte skriva ihop ett råd just nu. Siffrorna ovan gäller ändå – de är
+              räknade, inte hämtade härifrån.
+            </Body>
+            <Button label="Försök igen" variant="secondary" onPress={() => void advice.refetch()} />
+          </>
         )}
       </Card>
     </ScrollScreen>

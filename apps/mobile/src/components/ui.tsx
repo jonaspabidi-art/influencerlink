@@ -614,6 +614,7 @@ export function Photo({
   style,
   children,
   fallback,
+  fit = 'cover',
 }: {
   uri?: string | null;
   /** Namnet den färgade ytans ton hämtas ur när bild saknas. */
@@ -622,6 +623,12 @@ export function Photo({
   children?: ReactNode;
   /** Visas i stället för bilden när den saknas eller inte gick att hämta. */
   fallback?: ReactNode;
+  /**
+   * cover fyller ytan och beskär. contain visar hela bilden och fyller resten
+   * med samma bild suddad – på ett kampanjkort är beskärningen dyrare än
+   * kanterna, eftersom företaget valt bilden för att den visar rätten.
+   */
+  fit?: 'cover' | 'contain';
 }) {
   /*
    * En adress som finns är inte samma sak som en bild som går att visa.
@@ -639,12 +646,22 @@ export function Photo({
   return (
     <View style={[styles.photo, !showImage && name ? monogramTone(name) : null, style]}>
       {showImage ? (
-        <Image
-          source={{ uri: resolved }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          onError={() => setFailed(true)}
-        />
+        <>
+          {fit === 'contain' ? (
+            <Image
+              source={{ uri: resolved }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+              blurRadius={24}
+            />
+          ) : null}
+          <Image
+            source={{ uri: resolved }}
+            style={StyleSheet.absoluteFill}
+            resizeMode={fit}
+            onError={() => setFailed(true)}
+          />
+        </>
       ) : (
         fallback
       )}
