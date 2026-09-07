@@ -31,6 +31,7 @@ import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { aggregateStats } from '../services/social/index.js';
 import { ratingsFor } from '../services/reviews.js';
+import { refreshShowcase } from '../services/showcase.js';
 import { createTikTokClient, type StatsSource } from '../services/social/index.js';
 import { TikTokError } from '../services/social/tiktok.js';
 import { tiktokAccessToken } from '../services/social/tokens.js';
@@ -213,6 +214,7 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       },
     },
     async (request) => {
+      await refreshShowcase(prisma, tiktok, request.params.id);
       const profile = await prisma.influencerProfile.findUnique({
         where: { id: request.params.id },
         include: { socialAccounts: true, showcase: { orderBy: { position: 'asc' } } },
@@ -542,6 +544,9 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
     },
     async (request) => {
       const influencerId = requireProfileId(request);
+      // TikToks omslagsadresser slutar gälla. Hämtas om innan de visas,
+      // annars blir rutorna tomma medan länkarna fortsätter fungera.
+      await refreshShowcase(prisma, tiktok, influencerId);
       const items = await prisma.showcaseItem.findMany({
         where: { influencerId },
         orderBy: { position: 'asc' },

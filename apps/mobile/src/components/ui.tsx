@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from 'react';
+import { Children, useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -620,11 +620,28 @@ export function Photo({
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }) {
+  /*
+   * En adress som finns är inte samma sak som en bild som går att visa.
+   * TikToks omslagsbilder ligger på signerade adresser som slutar gälla, och
+   * en trasig sådan lämnade tidigare en tom ruta. Misslyckas hämtningen faller
+   * vi tillbaka på samma färgade yta som när bilden saknas helt.
+   */
+  const [failed, setFailed] = useState(false);
   const resolved = resolveMediaUrl(uri);
+  const showImage = resolved !== null && !failed;
+
+  // En ny adress förtjänar ett nytt försök.
+  useEffect(() => setFailed(false), [resolved]);
+
   return (
-    <View style={[styles.photo, !resolved && name ? monogramTone(name) : null, style]}>
-      {resolved ? (
-        <Image source={{ uri: resolved }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+    <View style={[styles.photo, !showImage && name ? monogramTone(name) : null, style]}>
+      {showImage ? (
+        <Image
+          source={{ uri: resolved }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+        />
       ) : null}
       {children}
     </View>
