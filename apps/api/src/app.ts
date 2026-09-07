@@ -58,6 +58,8 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
   await app.register(authPlugin, { secret: config.JWT_SECRET });
 
   app.decorate('services', services);
+  // Rådgivarens fel ska synas i samma logg som allt annat.
+  services.ai.useLogger(app.log);
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {

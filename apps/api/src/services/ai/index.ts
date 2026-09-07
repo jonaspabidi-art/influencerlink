@@ -111,8 +111,15 @@ const DRAFT_TOOL: Anthropic.Tool = {
   },
 };
 
+/** Så mycket av en logg behöver rådgivaren. Fastifys logger uppfyller det. */
+export interface AiLogger {
+  warn(context: object, message: string): void;
+  error(context: object, message: string): void;
+}
+
 export class AiService {
   private readonly client: Anthropic | undefined;
+  private log: AiLogger | undefined;
 
   constructor(
     private readonly config: Config,
@@ -120,6 +127,48 @@ export class AiService {
   ) {
     this.client =
       client ?? (config.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: config.ANTHROPIC_API_KEY }) : undefined);
+  }
+
+  /**
+   * Kopplar på serverns logg.
+   *
+   * Tjänsten skapas innan Fastify finns, så loggen skickas in efteråt. Utan den
+   * skriver rådgivaren ingenting när ett anrop misslyckas – och då ser man bara
+   * "prova igen" i appen, utan att kunna skilja en felaktig nyckel från ett
+   * nätverksfel.
+   */
+  useLogger(log: AiLogger): void {
+    this.log = log;
+  }
+
+  /**
+   * Varför ett anrop misslyckades, utan att nyckeln hamnar i loggen.
+   *
+   * Statuskoden är det som betyder något: 401 är fel nyckel, 429 är slut kvot,
+   * och ett anslutningsfel betyder att servern inte når Anthropic alls. De tre
+   * kräver helt olika åtgärder.
+   */
+  private logFailure(operation: string, caught: unknown): void {
+    if (!this.log) return;
+    if (caught instanceof Anthropic.AuthenticationError) {
+      this.log.error({ operation }, 'Anthropic avvisade nyckeln. Kontrollera ANTHROPIC_API_KEY.');
+      return;
+    }
+    if (caught instanceof Anthropic.RateLimitError) {
+      this.log.warn({ operation }, 'Anthropic svarade 429: kvoten är slut eller anropen för täta.');
+      return;
+    }
+    if (caught instanceof Anthropic.APIError) {
+      this.log.error(
+        { operation, status: caught.status, detail: caught.message },
+        'Anthropic svarade med ett fel.',
+      );
+      return;
+    }
+    this.log.error(
+      { operation, detail: caught instanceof Error ? caught.message : String(caught) },
+      'Kunde inte nå Anthropic.',
+    );
   }
 
   /** True när en API-nyckel finns. Utan nyckel används enbart heuristiken. */
@@ -273,8 +322,11 @@ export class AiService {
         .join('\n')
         .trim();
       return text.length > 0 ? text : null;
-    } catch {
+    } catch (caught) {
       // Ett uteblivet råd är ett tomt svar, inte ett fel som fäller skärmen.
+      // Men det ska synas i loggen: användaren ser bara "prova igen", och utan
+      // en rad här går det inte att skilja en felaktig nyckel från ett nätfel.
+      this.logFailure('advise', caught);
       return null;
     }
   }
@@ -297,8 +349,9 @@ export class AiService {
       });
       const block = response.content.find((item) => item.type === 'tool_use');
       return block?.type === 'tool_use' ? block.input : undefined;
-    } catch {
+    } catch (caught) {
       // Matchning får aldrig blockera flödet – anroparen faller tillbaka på heuristiken.
+      this.logFailure('callTool', caught);
       return undefined;
     }
   }
