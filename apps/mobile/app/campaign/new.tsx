@@ -291,7 +291,7 @@ export default function NewCampaign() {
                 {formatSek(expert.data.price)} – betalas först när ni sett resultatet.
               </Text>
               <Button
-                label="Läs mer"
+                label="Ja, gör det åt oss"
                 variant="secondary"
                 onPress={() => router.push('/campaign/expert')}
               />
