@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { TtlCache } from '../../lib/cache.js';
 import {
   formatSek,
   CATEGORIES,
@@ -28,6 +29,16 @@ export * from './types.js';
 const AI_REVIEW_LIMIT = 15;
 /** Sonnet får flytta grundpoängen med som mest så här mycket. */
 const MAX_SCORE_ADJUSTMENT = 20;
+
+/**
+ * Hur länge en färdig rangordning återanvänds.
+ *
+ * Kortleken hämtas om varje gång företaget öppnar den, och varje hämtning
+ * väntade tidigare på ett Sonnet-anrop – flera sekunder, varje gång, på samma
+ * kampanj och samma kreatörer. Tio minuter är kort nog att en ny kreatör syns
+ * snart och långt nog att bläddrandet känns direkt.
+ */
+const RANKING_TTL_MS = 10 * 60 * 1000;
 
 const verdictSchema = z.object({
   id: z.string(),
@@ -111,6 +122,28 @@ const DRAFT_TOOL: Anthropic.Tool = {
   },
 };
 
+/**
+ * Nyckeln till en cachad rangordning.
+ *
+ * Kampanjens id räcker inte: ändras budgeten eller nischerna ska bedömningen
+ * göras om, och kommer en ny kreatör till ska hen med. Därför ingår både det
+ * som styr matchningen och vilka som bedöms.
+ */
+function rankingKey(
+  campaign: CampaignCandidate,
+  entries: { influencer: { id: string } }[],
+): string {
+  return [
+    campaign.id,
+    campaign.budgetPerCreator,
+    campaign.minFollowers,
+    campaign.city,
+    campaign.categories.join(','),
+    campaign.platforms.join(','),
+    entries.map((entry) => entry.influencer.id).join(','),
+  ].join('|');
+}
+
 /** Så mycket av en logg behöver rådgivaren. Fastifys logger uppfyller det. */
 export interface AiLogger {
   warn(context: object, message: string): void;
@@ -120,6 +153,7 @@ export interface AiLogger {
 export class AiService {
   private readonly client: Anthropic | undefined;
   private log: AiLogger | undefined;
+  private readonly rankings = new TtlCache<RankedInfluencer[]>(RANKING_TTL_MS);
 
   constructor(
     private readonly config: Config,
@@ -194,6 +228,13 @@ export class AiService {
 
     if (!this.client || base.length === 0) return base;
 
+    // Samma kampanj och samma uppsättning kandidater ger samma rangordning.
+    // Nyckeln tar med kandidaterna: dyker en ny kreatör upp ska hen bedömas,
+    // inte hamna sist bakom ett gammalt svar.
+    const key = rankingKey(campaign, base);
+    const cached = this.rankings.get(key);
+    if (cached) return cached;
+
     const reviewed = base.slice(0, AI_REVIEW_LIMIT);
     const candidateLines = reviewed
       .map((entry) => describeInfluencer(entry.influencer, entry.score))
@@ -211,7 +252,9 @@ export class AiService {
       entry.reason = verdict.reason;
       entry.aiReviewed = true;
     }
-    return sortByFinalScore(base, (entry) => entry.influencer.id);
+    const ranked = sortByFinalScore(base, (entry) => entry.influencer.id);
+    this.rankings.set(key, ranked);
+    return ranked;
   }
 
   /** Samma sak från influencerns håll: vilka kampanjer ska ligga överst i decken? */

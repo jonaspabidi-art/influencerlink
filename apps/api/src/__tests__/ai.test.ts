@@ -160,6 +160,52 @@ describe('AiService med Sonnet', () => {
     expect(prompt).toContain('Bedöm alla 15 kandidater.');
   });
 
+  it('återanvänder rangordningen i stället för att fråga modellen igen', async () => {
+    const calls: unknown[] = [];
+    const service = new AiService(config, stubClient({ verdicts: [] }, calls));
+    const candidates = [influencer('a'), influencer('b')];
+
+    const first = await service.rankInfluencersForCampaign(campaign, candidates);
+    const second = await service.rankInfluencersForCampaign(campaign, candidates);
+
+    expect(calls).toHaveLength(1);
+    expect(second).toEqual(first);
+  });
+
+  it('frågar på nytt när en kandidat tillkommit', async () => {
+    const calls: unknown[] = [];
+    const service = new AiService(config, stubClient({ verdicts: [] }, calls));
+
+    await service.rankInfluencersForCampaign(campaign, [influencer('a')]);
+    await service.rankInfluencersForCampaign(campaign, [influencer('a'), influencer('b')]);
+
+    expect(calls).toHaveLength(2);
+  });
+
+  it('frågar på nytt när kampanjen ändrats', async () => {
+    const calls: unknown[] = [];
+    const service = new AiService(config, stubClient({ verdicts: [] }, calls));
+    const candidates = [influencer('a')];
+
+    await service.rankInfluencersForCampaign(campaign, candidates);
+    await service.rankInfluencersForCampaign(
+      { ...campaign, budgetPerCreator: campaign.budgetPerCreator * 2 },
+      candidates,
+    );
+
+    expect(calls).toHaveLength(2);
+  });
+
+  it('cachar inte ett misslyckat anrop – nästa försök ska få fråga igen', async () => {
+    const service = new AiService(config, failingClient());
+    const candidates = [influencer('a')];
+
+    await service.rankInfluencersForCampaign(campaign, candidates);
+    const andra = await service.rankInfluencersForCampaign(campaign, candidates);
+
+    expect(andra[0]?.aiReviewed).toBe(false);
+  });
+
   it('skapar ett kampanjutkast som validerar mot schemat', async () => {
     const service = new AiService(
       config,

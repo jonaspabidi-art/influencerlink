@@ -8,10 +8,12 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../src/auth';
+import { persistQueryCache, restoreQueryCache } from '../src/querycache';
 import { colors, type } from '../src/theme';
 
 const queryClient = new QueryClient({
@@ -19,13 +21,28 @@ const queryClient = new QueryClient({
     queries: {
       // Mobilt nät är opålitligt; ett omförsök räcker innan vi visar felet.
       retry: 1,
-      staleTime: 30_000,
+      /*
+       * Två minuter, inte trettio sekunder. Det mesta i appen ändras långsamt –
+       * kampanjer, profiler, kreatörer – och när något faktiskt ändras är det
+       * nästan alltid användaren själv som gjort det, varpå skärmen som gjorde
+       * ändringen redan avfärdar rätt nycklar.
+       */
+      staleTime: 2 * 60_000,
+      // Data ligger kvar en timme efter att sista skärmen slutat använda den,
+      // så ett besök tillbaka i en flik är omedelbart.
+      gcTime: 60 * 60_000,
       refetchOnWindowFocus: false,
     },
   },
 });
 
+// Sparad data läggs tillbaka innan något ritas, annars hinner skärmarna visa
+// en spinner för data vi redan har.
+restoreQueryCache(queryClient);
+
 export default function RootLayout() {
+  useEffect(() => persistQueryCache(queryClient), []);
+
   const [fontsLoaded] = useFonts({
     InstrumentSans_400Regular,
     InstrumentSans_500Medium,

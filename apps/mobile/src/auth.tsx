@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, setAccessToken, setUnauthorizedHandler } from './api';
+import { clearQueryCache } from './querycache';
 import { getItem, removeItem, setItem } from './storage';
 import type { SessionUser } from './types';
 
@@ -27,6 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setUser(null);
     await removeItem(TOKEN_KEY);
+    // Nästa som loggar in på samma enhet ska inte se den förras data.
+    clearQueryCache();
   }, []);
 
   const refresh = useCallback(async () => {
