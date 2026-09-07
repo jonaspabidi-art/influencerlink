@@ -106,7 +106,15 @@ export default function InfluencerSwipe() {
         large
         subtitle={`${cards.length} ${cards.length === 1 ? 'kampanj' : 'kampanjer'} som passar dig`}
         right={
-          <IconButton label="Filter" onPress={() => router.push('/onboarding/influencer')}>
+          /*
+            Kortleken styrs av profilen: stad, nischer och lägsta arvode avgör
+            vilka kampanjer som når hit. Knappen gick tidigare till onboardingen
+            och såg ut som att man skulle skapa kontot en gång till.
+          */
+          <IconButton
+            label="Justera vad du ser"
+            onPress={() => router.push('/profile/edit')}
+          >
             <SlidersIcon size={17} color={colors.muted} />
           </IconButton>
         }
@@ -183,7 +191,7 @@ function EmptyDeck({ queue, onRefresh }: { queue: PendingLike[]; onRefresh: () =
             <Button
               label="Ändra mina nischer"
               variant="secondary"
-              onPress={() => router.push('/onboarding/influencer')}
+              onPress={() => router.push('/profile/edit')}
             />
           </View>
         </View>
