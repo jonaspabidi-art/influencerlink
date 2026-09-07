@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { matchesQuery } from '../queries';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../api';
@@ -10,7 +11,7 @@ import { Avatar, Button, ErrorState, Header, Loading, Logo, Rating, Screen } fro
 /** Matchningslistan. Samma komponent för båda rollerna, olika motpart. */
 export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   const router = useRouter();
-  const matches = useQuery({ queryKey: ['matches'], queryFn: () => api.get<Match[]>('/matches') });
+  const matches = useQuery(matchesQuery());
 
   if (matches.isLoading) {
     return (

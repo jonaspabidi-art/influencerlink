@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { contractsQuery, payoutsQuery } from '../../src/queries';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
@@ -30,15 +31,9 @@ export default function Wallet() {
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-  const status = useQuery({
-    queryKey: ['payouts'],
-    queryFn: () => api.get<PayoutStatus>('/me/payouts/status'),
-  });
+  const status = useQuery(payoutsQuery());
 
-  const contracts = useQuery({
-    queryKey: ['contracts'],
-    queryFn: () => api.get<Contract[]>('/contracts'),
-  });
+  const contracts = useQuery(contractsQuery());
 
   const onboarding = useMutation({
     mutationFn: () => api.post<{ onboardingUrl: string }>('/me/payouts/onboarding'),

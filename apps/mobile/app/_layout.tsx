@@ -13,6 +13,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../src/auth';
+import { Prefetch } from '../src/components/Prefetch';
 import { persistQueryCache, restoreQueryCache } from '../src/querycache';
 import { colors, type } from '../src/theme';
 
@@ -57,6 +58,8 @@ export default function RootLayout() {
           <AuthProvider>
             {/* Ljust tema: mörk statusfältstext. */}
             <StatusBar style="dark" />
+            {/* Fyller flikarna i bakgrunden medan första skärmen läses. */}
+            <Prefetch />
             {fontsLoaded ? (
               <Stack
                 screenOptions={{

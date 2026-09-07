@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../api';
+import { expertOrdersQuery } from '../queries';
 import { formatSek } from '../format';
 import { colors, spacing, type } from '../theme';
 import type { ExpertOrder } from '../types';
@@ -20,10 +21,7 @@ export function ExpertOrderStatus() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
-  const orders = useQuery({
-    queryKey: ['expert-orders'],
-    queryFn: () => api.get<ExpertOrder[]>('/expert-orders/mine'),
-  });
+  const orders = useQuery(expertOrdersQuery());
 
   const approve = useMutation({
     mutationFn: (id: string) => api.post(`/expert-orders/${id}/approve`, {}),

@@ -1,5 +1,6 @@
 import { CATEGORIES, type Category } from '@pacta/shared';
 import { useQuery } from '@tanstack/react-query';
+import { ownBusinessQuery } from '../../src/queries';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -40,10 +41,7 @@ export default function BusinessDiscover() {
   const [nearby, setNearby] = useState(true);
   const [pickingDeck, setPickingDeck] = useState(false);
 
-  const profile = useQuery({
-    queryKey: ['own-business'],
-    queryFn: () => api.get<OwnBusinessProfile>('/me/business-profile'),
-  });
+  const profile = useQuery(ownBusinessQuery());
 
   const city = profile.data?.city ?? '';
   const creators = useQuery({

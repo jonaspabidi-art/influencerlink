@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { contractsQuery, pendingReviewsQuery } from '../queries';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../api';
@@ -31,14 +32,8 @@ const STATUS_COLORS: Record<Contract['status'], string> = {
 
 export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   const router = useRouter();
-  const contracts = useQuery({
-    queryKey: ['contracts'],
-    queryFn: () => api.get<Contract[]>('/contracts'),
-  });
-  const pendingReviews = useQuery({
-    queryKey: ['reviews-pending'],
-    queryFn: () => api.get<PendingReview[]>('/reviews/pending'),
-  });
+  const contracts = useQuery(contractsQuery());
+  const pendingReviews = useQuery(pendingReviewsQuery());
 
   if (contracts.isLoading) {
     return (

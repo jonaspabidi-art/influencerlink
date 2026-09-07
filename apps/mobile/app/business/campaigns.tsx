@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { myCampaignsQuery } from '../../src/queries';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
@@ -35,10 +36,7 @@ const STATUS_TONES: Record<Campaign['status'], StatusTone> = {
 
 export default function BusinessCampaigns() {
   const router = useRouter();
-  const campaigns = useQuery({
-    queryKey: ['campaigns', 'mine'],
-    queryFn: () => api.get<Campaign[]>('/campaigns/mine'),
-  });
+  const campaigns = useQuery(myCampaignsQuery());
 
   if (campaigns.isLoading) {
     return (
