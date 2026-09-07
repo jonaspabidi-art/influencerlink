@@ -200,10 +200,9 @@ export default function NewCampaign() {
 
         <View style={styles.step1Body}>
           <View style={styles.intro}>
-            <Text style={styles.stepTitle}>Beskriv vad du vill ha</Text>
+            <Text style={styles.stepTitle}>Vad vill ni få ut av det?</Text>
             <Text style={styles.lead}>
-              Som du skulle sagt det till en kollega. Vi gör om det till en färdig kampanj som du
-              får ändra i.
+              Skriv som du skulle sagt det till en kollega. Två meningar räcker.
             </Text>
           </View>
 
@@ -212,11 +211,14 @@ export default function NewCampaign() {
             <TextInput
               style={styles.noteInput}
               value={prompt}
-              onChangeText={(value) => setPrompt(value.slice(0, PROMPT_MAX))}
+              onChangeText={(value) => {
+                setError(null);
+                setPrompt(value.slice(0, PROMPT_MAX));
+              }}
               placeholder="Vi vill fylla luncherna på tisdagar och torsdagar. Gärna någon som gör snabba matvideor här i stan."
               placeholderTextColor={colors.dim}
               multiline
-              accessibilityLabel="Beskriv vad du vill ha"
+              accessibilityLabel="Vad vill ni få ut av det?"
             />
             <Text style={styles.counter}>
               {prompt.length} / {PROMPT_MAX}
@@ -225,44 +227,76 @@ export default function NewCampaign() {
 
           <Field label="Stad" value={city} onChangeText={setCity} placeholder="Göteborg" />
 
+          {/*
+            Hela meningarna, inte kapade till tre ord. De lär läsaren vad som
+            förväntas bättre än instruktionstexten gör – och kapade började alla
+            tre med "Vi" och gick inte att skilja åt.
+          */}
           <View style={styles.starters}>
-            <Label>ELLER BÖRJA HÄR</Label>
-            <View style={styles.starterRow}>
-              {STARTERS.map((starter) => (
-                <Chip
-                  key={starter}
-                  label={starter.split(' ').slice(0, 3).join(' ') + ' …'}
-                  onPress={() => setPrompt(starter)}
-                />
-              ))}
-            </View>
+            <Label>BÖRJA FRÅN ETT EXEMPEL</Label>
+            {STARTERS.map((starter) => (
+              <Pressable
+                key={starter}
+                accessibilityRole="button"
+                accessibilityLabel={starter}
+                onPress={() => {
+                  setError(null);
+                  setPrompt(starter);
+                }}
+                style={({ pressed }) => [styles.starterRow, pressed && styles.pressed]}
+              >
+                <Text style={styles.starterText}>{starter}</Text>
+              </Pressable>
+            ))}
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
+          {/*
+            Varje val svarar på samma tre frågor: vem gör jobbet, vad kostar
+            det, hur lång tid tar det. Det är den enda informationen som behövs
+            för att välja, och den stod tidigare ingenstans.
+          */}
           <View style={styles.step1Actions}>
             <Button
-              label="Gör ett utkast"
+              label="Föreslå ett samarbete åt mig"
               icon={<SparkIcon size={18} color={colors.ink} />}
               onPress={() => void generateDraft()}
               loading={drafting}
             />
-            <Text style={styles.footnote}>Tar några sekunder. Inget publiceras än.</Text>
-            <Button label="Fyll i själv" variant="secondary" onPress={() => setStep(2)} />
-            {/*
-              Tredje sättet att svara på frågan skärmen redan ställer, inte en
-              extra ruta. Döljs när vi är fullbokade – ett erbjudande vi inte
-              kan hålla är värre än inget erbjudande.
-            */}
-            {expert.data?.available ? (
+            <Text style={styles.footnote}>
+              Gratis. Tar tio sekunder. Vi föreslår rubrik, beskrivning och ersättning – du ändrar
+              allt innan något publiceras.
+            </Text>
+
+            <Button label="Jag fyller i allt själv" variant="secondary" onPress={() => setStep(2)} />
+            <Text style={styles.footnote}>Ungefär fem minuter.</Text>
+          </View>
+
+          {/*
+            Under en avdelare med egen rubrik, så tjänsten läses som något man
+            kan välja bort – inte som en tredje knapp man måste förstå för att
+            komma vidare. Döljs när vi är fullbokade: ett erbjudande vi inte kan
+            hålla är värre än inget erbjudande.
+          */}
+          {expert.data?.available ? (
+            <View style={styles.expertBlock}>
+              <Divider />
+              <Text style={styles.expertTitle}>Vill ni slippa göra det själva?</Text>
+              <Text style={styles.lead}>
+                En av oss skriver beskrivningen, sätter ersättningen och väljer ut kreatörerna med
+                hjälp av siffrorna vi har. Ni godkänner och publicerar.
+              </Text>
+              <Text style={styles.expertPrice}>
+                {formatSek(expert.data.price)} – betalas först när ni sett resultatet.
+              </Text>
               <Button
-                label="Låt en Pacta-expert skapa kampanjen"
+                label="Läs mer"
                 variant="secondary"
-                icon={<SparkIcon size={18} color={colors.text} />}
                 onPress={() => router.push('/campaign/expert')}
               />
-            ) : null}
-          </View>
+            </View>
+          ) : null}
         </View>
       </ScrollScreen>
     );
@@ -288,6 +322,16 @@ export default function NewCampaign() {
         right={<Text style={styles.stepCounter}>2 / 2</Text>}
       />
       <Progress total={2} current={2} />
+
+      {/*
+        Den som tryckte på förslagsknappen behöver veta vad hen tittar på: ett
+        förslag som går att ändra, inte något som redan gäller.
+      */}
+      <Text style={styles.step2Intro}>
+        {rationale
+          ? 'Här är vårt förslag. Ändra det du vill innan du publicerar.'
+          : 'Fyll i det ni söker. Inget publiceras förrän du trycker på Publicera.'}
+      </Text>
 
       {rationale ? (
         <View style={styles.aiNote}>
@@ -482,9 +526,22 @@ const styles = StyleSheet.create({
   counter: { ...type.secondary, fontSize: 12, color: colors.muted, textAlign: 'right' },
 
   starters: { gap: spacing.sm },
-  starterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  starterRow: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.control,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  starterText: { ...type.bodySmall, color: colors.text },
+  pressed: { opacity: 0.8 },
+  expertBlock: { gap: spacing.md, paddingTop: spacing.sm },
+  expertTitle: { ...type.listTitle, color: colors.text },
+  expertPrice: { ...type.rowTitle, color: colors.accent },
   step1Actions: { gap: spacing.sm },
   footnote: { ...type.secondary, color: colors.muted, textAlign: 'center' },
+  step2Intro: { ...type.bodySmall, color: colors.muted },
   error: { ...type.secondary, color: colors.danger },
 
   aiNote: {
