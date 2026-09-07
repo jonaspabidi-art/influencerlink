@@ -159,12 +159,36 @@ inget svar, eftersom företaget betalar utifrån det. Underlaget säger också o
 kreatörs siffror är hämtade från plattformen eller uppgivna av henne själv, så
 att ett råd som vilar på ogranskade tal kan säga det.
 
-Plattformens egna regler – tolv procent, spärrade pengar, BankID, godkännande
-före publicering, fjorton dagars omdömesfönster – står i systemprompten, så att
-svaren om hur det går till stämmer med vad koden gör.
+Plattformens egna regler – den delade avgiften, spärrade pengar, BankID,
+godkännande före publicering, fjorton dagars omdömesfönster – står i
+systemprompten, så att svaren om hur det går till stämmer med vad koden gör.
 
 Utan `ANTHROPIC_API_KEY` svarar slutpunkten `available: false` och appen säger
 det rakt ut i stället för att låtsas.
+
+## Varför kreatören får få matchningar
+
+Kortleken visar alla kampanjer kreatören är behörig till. Den visar aldrig dem
+som sorterats bort, och inte varför. Den som får ett tomt däck ser bara tystnad.
+
+`GET /me/insights` räknar därför på samtliga öppna kampanjer, inte bara de hon
+kan söka: hur många hon är behörig till, hur många som ligger i hennes stad, och
+vad de övriga faller på – följarkrav, plattform eller lägstapris. Uträkningen
+ligger i `creatorInsights` i det delade paketet, så demoläget svarar likadant.
+
+Stegen är kvantifierade. "Sänker du ditt lägsta arvode till 3 000 kr blir du
+behörig till tre kampanjer till" räknas bara på kampanjer där priset är det enda
+hindret; annars vore siffran ett löfte som inte infrias. Kampanjer som ersätter
+i mat har ingen kontant budget och är undantagna helt – ett förslag om noll
+kronor är inget råd.
+
+`POST /me/insights/advice` lägger Sonnet ovanpå den färdiga uträkningen. Modellen
+får inte räkna om något; den prioriterar bland tal som redan är kontrollerade.
+Svaret cachas på själva underlaget, så det kostar ett anrop först när
+kampanjerna eller profilen faktiskt ändrats.
+
+Ordningen i appen är densamma: fakta först, rådet sist. Ett råd överst hade lästs
+som en spådom – efter siffrorna läses det som en slutsats man kan kontrollera.
 
 ## Resultat
 

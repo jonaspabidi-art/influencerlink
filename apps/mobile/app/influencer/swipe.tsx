@@ -13,6 +13,7 @@ import {
   Logo,
   Screen,
 } from '../../src/components/ui';
+import { InsightsPrompt } from '../../src/components/InsightsPrompt';
 import { MatchScreen } from '../../src/components/MatchScreen';
 import { formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
@@ -180,6 +181,9 @@ function EmptyDeck({ queue, onRefresh }: { queue: PendingLike[]; onRefresh: () =
             />
           </View>
         </View>
+
+        {/* Ligger inte kvar när kön redan fyller skärmen – tre kort får inte plats. */}
+        {queue.length === 0 ? <InsightsPrompt /> : null}
       </View>
     </Screen>
   );

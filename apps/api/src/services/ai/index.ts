@@ -9,6 +9,7 @@ import {
   rankCampaigns,
   rankInfluencers,
   type CampaignCandidate,
+  type CreatorInsights,
   type InfluencerCandidate,
 } from '@pacta/shared';
 import { z } from 'zod';
@@ -16,9 +17,11 @@ import type { Config } from '../../config.js';
 import {
   ADVISOR_SYSTEM_PROMPT,
   CAMPAIGN_DRAFT_SYSTEM_PROMPT,
+  CREATOR_ADVISOR_SYSTEM_PROMPT,
   MATCHING_SYSTEM_PROMPT,
   describeCampaign,
   describeCandidateForAdvisor,
+  describeCreatorInsights,
   describeInfluencer,
 } from './prompts.js';
 import type { CampaignDraft, RankedCampaign, RankedInfluencer } from './types.js';
@@ -39,6 +42,16 @@ const MAX_SCORE_ADJUSTMENT = 20;
  * snart och långt nog att bläddrandet känns direkt.
  */
 const RANKING_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Hur länge ett råd till en kreatör återanvänds.
+ *
+ * Rådet vilar helt på uträkningen, och uträkningen ändras bara när kampanjerna
+ * eller profilen gör det. Ändras något får hon ett nytt råd direkt eftersom
+ * nyckeln är själva underlaget – annars är det samma svar, och då ska det inte
+ * kosta ett anrop varje gång hon öppnar skärmen.
+ */
+const CREATOR_ADVICE_TTL_MS = 60 * 60 * 1000;
 
 const verdictSchema = z.object({
   id: z.string(),
@@ -154,6 +167,7 @@ export class AiService {
   private readonly client: Anthropic | undefined;
   private log: AiLogger | undefined;
   private readonly rankings = new TtlCache<RankedInfluencer[]>(RANKING_TTL_MS);
+  private readonly creatorAdvice = new TtlCache<string>(CREATOR_ADVICE_TTL_MS);
 
   constructor(
     private readonly config: Config,
@@ -370,6 +384,51 @@ export class AiService {
       // Men det ska synas i loggen: användaren ser bara "prova igen", och utan
       // en rad här går det inte att skilja en felaktig nyckel från ett nätfel.
       this.logFailure('advise', caught);
+      return null;
+    }
+  }
+
+  /**
+   * Svarar kreatören som undrar varför hon får få matchningar.
+   *
+   * Uträkningen är gjord innan modellen ser den, och den får inte räkna om
+   * något: kampanjerna är räknade, hindren summerade och stegen kvantifierade.
+   * Det som återstår är prioriteringen – vilket steg som är värt att göra
+   * först. Att låta modellen hitta talen själv vore att byta ut ett kontrollerat
+   * svar mot ett trovärdigt formulerat.
+   */
+  async adviseCreator(
+    influencer: InfluencerCandidate,
+    insights: CreatorInsights,
+  ): Promise<string | null> {
+    if (!this.client) return null;
+
+    const facts = describeCreatorInsights(influencer, insights);
+    const cached = this.creatorAdvice.get(facts);
+    if (cached) return cached;
+
+    try {
+      const response = await this.client.messages.create({
+        model: this.config.ANTHROPIC_MODEL,
+        max_tokens: 500,
+        system: CREATOR_ADVISOR_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: `${facts}\n\nHon frågar: varför får jag så få matchningar, och vad ska jag göra åt det?`,
+          },
+        ],
+      });
+      const text = response.content
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map((block) => block.text)
+        .join('\n')
+        .trim();
+      if (text.length === 0) return null;
+      this.creatorAdvice.set(facts, text);
+      return text;
+    } catch (caught) {
+      this.logFailure('adviseCreator', caught);
       return null;
     }
   }

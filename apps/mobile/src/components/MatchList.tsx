@@ -6,6 +6,7 @@ import { api } from '../api';
 import { formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { Match } from '../types';
+import { InsightsPrompt } from './InsightsPrompt';
 import { Avatar, Button, ErrorState, Header, Loading, Logo, Photo, Rating, Screen } from './ui';
 
 /** Matchningslistan. Samma komponent för båda rollerna, olika motpart. */
@@ -54,6 +55,7 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
               }
             />
           </View>
+          {role === 'INFLUENCER' ? <InsightsPrompt /> : null}
         </View>
       </Screen>
     );
@@ -67,6 +69,7 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
         keyExtractor={(match) => match.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        ListFooterComponent={role === 'INFLUENCER' ? <InsightsPrompt /> : null}
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
   lastMessage: { ...type.secondary, color: colors.dim, flexShrink: 1 },
   amount: { fontFamily: type.rowTitle.fontFamily, fontSize: 15, color: colors.accent },
 
-  emptyBody: { flex: 1, paddingHorizontal: spacing.base },
+  emptyBody: { flex: 1, paddingHorizontal: spacing.base, gap: 14 },
   emptyCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,

@@ -561,3 +561,23 @@ export interface AdminExpertOrder extends ExpertOrder {
   companyName: string;
   city: string;
 }
+
+/** Varför kreatören får få matchningar. Räknat på servern, inte gissat. */
+export interface CreatorInsights {
+  openCampaigns: number;
+  eligible: number;
+  eligibleInCity: number;
+  reviewed: number;
+  waiting: number;
+  matches: number;
+  city: string;
+  blockers: { followers: number; platforms: number; budget: number };
+  actions: {
+    kind: 'FOLLOWERS' | 'PLATFORMS' | 'BUDGET';
+    message: string;
+    unlocks: number;
+    suggestedPriceMin?: number;
+    platform?: string;
+  }[];
+  gaps: { field: string; message: string }[];
+}

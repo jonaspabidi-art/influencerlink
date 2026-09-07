@@ -7,6 +7,7 @@ import { authRoutes } from './auth.js';
 import { campaignRoutes } from './campaigns.js';
 import { contractRoutes } from './contracts.js';
 import { feedRoutes } from './feed.js';
+import { insightRoutes } from './insights.js';
 import { matchRoutes } from './matches.js';
 import { mediaRoutes } from './media.js';
 import { profileRoutes } from './profiles.js';
@@ -48,6 +49,7 @@ export async function registerRoutes(app: FastifyInstance, services: Services): 
     await mediaRoutes(instance, services);
     await campaignRoutes(instance, services);
     await feedRoutes(instance, services);
+    await insightRoutes(instance, services);
     await swipeRoutes(instance, services);
     await matchRoutes(instance, services);
     await contractRoutes(instance, services);

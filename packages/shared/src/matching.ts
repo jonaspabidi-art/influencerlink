@@ -138,21 +138,40 @@ export interface Eligibility {
 }
 
 /**
+ * Vad ett hinder beror på.
+ *
+ * Texten räcker för att visa hindret, men inte för att räkna på det. Vill man
+ * veta hur många kampanjer som skulle öppna sig om kreatören sänkte sitt
+ * lägstapris måste hindren gå att skilja åt utan att läsa svenska.
+ */
+export type BlockerKind = 'FOLLOWERS' | 'PLATFORMS' | 'BUDGET';
+
+export interface Blocker {
+  kind: BlockerKind;
+  /** Formulerad för företagets vy, där hindren först visades. */
+  message: string;
+}
+
+/**
  * Hårda krav som avgör om paret ens får visas i flödet. Håll dessa få – allt
  * annat hör hemma i poängsättningen så att gränsfall fortfarande syns.
  */
-export function checkEligibility(
+export function eligibilityBlockers(
   campaign: CampaignCandidate,
   influencer: InfluencerCandidate,
-): Eligibility {
-  const blockers: string[] = [];
+): Blocker[] {
+  const blockers: Blocker[] = [];
   if (influencer.followers < campaign.minFollowers) {
-    blockers.push(
-      `Kampanjen kräver minst ${campaign.minFollowers.toLocaleString('sv-SE')} följare.`,
-    );
+    blockers.push({
+      kind: 'FOLLOWERS',
+      message: `Kampanjen kräver minst ${campaign.minFollowers.toLocaleString('sv-SE')} följare.`,
+    });
   }
   if (campaign.platforms.length > 0 && sharedPlatforms(campaign, influencer).length === 0) {
-    blockers.push('Influencern publicerar inte på någon av kampanjens plattformar.');
+    blockers.push({
+      kind: 'PLATFORMS',
+      message: 'Influencern publicerar inte på någon av kampanjens plattformar.',
+    });
   }
   /*
    * Budgeten är en riktpunkt, inte ett tak.
@@ -164,9 +183,20 @@ export function checkEligibility(
    * blir det ett hinder.
    */
   if (influencer.priceMin > campaign.budgetPerCreator * (1 + BUDGET_TOLERANCE)) {
-    blockers.push('Kreatörens lägsta arvode ligger långt över budgeten.');
+    blockers.push({
+      kind: 'BUDGET',
+      message: 'Kreatörens lägsta arvode ligger långt över budgeten.',
+    });
   }
-  return { eligible: blockers.length === 0, blockers };
+  return blockers;
+}
+
+export function checkEligibility(
+  campaign: CampaignCandidate,
+  influencer: InfluencerCandidate,
+): Eligibility {
+  const blockers = eligibilityBlockers(campaign, influencer);
+  return { eligible: blockers.length === 0, blockers: blockers.map((blocker) => blocker.message) };
 }
 
 /**

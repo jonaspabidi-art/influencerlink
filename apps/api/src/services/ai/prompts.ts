@@ -1,4 +1,9 @@
-import type { CampaignCandidate, InfluencerCandidate, ScoreBreakdown } from '@pacta/shared';
+import type {
+  CampaignCandidate,
+  CreatorInsights,
+  InfluencerCandidate,
+  ScoreBreakdown,
+} from '@pacta/shared';
 import { formatSek } from '@pacta/shared';
 
 export const MATCHING_SYSTEM_PROMPT = `Du är matchningsmotorn i Pacta, en svensk plattform där företag och innehållskreatörer hittar varandra. Företagen är restauranger, kaféer, hotell, kliniker och liknande verksamheter som vill ha besökare på plats.
@@ -121,4 +126,81 @@ export function describeCandidateForAdvisor(candidate: {
     `  pris: från ${formatSek(candidate.priceMin)}, riktpris ${formatSek(candidate.priceTarget)}`,
     `  ${rating}, ${candidate.showcaseCount} uppvisade klipp`,
   ].join('\n');
+}
+
+/**
+ * Rådgivaren på kreatörens sida.
+ *
+ * Skillnaden mot företagets rådgivare är att den här inte får något att välja
+ * mellan – den får en uträkning. Kampanjerna är redan räknade, hindren redan
+ * summerade, och stegen redan kvantifierade. Modellens enda uppgift är att
+ * säga vilket av dem som är värt att göra först och varför.
+ *
+ * Frestelsen att trösta är det som skulle förstöra funktionen. Kreatören som
+ * får noll matchningar är hjälpt av att veta att hon prissatt sig utanför
+ * marknaden, inte av att höra att hon snart kommer att lyckas.
+ */
+export const CREATOR_ADVISOR_SYSTEM_PROMPT = `Du är rådgivaren i Pacta, en svensk plattform där företag och innehållskreatörer hittar varandra. Företagen är restauranger, kaféer, hotell, kliniker och butiker som vill ha besökare på plats.
+
+Du talar med en kreatör som undrar varför hon får få matchningar. Du får en färdig uträkning: hur många kampanjer som ligger ute, hur många hon är behörig till, vad de andra faller på, och vad varje åtgärd skulle öppna.
+
+Så här svarar du:
+- Kort. Tre till fem meningar, eller tre punkter. Inte mer.
+- Börja med det som stämmer bäst med siffrorna, inte med en uppmuntran.
+- Säg vad hon ska göra först och vad det ger. Använd talen du fått.
+- Är läget att det helt enkelt ligger få kampanjer ute säger du det rakt ut. Det är ett riktigt svar.
+
+Absoluta regler:
+- Använd bara siffrorna i underlaget. Hitta aldrig på ett antal kampanjer, en följarsiffra eller ett belopp.
+- Lova aldrig matchningar, uppdrag eller inkomst. Du kan säga vad en åtgärd gör henne behörig till, inte vad den ger.
+- Föreslå aldrig att hon köper räckvidd eller uppger siffror hon inte har.
+- Säg aldrig åt henne att sänka priset när priset inte är det som blockerar. Underlaget visar vad som blockerar.
+
+Bakgrund du kan luta dig mot:
+- Kampanjerna kräver ett fysiskt besök, så kampanjer i hennes egen stad är de som oftast blir av.
+- Företaget ser hennes profilbild, presentation, nischer, klipp och siffror. Statistik som hämtats från plattformen väger tyngre än siffror hon uppgett själv.
+- Budgeten i en kampanj är en riktpunkt, inte ett tak – arvodet förhandlas per samarbete. Hennes lägstapris är däremot en hård gräns i matchningen.
+
+Skriv på svenska, i du-tilltal, utan rubriker och utan hälsningsfras.`;
+
+/** Uträkningen som prosa. Bara tal som faktiskt räknats fram. */
+export function describeCreatorInsights(
+  influencer: InfluencerCandidate,
+  insights: CreatorInsights,
+): string {
+  const lines = [
+    `Kreatör: ${influencer.displayName} i ${influencer.city}.`,
+    `Nischer: ${influencer.categories.join(', ') || 'inga angivna'}.`,
+    `Plattformar: ${influencer.platforms.join(', ') || 'inga kopplade'}.`,
+    `${influencer.followers} följare, ${influencer.avgViews} visningar i snitt, ${(influencer.engagementRate * 100).toFixed(1)} % engagemang.`,
+    `Lägsta arvode: ${formatSek(influencer.priceMin)}. Riktpris: ${formatSek(influencer.priceTarget)}.`,
+    '',
+    `Öppna kampanjer just nu: ${insights.openCampaigns}.`,
+    `Hon är behörig till ${insights.eligible} av dem, varav ${insights.eligibleInCity} i ${influencer.city}.`,
+    `Hon har redan svarat på ${insights.reviewed} och har ${insights.waiting} kvar att svepa på.`,
+    `Matchningar totalt: ${insights.matches}.`,
+    '',
+    'Kampanjer som faller på respektive hinder:',
+    `- följarkravet: ${insights.blockers.followers}`,
+    `- plattform hon inte publicerar på: ${insights.blockers.platforms}`,
+    `- hennes lägstapris ligger för långt över budgeten: ${insights.blockers.budget}`,
+  ];
+
+  if (insights.actions.length > 0) {
+    lines.push('', 'Uträknade steg (talen är kontrollerade, använd dem som de står):');
+    for (const action of insights.actions) {
+      lines.push(`- ${action.message}`);
+    }
+  } else {
+    lines.push('', 'Ingen enskild ändring i profilen skulle öppna fler kampanjer.');
+  }
+
+  if (insights.gaps.length > 0) {
+    lines.push('', 'Luckor i profilen:');
+    for (const gap of insights.gaps) lines.push(`- ${gap.message}`);
+  } else {
+    lines.push('', 'Profilen är komplett: bild, presentation, klipp, nischer och hämtad statistik.');
+  }
+
+  return lines.join('\n');
 }

@@ -4,6 +4,7 @@ export * from './drafts.js';
 export * from './expert.js';
 export * from './links.js';
 export * from './matching.js';
+export * from './insights.js';
 export * from './media.js';
 export * from './money.js';
 export * from './results.js';

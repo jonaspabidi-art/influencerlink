@@ -4,6 +4,7 @@ import { api } from './api';
 import type {
   Campaign,
   Contract,
+  CreatorInsights,
   ExpertOrder,
   Match,
   OwnBusinessProfile,
@@ -55,6 +56,16 @@ export const expertOrdersQuery = () =>
     queryFn: () => api.get<ExpertOrder[]>('/expert-orders/mine'),
   });
 
+/**
+ * Insikterna är räknade och billiga – rådet är det som kostar. Därför ligger
+ * bara den här i förhämtningen, och rådet hämtas först när skärmen öppnas.
+ */
+export const insightsQuery = () =>
+  queryOptions({
+    queryKey: ['insights'],
+    queryFn: () => api.get<CreatorInsights>('/me/insights'),
+  });
+
 export const payoutsQuery = () =>
   queryOptions({
     queryKey: ['payouts'],
@@ -81,6 +92,7 @@ export function prefetchTabs(client: QueryClient, role: Role): void {
     business: () => void client.prefetchQuery(ownBusinessQuery()),
     expert: () => void client.prefetchQuery(expertOrdersQuery()),
     payouts: () => void client.prefetchQuery(payoutsQuery()),
+    insights: () => void client.prefetchQuery(insightsQuery()),
   };
 
   if (role === 'BUSINESS') {
@@ -97,5 +109,6 @@ export function prefetchTabs(client: QueryClient, role: Role): void {
     hämta.contracts();
     hämta.reviews();
     hämta.payouts();
+    hämta.insights();
   }
 }

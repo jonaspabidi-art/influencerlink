@@ -1,6 +1,7 @@
 import {
   checkEligibility,
   checkReviewEligibility,
+  creatorInsights,
   daysLeftToReview,
   emptyRatingSummary,
   overallRating,
@@ -1407,6 +1408,48 @@ route('GET', '/feed/pending', () => {
       };
     });
 });
+
+/**
+ * Insikterna i demoläget. Samma uträkning som servern gör – den ligger i det
+ * delade paketet – men utan rådet: demoläget har ingen modell att fråga.
+ */
+route('GET', '/me/insights', () => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const candidate = toInfluencerCandidate(profile);
+
+  const open = state.campaigns
+    .filter(
+      (campaign) =>
+        campaign.status === 'ACTIVE' &&
+        new Date(campaign.endDate).getTime() >= Date.now() &&
+        slotsFilled(campaign.id) < campaign.slots,
+    )
+    .map((campaign) => ({
+      ...toCampaignCandidate(campaign),
+      reviewed: state.swipes.some(
+        (swipe) =>
+          swipe.campaignId === campaign.id &&
+          swipe.influencerId === profile.id &&
+          swipe.actor === 'INFLUENCER',
+      ),
+    }));
+
+  const insights = creatorInsights({
+    influencer: candidate,
+    campaigns: open,
+    matches: state.matches.filter((match) => match.influencerId === profile.id).length,
+    signals: {
+      hasAvatar: profile.avatarUrl !== null && profile.avatarUrl !== '',
+      bioLength: profile.bio.trim().length,
+      showcaseCount: profile.showcase.length,
+      statsVerified: false,
+    },
+  });
+
+  return { ...insights, city: candidate.city };
+});
+
+route('POST', '/me/insights/advice', () => ({ available: false, advice: null }));
 
 route('GET', '/feed/influencers', ({ query }) => {
   const campaign = campaignById(query.get('campaignId') ?? '');
