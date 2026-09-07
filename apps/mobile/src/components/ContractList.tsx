@@ -7,7 +7,7 @@ import { formatDate, formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { Contract, PendingReview } from '../types';
 import { StarIcon } from './icons';
-import { Button, ErrorState, Header, Loading, Screen } from './ui';
+import { Button, ErrorState, Header, Loading, Photo, Screen } from './ui';
 
 /** Statusetiketter i den ordning avtalet faktiskt rör sig. */
 const STATUS_LABELS: Record<Contract['status'], string> = {
@@ -97,8 +97,17 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             onPress={() => router.push(`/contract/${item.id}`)}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
+            {/* Samma bild som på kortet man svepte på – rubriken ensam räcker
+                inte för att skilja två uppdrag åt. */}
+            <Photo
+              uri={item.campaignImageUrl ?? item.businessLogoUrl}
+              name={item.campaignTitle}
+              style={styles.thumb}
+            />
             <View style={styles.rowText}>
-              <Text style={styles.title}>{item.campaignTitle}</Text>
+              <Text style={styles.title} numberOfLines={2}>
+                {item.campaignTitle}
+              </Text>
               <Text style={styles.secondary}>
                 {role === 'BUSINESS' ? item.influencerName : item.businessName} · deadline{' '}
                 {formatDate(item.dueDate)}
@@ -166,6 +175,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   pressed: { opacity: 0.9 },
+  thumb: { width: 52, height: 52, borderRadius: radius.control },
   rowText: { flex: 1, gap: 2 },
   title: { ...type.listTitle, fontSize: 16, color: colors.text },
   secondary: { ...type.secondary, color: colors.muted },

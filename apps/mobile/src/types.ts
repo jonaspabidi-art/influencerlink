@@ -272,6 +272,9 @@ export interface Contract {
   id: string;
   campaignId: string;
   campaignTitle: string;
+  /** Kampanjbilden, så listan går att känna igen på annat än rubriken. */
+  campaignImageUrl: string | null;
+  businessLogoUrl: string | null;
   businessId: string;
   businessName: string;
   influencerId: string;

@@ -6,7 +6,7 @@ import { api } from '../api';
 import { formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
 import type { Match } from '../types';
-import { Avatar, Button, ErrorState, Header, Loading, Logo, Rating, Screen } from './ui';
+import { Avatar, Button, ErrorState, Header, Loading, Photo, Rating, Screen } from './ui';
 
 /** Matchningslistan. Samma komponent för båda rollerna, olika motpart. */
 export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
@@ -73,10 +73,20 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             onPress={() => router.push(`/match/${item.id}`)}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
+            {/*
+              Kreatören har många företag och många kampanjer, och känner igen
+              samarbetet på bilden hon svepte på – därför kampanjbilden, med
+              logotypen som reserv. Företaget har få kampanjer och många
+              kreatörer, och känner i stället igen personen.
+            */}
             {role === 'INFLUENCER' ? (
-              <Logo uri={item.campaign.businessLogoUrl} name={item.campaign.businessName} size={44} />
+              <Photo
+                uri={item.campaign.imageUrl ?? item.campaign.businessLogoUrl}
+                name={item.campaign.businessName}
+                style={styles.thumb}
+              />
             ) : (
-              <Avatar uri={item.influencer.avatarUrl} name={item.influencer.displayName} size={44} />
+              <Avatar uri={item.influencer.avatarUrl} name={item.influencer.displayName} size={52} />
             )}
             <View style={styles.rowText}>
               {/*
@@ -122,6 +132,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   pressed: { opacity: 0.9 },
+  thumb: { width: 52, height: 52, borderRadius: radius.control },
   rowText: { flex: 1, gap: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   campaign: { ...type.secondary, color: colors.text },
