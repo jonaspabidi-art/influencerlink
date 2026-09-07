@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../src/auth';
 import { Prefetch } from '../src/components/Prefetch';
 import { persistQueryCache, restoreQueryCache } from '../src/querycache';
+import { hideHtmlSplash } from '../src/splash';
 import { colors, type } from '../src/theme';
 
 const queryClient = new QueryClient({
@@ -50,6 +51,12 @@ export default function RootLayout() {
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
   });
+
+  // HTML-startskärmen ligger kvar tills typsnitten är på plats, annars byts
+  // loggan mot en halvritad skärm och sedan tillbaka när texten hoppar.
+  useEffect(() => {
+    if (fontsLoaded) hideHtmlSplash();
+  }, [fontsLoaded]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
