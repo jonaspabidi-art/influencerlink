@@ -48,8 +48,9 @@ export interface DemoInfluencer {
   retainerSlots?: number;
   /** Månadspris för grundpaketet, fyra videor, i öre. */
   retainerBaseRate?: number | null;
-  /** Rabatt hon ger vid förskottsbetalning, i baspunkter. Noll = ingen. */
+  /** Rabatter hon ger, i baspunkter. Noll = ingen. */
   retainerPrepayDiscountBps?: number;
+  retainerVolumeDiscountBps?: number;
 }
 
 export interface DemoBusiness {
@@ -117,6 +118,7 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     retainerSlots: 2,
     retainerBaseRate: kr(6_000),
     retainerPrepayDiscountBps: 1000,
+    retainerVolumeDiscountBps: 500,
     socials: [
       { id: 'soc_anna_tt', platform: 'TIKTOK', handle: 'annaater', followers: 48_000, avgViews: 39_000, engagementRate: 0.071, verified: false },
       { id: 'soc_anna_ig', platform: 'INSTAGRAM', handle: 'annaater', followers: 21_000, avgViews: 9_000, engagementRate: 0.048, verified: false },

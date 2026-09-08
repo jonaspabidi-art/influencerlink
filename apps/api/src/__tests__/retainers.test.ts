@@ -17,15 +17,6 @@ describe('retainerMonthlyRate', () => {
     expect(retainerMonthlyRate(600_000, 4)).toBe(600_000);
   });
 
-  it('låter priset per video sjunka med volymen', () => {
-    const four = retainerMonthlyRate(600_000, 4) / 4;
-    const eight = retainerMonthlyRate(600_000, 8) / 8;
-    const twelve = retainerMonthlyRate(600_000, 12) / 12;
-
-    expect(eight).toBeLessThan(four);
-    expect(twelve).toBeLessThan(eight);
-  });
-
   it('avrundar till hela kronor', () => {
     for (const size of RETAINER_PACKAGES) {
       expect(retainerMonthlyRate(533_300, size) % 100).toBe(0);
@@ -41,8 +32,8 @@ describe('retainerPackages', () => {
   it('räknar fram alla tre paketen ur ett enda pris', () => {
     expect(retainerPackages(500_000)).toEqual([
       { videosPerMonth: 4, monthlyRate: 500_000 },
-      { videosPerMonth: 8, monthlyRate: 900_000 },
-      { videosPerMonth: 12, monthlyRate: 1_250_000 },
+      { videosPerMonth: 8, monthlyRate: 1_000_000 },
+      { videosPerMonth: 12, monthlyRate: 1_500_000 },
     ]);
   });
 });
@@ -131,5 +122,32 @@ describe('isRetainerPackage', () => {
   it('släpper bara igenom de tre storlekarna', () => {
     expect(isRetainerPackage(8)).toBe(true);
     expect(isRetainerPackage(5)).toBe(false);
+  });
+});
+
+describe('volymrabatt', () => {
+  it('låter större paket kosta rakt av mer utan rabatt', () => {
+    expect(retainerMonthlyRate(600_000, 4)).toBe(600_000);
+    expect(retainerMonthlyRate(600_000, 8)).toBe(1_200_000);
+    expect(retainerMonthlyRate(600_000, 12)).toBe(1_800_000);
+  });
+
+  it('håller priset per video konstant när hon inte valt rabatt', () => {
+    const packs = retainerPackages(600_000);
+    const perVideo = packs.map((pack) => pack.monthlyRate / pack.videosPerMonth);
+    expect(new Set(perVideo).size).toBe(1);
+  });
+
+  it('sänker priset per video först när hon valt det', () => {
+    const packs = retainerPackages(600_000, 1000);
+    expect(packs[0]!.monthlyRate).toBe(600_000);
+    expect(packs[1]!.monthlyRate).toBe(1_080_000);
+    expect(packs[2]!.monthlyRate).toBe(1_620_000);
+  });
+
+  it('rör aldrig grundpaketet', () => {
+    for (const bps of [0, 500, 1000, 1500]) {
+      expect(retainerMonthlyRate(733_300, 4, bps)).toBe(733_300);
+    }
   });
 });

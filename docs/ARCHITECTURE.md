@@ -235,11 +235,20 @@ Grannarnas enskilda priser lämnar aldrig servern. De har lämnat dem till oss f
 matchningens skull, inte för konkurrenternas insyn, så appen får bara antal,
 median och ytterlägen.
 
-Rabatten vid förskottsbetalning är kreatörens eget val – noll, fem, tio eller
-femton procent, med noll som förval. Den dras på hennes arvode, inte på vår
-avgift, så en sats vi satt åt henne hade varit att förhandla bort en del av
-hennes betalning i ett samtal hon inte var med i. Erbjuder hon ingen rabatt
-visas inte förskottsbetalning som ett val för företaget.
+Båda rabatterna hon kan ge är hennes egna val – noll, fem, tio eller femton
+procent, med noll som förval. Den ena gäller förskottsbetalning, den andra de
+större paketen. Båda dras på hennes arvode, inte på vår avgift, så en sats vi
+satt åt henne hade varit att förhandla bort en del av hennes betalning i ett
+samtal hon inte var med i.
+
+De större paketen kostade tidigare mindre per video av sig självt, som en
+avspegling av att den första videon hos en ny kund kräver mer arbete än den
+tionde. Resonemanget håller, men pengarna var hennes: hon kunde välja "ingen
+rabatt" och ändå se ett lägre pris per video, av skäl bara vi kände till. Tolv
+videor kostar nu exakt tre gånger fyra tills hon säger något annat.
+
+Erbjuder hon ingen förskottsrabatt visas inte förskottsbetalning som ett val
+för företaget.
 
 ## Varför kreatören får få matchningar
 

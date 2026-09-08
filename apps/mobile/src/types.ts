@@ -653,8 +653,9 @@ export interface RetainerAvailability {
   acceptsRetainers: boolean;
   slots: number;
   baseRate: number | null;
-  /** Rabatt hon ger vid förskottsbetalning, i baspunkter. Noll = ingen. */
+  /** Rabatter hon ger, i baspunkter. Noll = ingen. */
   prepayDiscountBps: number;
+  volumeDiscountBps: number;
   packages: { videosPerMonth: number; monthlyRate: number }[];
 }
 

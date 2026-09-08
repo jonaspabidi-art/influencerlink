@@ -85,13 +85,22 @@ const retainerDetailSchema = retainerSchema.extend({
   periods: z.array(periodSchema),
 });
 
+/** Samma stege för båda rabatterna hon kan ge. */
+const discountSchema = z.union([
+  z.literal(DISCOUNTS[0]),
+  z.literal(DISCOUNTS[1]),
+  z.literal(DISCOUNTS[2]),
+  z.literal(DISCOUNTS[3]),
+]);
+
 const availabilitySchema = z.object({
   acceptsRetainers: z.boolean(),
   slots: z.number().int().min(0).max(20),
   /** Månadspris för grundpaketet, i öre. Null när hon inte satt något. */
   baseRate: z.number().int().nullable(),
-  /** Rabatt hon ger vid förskottsbetalning, i baspunkter. Noll = ingen. */
+  /** Rabatter hon ger, i baspunkter. Noll = ingen. */
   prepayDiscountBps: z.number().int(),
+  volumeDiscountBps: z.number().int(),
   packages: z.array(
     z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
   ),
@@ -235,7 +244,10 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
         slots: profile.retainerSlots,
         baseRate: profile.retainerBaseRate,
         prepayDiscountBps: profile.retainerPrepayDiscountBps,
-        packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
+        volumeDiscountBps: profile.retainerVolumeDiscountBps,
+        packages: profile.retainerBaseRate
+          ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps)
+          : [],
       };
     },
   );
@@ -249,19 +261,16 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
           acceptsRetainers: z.boolean(),
           slots: z.number().int().min(0).max(20),
           baseRate: z.number().int().min(MIN_RETAINER_BASE_RATE).max(MAX_RETAINER_BASE_RATE).nullable(),
-          /** Hennes egen sats. Rabatten dras på hennes arvode, inte på vår avgift. */
-          prepayDiscountBps: z.union([
-            z.literal(DISCOUNTS[0]),
-            z.literal(DISCOUNTS[1]),
-            z.literal(DISCOUNTS[2]),
-            z.literal(DISCOUNTS[3]),
-          ]),
+          /** Hennes egna satser. Rabatterna dras på hennes arvode, inte på vår avgift. */
+          prepayDiscountBps: discountSchema,
+          volumeDiscountBps: discountSchema,
         }),
         response: { 200: availabilitySchema, 400: problemSchema },
       },
     },
     async (request) => {
-      const { acceptsRetainers, slots, baseRate, prepayDiscountBps } = request.body;
+      const { acceptsRetainers, slots, baseRate, prepayDiscountBps, volumeDiscountBps } =
+        request.body;
       // Ett läge som säger "tar uppdrag" utan pris är ett löfte utan innehåll:
       // företaget ser en ledig plats men får inget att ta ställning till.
       if (acceptsRetainers && baseRate === null) {
@@ -274,6 +283,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
           retainerSlots: slots,
           retainerBaseRate: baseRate,
           retainerPrepayDiscountBps: prepayDiscountBps,
+          retainerVolumeDiscountBps: volumeDiscountBps,
         },
       });
       return {
@@ -281,7 +291,10 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
         slots: profile.retainerSlots,
         baseRate: profile.retainerBaseRate,
         prepayDiscountBps: profile.retainerPrepayDiscountBps,
-        packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
+        volumeDiscountBps: profile.retainerVolumeDiscountBps,
+        packages: profile.retainerBaseRate
+          ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps)
+          : [],
       };
     },
   );

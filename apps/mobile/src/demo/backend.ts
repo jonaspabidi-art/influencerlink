@@ -9,7 +9,7 @@ import {
   retainerMonthlyRate,
   retainerPackages,
   retainerPeriodMoney,
-  PREPAY_DISCOUNT_CHOICES,
+  DISCOUNT_CHOICES,
   suggestRetainerRate,
   PREPAY_MONTHS,
   RETAINER_PACKAGES,
@@ -1143,7 +1143,7 @@ route('GET', '/influencers', ({ query }) => {
         retainerSlots: profile.retainerSlots ?? 0,
         retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
         retainerPackages: profile.retainerBaseRate
-          ? retainerPackages(profile.retainerBaseRate)
+          ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps ?? 0)
           : [],
       };
     });
@@ -1177,7 +1177,7 @@ route('GET', '/influencers/:id', ({ params }) => {
     retainerSlots: profile.retainerSlots ?? 0,
     retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
     retainerPackages: profile.retainerBaseRate
-      ? retainerPackages(profile.retainerBaseRate)
+      ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps ?? 0)
       : [],
   };
 });
@@ -1553,7 +1553,10 @@ route('GET', '/me/retainer-availability', () => {
     slots: profile.retainerSlots ?? 0,
     baseRate: profile.retainerBaseRate ?? null,
     prepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
-    packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
+    volumeDiscountBps: profile.retainerVolumeDiscountBps ?? 0,
+    packages: profile.retainerBaseRate
+      ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps ?? 0)
+      : [],
   };
 });
 
@@ -1567,13 +1570,15 @@ route('PUT', '/me/retainer-availability', ({ body }) => {
   profile.retainerSlots = Number(body.slots ?? 0);
   profile.retainerBaseRate = baseRate;
   profile.retainerPrepayDiscountBps = Number(body.prepayDiscountBps ?? 0);
+  profile.retainerVolumeDiscountBps = Number(body.volumeDiscountBps ?? 0);
   persist();
   return {
     acceptsRetainers: profile.acceptsRetainers,
     slots: profile.retainerSlots,
     baseRate: profile.retainerBaseRate,
     prepayDiscountBps: profile.retainerPrepayDiscountBps,
-    packages: baseRate ? retainerPackages(baseRate) : [],
+    volumeDiscountBps: profile.retainerVolumeDiscountBps,
+    packages: baseRate ? retainerPackages(baseRate, profile.retainerVolumeDiscountBps) : [],
   };
 });
 
@@ -1617,7 +1622,11 @@ route('POST', '/retainers', ({ body }) => {
     (influencer.retainerPrepayDiscountBps ?? 0) > 0
       ? PREPAY_MONTHS
       : 1;
-  const listRate = retainerMonthlyRate(influencer.retainerBaseRate, size as 4 | 8 | 12);
+  const listRate = retainerMonthlyRate(
+    influencer.retainerBaseRate,
+    size as 4 | 8 | 12,
+    influencer.retainerVolumeDiscountBps ?? 0,
+  );
 
   const retainer: DemoRetainer = {
     id: nextId('ret'),
@@ -1790,7 +1799,7 @@ route('POST', '/retainer-posts/:id/published', ({ params, body }) => {
 route('GET', '/retainer-terms', () => ({
   packages: [...RETAINER_PACKAGES],
   prepayMonths: PREPAY_MONTHS,
-  prepayDiscountChoices: [...PREPAY_DISCOUNT_CHOICES],
+  prepayDiscountChoices: [...DISCOUNT_CHOICES],
 }));
 
 /** Prisförslaget, räknat på samma sätt som servern gör det. */

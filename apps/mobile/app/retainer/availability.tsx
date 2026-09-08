@@ -1,17 +1,18 @@
 import {
+  DISCOUNT_CHOICES,
+  DISCOUNT_LABELS,
   MIN_RETAINER_BASE_RATE,
-  PREPAY_DISCOUNT_CHOICES,
-  PREPAY_DISCOUNT_LABELS,
   PREPAY_MONTHS,
   RATE_CONFIDENCE_LABELS,
   retainerPackages,
-  type PrepayDiscountBps,
+  type DiscountBps,
 } from '@pacta/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
+import { SparkIcon } from '../../src/components/icons';
 import {
   Body,
   Button,
@@ -19,13 +20,10 @@ import {
   Divider,
   Field,
   Header,
-  Label,
   Loading,
   ScrollScreen,
 } from '../../src/components/ui';
 import { formatSek } from '../../src/format';
-import { api as client } from '../../src/api';
-import { SparkIcon } from '../../src/components/icons';
 import { retainerAvailabilityQuery, retainerRateQuery } from '../../src/queries';
 import { colors, radius, spacing, type } from '../../src/theme';
 import type { RetainerAvailability } from '../../src/types';
@@ -34,10 +32,10 @@ import type { RetainerAvailability } from '../../src/types';
  * Kreatörens läge för löpande uppdrag.
  *
  * Ett tal att fylla i, inte tre: hon säger vad hon vill ha för fyra videor i
- * månaden, och de större paketen följer av skalan. Priset per video sjunker
- * med volymen, och det är ingen rabatt utan en avspegling av arbetet – den
- * första videon hos en ny kund kräver att hon lär sig stället, resten gör det
- * inte.
+ * månaden, och de större paketen kostar rakt av så många gånger mer. Vill hon
+ * belöna volym eller förskott gör hon det som ett eget val, under Dina
+ * rabatter – båda dras på hennes arvode, så ingen av dem får uppstå av sig
+ * själv.
  *
  * Platserna är ett riktigt tal. Visar vi en ledig plats ska hon kunna ta emot
  * den; en dag i veckan går inte att sälja två gånger.
@@ -49,7 +47,8 @@ export default function RetainerAvailabilityScreen() {
   const [enabled, setEnabled] = useState(false);
   const [slots, setSlots] = useState('2');
   const [rate, setRate] = useState('');
-  const [discount, setDiscount] = useState<PrepayDiscountBps>(0);
+  const [prepayDiscount, setPrepayDiscount] = useState<DiscountBps>(0);
+  const [volumeDiscount, setVolumeDiscount] = useState<DiscountBps>(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,7 +57,8 @@ export default function RetainerAvailabilityScreen() {
     setEnabled(data.acceptsRetainers);
     setSlots(String(data.slots));
     setRate(data.baseRate === null ? '' : String(Math.round(data.baseRate / 100)));
-    setDiscount(data.prepayDiscountBps as PrepayDiscountBps);
+    setPrepayDiscount(data.prepayDiscountBps as DiscountBps);
+    setVolumeDiscount(data.volumeDiscountBps as DiscountBps);
   }, [availability.data]);
 
   const save = useMutation({
@@ -66,7 +66,8 @@ export default function RetainerAvailabilityScreen() {
       acceptsRetainers: boolean;
       slots: number;
       baseRate: number | null;
-      prepayDiscountBps: PrepayDiscountBps;
+      prepayDiscountBps: DiscountBps;
+      volumeDiscountBps: DiscountBps;
     }) => api.put<RetainerAvailability>('/me/retainer-availability', input),
     onSuccess: (saved) => {
       queryClient.setQueryData(retainerAvailabilityQuery().queryKey, saved);
@@ -87,8 +88,10 @@ export default function RetainerAvailabilityScreen() {
 
   const kronor = Number(rate.replace(/\s/g, ''));
   const baseRate = Number.isFinite(kronor) && kronor > 0 ? Math.round(kronor) * 100 : null;
-  const preview =
-    baseRate !== null && baseRate >= MIN_RETAINER_BASE_RATE ? retainerPackages(baseRate) : [];
+  const packages =
+    baseRate !== null && baseRate >= MIN_RETAINER_BASE_RATE
+      ? retainerPackages(baseRate, volumeDiscount)
+      : [];
 
   const submit = () => {
     setError(null);
@@ -102,7 +105,8 @@ export default function RetainerAvailabilityScreen() {
       acceptsRetainers: enabled,
       slots: Math.max(0, Math.min(20, Number(slots) || 0)),
       baseRate,
-      prepayDiscountBps: discount,
+      prepayDiscountBps: prepayDiscount,
+      volumeDiscountBps: volumeDiscount,
     });
   };
 
@@ -110,17 +114,9 @@ export default function RetainerAvailabilityScreen() {
     <ScrollScreen contentStyle={styles.content}>
       <Header
         title="Löpande uppdrag"
-        subtitle="Fast inkomst varje månad"
+        subtitle="Du producerar åt företagets egna kanaler varje månad"
         onBack={() => router.back()}
       />
-
-      <Card tone="raised">
-        <Body>
-          Ett löpande uppdrag betyder att du producerar innehåll åt ett företags egna kanaler
-          varje månad – inte att du postar om dem på ditt konto. Din publik märker ingenting,
-          och du vet vad som kommer in.
-        </Body>
-      </Card>
 
       <Card>
         <Pressable
@@ -130,8 +126,10 @@ export default function RetainerAvailabilityScreen() {
           style={styles.toggleRow}
         >
           <View style={styles.toggleText}>
-            <Text style={styles.toggleTitle}>Jag tar löpande uppdrag</Text>
-            <Text style={styles.secondary}>Visas på din profil med lediga platser.</Text>
+            <Text style={styles.cardTitle}>Jag tar löpande uppdrag</Text>
+            <Text style={styles.secondary}>
+              Visas på din profil med lediga platser. Din egen kanal berörs inte.
+            </Text>
           </View>
           <View style={[styles.switch, enabled && styles.switchOn]}>
             <View style={[styles.knob, enabled && styles.knobOn]} />
@@ -143,14 +141,16 @@ export default function RetainerAvailabilityScreen() {
         <>
           <RateHelp onUse={(suggested) => setRate(String(Math.round(suggested / 100)))} />
 
+          {/* Priset och vad det blir, i ett kort: man skriver ett tal och ser
+              vad det betyder utan att leta efter svaret längre ned. */}
           <Card>
+            <Text style={styles.cardTitle}>Ditt pris</Text>
             <Field
-              label="Vad vill du ha i månaden för fyra videor?"
+              label="Per månad för fyra videor"
               value={rate}
               onChangeText={setRate}
               keyboardType="numeric"
               placeholder="6 000"
-              hint="I kronor. Priserna för åtta och tolv videor räknas fram automatiskt."
             />
             <Field
               label="Lediga platser"
@@ -159,78 +159,64 @@ export default function RetainerAvailabilityScreen() {
               keyboardType="numeric"
               hint="Hur många företag du kan ta emot just nu. En dag i veckan var."
             />
-          </Card>
 
-          {preview.length > 0 ? (
-            <View style={styles.section}>
-              <Label>SÅ HÄR SER DINA PAKET UT</Label>
-              <Card>
-                {preview.map((pack, index) => (
-                  <View key={pack.videosPerMonth}>
-                    {index > 0 ? <Divider /> : null}
-                    <View style={styles.packRow}>
-                      <View style={styles.packText}>
-                        <Text style={styles.packTitle}>
-                          {pack.videosPerMonth} videor i månaden
-                        </Text>
-                        <Text style={styles.secondary}>
-                          {formatSek(Math.round(pack.monthlyRate / pack.videosPerMonth))} per video
-                        </Text>
-                      </View>
-                      <Text style={styles.packPrice}>{formatSek(pack.monthlyRate)}</Text>
+            {packages.length > 0 ? (
+              <>
+                <Divider />
+                {packages.map((pack) => (
+                  <View key={pack.videosPerMonth} style={styles.packRow}>
+                    <View style={styles.packText}>
+                      <Text style={styles.packTitle}>{pack.videosPerMonth} videor i månaden</Text>
+                      <Text style={styles.secondary}>
+                        {formatSek(Math.round(pack.monthlyRate / pack.videosPerMonth))} per video
+                      </Text>
                     </View>
+                    <Text style={styles.packPrice}>{formatSek(pack.monthlyRate)}</Text>
                   </View>
                 ))}
-              </Card>
-              <Text style={styles.footnote}>Från beloppen dras 10 % i förmedlingsavgift.</Text>
-            </View>
-          ) : null}
+                <Text style={styles.footnote}>
+                  Från beloppen dras 10 % i förmedlingsavgift. Du får{' '}
+                  {formatSek(Math.round((packages[0]?.monthlyRate ?? 0) * 0.9))} av grundpaketet.
+                </Text>
+              </>
+            ) : null}
+          </Card>
 
           {/*
-            Rabatten är hennes pengar. Den dras på arvodet, inte på vår avgift,
-            så en sats vi satt åt henne hade varit att förhandla bort en del av
-            hennes betalning i ett samtal hon inte var med i. Noll är förvalt.
+            Båda rabatterna på ett ställe, båda hennes.
+            Volymrabatten fanns tidigare som en osynlig skala: hon valde ingen
+            rabatt och fick ändå ett lägre pris per video i de större paketen,
+            av skäl bara vi kände till. Nu kostar tolv videor exakt tre gånger
+            fyra tills hon säger något annat.
           */}
-          <View style={styles.section}>
-            <Label>RABATT VID {PREPAY_MONTHS} MÅNADER I FÖRSKOTT</Label>
-            <Card>
-              <Body>
-                Betalar företaget flera månader på en gång vet du vad som kommer in – vill du ge
-                något för det? Rabatten dras på ditt arvode.
-              </Body>
-              <View style={styles.discountRow}>
-                {PREPAY_DISCOUNT_CHOICES.map((choice) => (
-                  <Pressable
-                    key={choice}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: discount === choice }}
-                    onPress={() => setDiscount(choice)}
-                    style={[styles.discount, discount === choice && styles.discountOn]}
-                  >
-                    <Text
-                      style={[
-                        styles.discountLabel,
-                        discount === choice && styles.discountLabelOn,
-                      ]}
-                    >
-                      {PREPAY_DISCOUNT_LABELS[choice]}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              {discount > 0 && preview[0] ? (
-                <Text style={styles.footnote}>
-                  Ett företag som binder sig i {PREPAY_MONTHS} månader betalar då{' '}
-                  {formatSek(Math.round((preview[0].monthlyRate * (10_000 - discount)) / 10_000))}{' '}
-                  i månaden i stället för {formatSek(preview[0].monthlyRate)}.
-                </Text>
-              ) : (
-                <Text style={styles.footnote}>
-                  Utan rabatt syns inte förskottsbetalning som ett val för företaget.
-                </Text>
-              )}
-            </Card>
-          </View>
+          <Card>
+            <Text style={styles.cardTitle}>Dina rabatter</Text>
+            <Body>Båda dras på ditt arvode. Vill du inte ge något lämnar du dem på Ingen.</Body>
+
+            <DiscountRow
+              label={`${PREPAY_MONTHS} månader i förskott`}
+              hint={
+                prepayDiscount > 0 && packages[0]
+                  ? `Företaget betalar ${formatSek(Math.round((packages[0].monthlyRate * (10_000 - prepayDiscount)) / 10_000))} i månaden i stället för ${formatSek(packages[0].monthlyRate)}.`
+                  : 'Utan rabatt syns inte förskottsbetalning som ett val för företaget.'
+              }
+              value={prepayDiscount}
+              onChange={setPrepayDiscount}
+            />
+
+            <Divider />
+
+            <DiscountRow
+              label="Åtta eller tolv videor i månaden"
+              hint={
+                volumeDiscount > 0
+                  ? 'De större paketen kostar mindre per video.'
+                  : 'Tolv videor kostar exakt tre gånger fyra.'
+              }
+              value={volumeDiscount}
+              onChange={setVolumeDiscount}
+            />
+          </Card>
         </>
       ) : null}
 
@@ -240,27 +226,61 @@ export default function RetainerAvailabilityScreen() {
   );
 }
 
+/** En rabattsats med sin egen förklaring. Samma stege båda gångerna. */
+function DiscountRow({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: DiscountBps;
+  onChange: (next: DiscountBps) => void;
+}) {
+  return (
+    <View style={styles.discountBlock}>
+      <Text style={styles.discountLabel}>{label}</Text>
+      <View style={styles.discountRow}>
+        {DISCOUNT_CHOICES.map((choice) => (
+          <Pressable
+            key={choice}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: value === choice }}
+            onPress={() => onChange(choice)}
+            style={[styles.discount, value === choice && styles.discountOn]}
+          >
+            <Text style={[styles.discountText, value === choice && styles.discountTextOn]}>
+              {DISCOUNT_LABELS[choice]}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={styles.footnote}>{hint}</Text>
+    </View>
+  );
+}
+
 /**
  * Vad är hon värd?
  *
  * Den fråga kreatörer är sämst rustade att svara på: ett enstaka samarbete går
  * att jämföra med tidigare samarbeten, men ett månadspris har hon oftast aldrig
  * satt. Spannet räknas fram ur hennes eget riktpris, vad andra i staden tar och
- * vad företagen där budgeterar – och skärmen säger vilket av dem som saknas.
+ * vad företagen där budgeterar.
  *
- * Rådet ligger bakom en knapp. Siffrorna är räknade och står där de står; att
- * starta ett modellanrop bara för att någon öppnat skärmen vore att svara på en
- * fråga ingen ställt.
+ * Underlaget ligger hopfällt. Det är fyra rader som svarar på "hur vet ni det?"
+ * – en fråga man ställer en gång, inte varje gång man öppnar skärmen.
  */
 function RateHelp({ onUse }: { onUse: (rate: number) => void }) {
   const rate = useQuery(retainerRateQuery());
   const [asked, setAsked] = useState(false);
+  const [showBasis, setShowBasis] = useState(false);
 
   const advice = useQuery({
     queryKey: ['retainer-rate', 'advice'],
-    queryFn: () => client.post<{ available: boolean; advice: string | null }>(
-      '/me/retainer-rate/advice',
-    ),
+    queryFn: () =>
+      api.post<{ available: boolean; advice: string | null }>('/me/retainer-rate/advice'),
     enabled: asked,
     staleTime: 30 * 60_000,
     retry: false,
@@ -273,8 +293,8 @@ function RateHelp({ onUse }: { onUse: (rate: number) => void }) {
     <Card tone="raised">
       <View style={styles.headRow}>
         <SparkIcon size={18} color={colors.accent} />
-        <Text style={styles.rateTitle}>Vad kan du ta?</Text>
-        <Text style={styles.confidence}>{RATE_CONFIDENCE_LABELS[data.confidence]}</Text>
+        <Text style={styles.cardTitle}>Vad kan du ta?</Text>
+        <Text style={styles.secondary}>{RATE_CONFIDENCE_LABELS[data.confidence]}</Text>
       </View>
 
       <Text style={styles.rateRange}>
@@ -282,44 +302,61 @@ function RateHelp({ onUse }: { onUse: (rate: number) => void }) {
       </Text>
       <Text style={styles.secondary}>i månaden för fyra videor, i {data.city}</Text>
 
-      <View style={styles.basis}>
-        {data.basis.map((line) => (
-          <View key={line} style={styles.basisRow}>
-            <View style={styles.dot} />
-            <Text style={styles.basisText}>{line}</Text>
-          </View>
-        ))}
+      <View style={styles.rateActions}>
+        <Button
+          label={`Använd ${formatSek(data.mid)}`}
+          variant="secondary"
+          compact
+          onPress={() => onUse(data.mid)}
+        />
+        {!asked ? (
+          <Button label="Fråga Pacta" compact onPress={() => setAsked(true)} />
+        ) : null}
       </View>
 
-      <Button
-        label={`Använd ${formatSek(data.mid)}`}
-        variant="secondary"
-        onPress={() => onUse(data.mid)}
-      />
+      {asked ? (
+        advice.isFetching ? (
+          <Loading label="Tittar på ditt underlag" />
+        ) : advice.data?.advice ? (
+          <Text style={styles.advice}>{advice.data.advice}</Text>
+        ) : (
+          <Body>Vi kunde inte skriva ihop ett råd just nu. Spannet ovan gäller ändå.</Body>
+        )
+      ) : null}
 
-      {!asked ? (
-        <Button label="Fråga Pacta var i spannet du bör lägga dig" onPress={() => setAsked(true)} />
-      ) : advice.isFetching ? (
-        <Loading label="Tittar på ditt underlag" />
-      ) : advice.data?.advice ? (
-        <Text style={styles.advice}>{advice.data.advice}</Text>
-      ) : (
-        <Body>Vi kunde inte skriva ihop ett råd just nu. Spannet ovan gäller ändå.</Body>
-      )}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showBasis }}
+        onPress={() => setShowBasis((current) => !current)}
+        hitSlop={8}
+      >
+        <Text style={styles.link}>{showBasis ? 'Dölj underlaget' : 'Så räknar vi'}</Text>
+      </Pressable>
+
+      {showBasis ? (
+        <View style={styles.basis}>
+          {data.basis.map((line) => (
+            <View key={line} style={styles.basisRow}>
+              <View style={styles.dot} />
+              <Text style={styles.basisText}>{line}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   content: { paddingTop: 0, gap: 14 },
-  section: { gap: spacing.sm },
   secondary: { ...type.secondary, color: colors.muted },
   footnote: { ...type.secondary, color: colors.muted },
   error: { ...type.secondary, color: colors.danger },
+  cardTitle: { ...type.listTitle, color: colors.text, flex: 1 },
+  link: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.primary },
 
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   toggleText: { flex: 1, gap: 2 },
-  toggleTitle: { ...type.listTitle, color: colors.text },
   switch: {
     width: 50,
     height: 30,
@@ -334,25 +371,26 @@ const styles = StyleSheet.create({
   knob: { width: 22, height: 22, borderRadius: radius.round, backgroundColor: colors.surface },
   knobOn: { alignSelf: 'flex-end' },
 
-  packRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 4 },
+  packRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   packText: { flex: 1, gap: 2 },
   packTitle: { ...type.listTitle, color: colors.text },
   packPrice: { fontFamily: type.rowTitle.fontFamily, fontSize: 16, color: colors.accent },
 
   headRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  rateTitle: { ...type.listTitle, color: colors.text, flex: 1 },
-  confidence: { ...type.secondary, color: colors.muted },
-  rateRange: { ...type.amountHero, fontSize: 30, color: colors.accent },
+  rateRange: { ...type.amountHero, fontSize: 28, color: colors.accent },
+  rateActions: { flexDirection: 'row', gap: spacing.sm },
+  advice: { ...type.bodySmall, color: colors.text },
   basis: { gap: 6 },
   basisRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.muted, marginTop: 7 },
   basisText: { ...type.secondary, color: colors.muted, flex: 1 },
-  advice: { ...type.bodySmall, color: colors.text },
 
-  discountRow: { flexDirection: 'row', gap: spacing.sm },
+  discountBlock: { gap: spacing.sm },
+  discountLabel: { ...type.bodySmall, color: colors.text },
+  discountRow: { flexDirection: 'row', gap: 6 },
   discount: {
     flex: 1,
-    height: 44,
+    height: 42,
     borderRadius: radius.control,
     borderWidth: 1,
     borderColor: colors.border,
@@ -361,6 +399,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   discountOn: { borderColor: colors.primary, backgroundColor: colors.tint },
-  discountLabel: { ...type.secondary, color: colors.muted },
-  discountLabelOn: { fontFamily: type.listTitle.fontFamily, color: colors.text },
+  discountText: { ...type.secondary, color: colors.muted },
+  discountTextOn: { fontFamily: type.listTitle.fontFamily, color: colors.text },
 });

@@ -78,7 +78,11 @@ export async function requestRetainer(
   });
   if (existing) throw conflict('Ni har redan ett löpande uppdrag med den här kreatören.');
 
-  const listRate = retainerMonthlyRate(influencer.retainerBaseRate, size);
+  const listRate = retainerMonthlyRate(
+    influencer.retainerBaseRate,
+    size,
+    influencer.retainerVolumeDiscountBps,
+  );
   // Förskott är bara ett alternativ när hon faktiskt erbjuder något för det.
   const months =
     input.prepaidMonths >= PREPAY_MONTHS && influencer.retainerPrepayDiscountBps > 0

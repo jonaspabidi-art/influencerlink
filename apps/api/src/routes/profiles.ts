@@ -958,6 +958,7 @@ export function toPublicInfluencer(profile: {
   retainerSlots: number;
   retainerBaseRate: number | null;
   retainerPrepayDiscountBps: number;
+  retainerVolumeDiscountBps: number;
   socialAccounts: SocialAccountRow[];
   showcase?: ShowcaseRow[];
 }) {
@@ -983,7 +984,9 @@ export function toPublicInfluencer(profile: {
     retainerSlots: profile.retainerSlots,
     retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps,
     retainerPackages:
-      profile.retainerBaseRate === null ? [] : retainerPackages(profile.retainerBaseRate),
+      profile.retainerBaseRate === null
+        ? []
+        : retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps),
   };
 }
 

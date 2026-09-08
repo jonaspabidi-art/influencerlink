@@ -184,12 +184,15 @@ model InfluencerProfile {
   /// Vad hon vill ha för grundpaketet, fyra videor i månaden, i öre.
   /// Priset för åtta och tolv följer av paketskalan i det delade paketet.
   retainerBaseRate Int?
-  /// Rabatt hon ger vid förskottsbetalning, i baspunkter. Noll = ingen.
+  /// Rabatter hon ger, i baspunkter. Noll = ingen.
   ///
   /// Hennes val, inte plattformens. Rabatten dras på hennes arvode, så en sats
   /// vi satt åt henne hade varit att förhandla bort en del av hennes betalning
-  /// i ett samtal hon inte var med i.
+  /// i ett samtal hon inte var med i. Den ena gäller förskottsbetalning, den
+  /// andra de större paketen – utan den kostar tolv videor exakt tre gånger
+  /// fyra.
   retainerPrepayDiscountBps Int @default(0)
+  retainerVolumeDiscountBps Int @default(0)
 
   /// Stripe Connect-konto som utbetalningar går till.
   stripeAccountId String? @unique

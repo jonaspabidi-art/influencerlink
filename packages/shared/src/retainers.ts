@@ -32,44 +32,39 @@ import {
 export const RETAINER_PACKAGES = [4, 8, 12] as const;
 export type RetainerPackage = (typeof RETAINER_PACKAGES)[number];
 
-/**
- * Vad de större paketen kostar i förhållande till grundpaketet.
- *
- * Priset per video sjunker med volymen, och det är inte en rabatt utan en
- * avspegling av arbetet: den första videon hos en ny kund kräver att kreatören
- * lär sig stället, resten gör det inte. Åtta videor kostar 1,8 gånger fyra,
- * inte två gånger.
- */
-const PACKAGE_MULTIPLIER: Record<RetainerPackage, number> = {
-  4: 1,
-  8: 1.8,
-  12: 2.5,
-};
-
-/** Antal månader i förskott som kan ge rabatt. */
-export const PREPAY_MONTHS = 3;
+/** Grundpaketet som de andra räknas ur. */
+const BASE_PACKAGE: RetainerPackage = 4;
 
 /**
- * Rabattsatser kreatören kan välja mellan vid förskottsbetalning, i baspunkter.
+ * Rabattsatser kreatören kan välja mellan, i baspunkter.
  *
- * Noll står först och är förvalt. Rabatten är hennes pengar, inte plattformens
- * – att sätta den åt henne vore att förhandla bort en del av hennes arvode i
- * ett samtal hon inte var med i.
+ * Samma stege används för båda rabatterna hon kan ge – vid förskott och vid
+ * fler videor i månaden. Noll står först och är förvalt i båda fallen: en
+ * rabatt dras på hennes arvode, och en sats vi satt åt henne hade varit att
+ * förhandla bort en del av hennes betalning i ett samtal hon inte var med i.
  */
-export const PREPAY_DISCOUNT_CHOICES = [0, 500, 1000, 1500] as const;
-export type PrepayDiscountBps = (typeof PREPAY_DISCOUNT_CHOICES)[number];
+export const DISCOUNT_CHOICES = [0, 500, 1000, 1500] as const;
+export type DiscountBps = (typeof DISCOUNT_CHOICES)[number];
 
-/** Vad appen kallar respektive sats. */
-export const PREPAY_DISCOUNT_LABELS: Record<PrepayDiscountBps, string> = {
-  0: 'Ingen rabatt',
+export const DISCOUNT_LABELS: Record<DiscountBps, string> = {
+  0: 'Ingen',
   500: '5 %',
   1000: '10 %',
   1500: '15 %',
 };
 
-export function isPrepayDiscount(bps: number): bps is PrepayDiscountBps {
-  return (PREPAY_DISCOUNT_CHOICES as readonly number[]).includes(bps);
+export function isDiscountChoice(bps: number): bps is DiscountBps {
+  return (DISCOUNT_CHOICES as readonly number[]).includes(bps);
 }
+
+/** Antal månader i förskott som kan ge rabatt. */
+export const PREPAY_MONTHS = 3;
+
+/** Kvar under sitt gamla namn: rabatten vid förskott använder samma stege. */
+export const PREPAY_DISCOUNT_CHOICES = DISCOUNT_CHOICES;
+export type PrepayDiscountBps = DiscountBps;
+export const PREPAY_DISCOUNT_LABELS = DISCOUNT_LABELS;
+export const isPrepayDiscount = isDiscountChoice;
 
 /** Lägsta respektive högsta grundpris en kreatör får sätta, i öre. */
 export const MIN_RETAINER_BASE_RATE = 200_000;
@@ -82,23 +77,38 @@ export function isRetainerPackage(videos: number): videos is RetainerPackage {
 /**
  * Månadsarvodet för ett paket, räknat ur kreatörens grundpris.
  *
- * Kreatören sätter ett tal: vad hon vill ha för fyra videor i månaden. Resten
- * följer av paketskalan, så att hon slipper prissätta tre saker och företaget
- * slipper jämföra tre offerter. Avrundas till hela kronor – ett månadspris med
- * ören i ser ut som ett misstag.
+ * Kreatören sätter ett tal – vad hon vill ha för fyra videor i månaden – och
+ * de större paketen kostar rakt av så många gånger mer. Att låta priset per
+ * video sjunka av sig självt vore en rabatt hon aldrig valt: hon skriver
+ * "ingen rabatt" och ser ändå ett lägre pris per video, av skäl bara vi känner
+ * till. Vill hon belöna volym väljer hon det, och då syns det som en rabatt.
+ *
+ * Avrundas till hela kronor – ett månadspris med ören i ser ut som ett misstag.
  */
-export function retainerMonthlyRate(baseRate: Ore, videosPerMonth: RetainerPackage): Ore {
+export function retainerMonthlyRate(
+  baseRate: Ore,
+  videosPerMonth: RetainerPackage,
+  volumeDiscountBps = 0,
+): Ore {
   if (!Number.isInteger(baseRate) || baseRate < 0) {
     throw new Error('Grundpriset måste vara ett heltal i öre.');
   }
-  return Math.round((baseRate * PACKAGE_MULTIPLIER[videosPerMonth]) / 100) * 100;
+  const linear = (baseRate * videosPerMonth) / BASE_PACKAGE;
+  const discounted =
+    videosPerMonth === BASE_PACKAGE
+      ? linear
+      : (linear * (10_000 - volumeDiscountBps)) / 10_000;
+  return Math.round(discounted / 100) * 100;
 }
 
 /** Alla tre paketen med sina priser, som de visas på kreatörens profil. */
-export function retainerPackages(baseRate: Ore): { videosPerMonth: RetainerPackage; monthlyRate: Ore }[] {
+export function retainerPackages(
+  baseRate: Ore,
+  volumeDiscountBps = 0,
+): { videosPerMonth: RetainerPackage; monthlyRate: Ore }[] {
   return RETAINER_PACKAGES.map((videosPerMonth) => ({
     videosPerMonth,
-    monthlyRate: retainerMonthlyRate(baseRate, videosPerMonth),
+    monthlyRate: retainerMonthlyRate(baseRate, videosPerMonth, volumeDiscountBps),
   }));
 }
 

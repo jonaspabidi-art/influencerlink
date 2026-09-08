@@ -846,6 +846,11 @@ ALTER TABLE "RetainerPost" ADD CONSTRAINT "RetainerPost_periodId_fkey" FOREIGN K
 -- AlterTable
 ALTER TABLE "InfluencerProfile" ADD COLUMN     "retainerPrepayDiscountBps" INTEGER NOT NULL DEFAULT 0;
 
+-- === 20260919000000_volume_discount ===
+
+-- AlterTable
+ALTER TABLE "InfluencerProfile" ADD COLUMN     "retainerVolumeDiscountBps" INTEGER NOT NULL DEFAULT 0;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -933,6 +938,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         '529ac8fb732be62b79716c47e53f294095b74987688fc47d18f98c0e39d508e0',
         now(), '20260918000000_retainer_discount', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '9889c8769428fcd5dfe14e6d02299cc44570ac426486a49a5b184daa561fe12f',
+        now(), '20260919000000_volume_discount', now(), 1);
 
 -- === Demodata ===
 
