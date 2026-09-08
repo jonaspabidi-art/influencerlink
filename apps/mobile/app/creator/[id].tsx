@@ -8,6 +8,7 @@ import { GridIcon } from '../../src/components/icons';
 import {
   Avatar,
   Body,
+  Button,
   Card,
   ErrorState,
   Header,
@@ -106,6 +107,32 @@ export default function CreatorProfile() {
             <InviteToCampaign influencerId={String(id)} displayName={data.displayName} />
           ) : null}
 
+          {/*
+            Löpande uppdrag står här och inte under en egen flik: frågan uppstår
+            när man tittar på en profil och tänker "henne skulle vi vilja ha
+            varje vecka". Platserna är ett riktigt tal, så bristen är sann.
+          */}
+          {user?.role === 'BUSINESS' && data.acceptsRetainers && data.retainerSlots > 0 ? (
+            <Card tone="raised">
+              <Text style={styles.retainerTitle}>Tar löpande uppdrag</Text>
+              <Body>
+                {data.displayName} kan producera innehåll åt era egna kanaler varje månad, från{' '}
+                {formatSek(data.retainerPackages[0]?.monthlyRate ?? 0)} i månaden.{' '}
+                {data.retainerSlots} {data.retainerSlots === 1 ? 'plats ledig' : 'platser lediga'}.
+              </Body>
+              <Button
+                label="Anlita löpande"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/retainer/new',
+                    params: { influencerId: String(id) },
+                  })
+                }
+              />
+            </Card>
+          ) : null}
+
           <View style={styles.statRow}>
             <StatBox label="FÖLJARE" value={formatFollowers(data.followers)} />
             <StatBox label="SNITTVISN." value={formatFollowers(data.avgViews)} />
@@ -191,6 +218,7 @@ const styles = StyleSheet.create({
   name: { ...type.sectionTitle, color: colors.text },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statRow: { flexDirection: 'row', gap: spacing.sm },
+  retainerTitle: { ...type.listTitle, color: colors.text },
   price: { ...type.amountHero, color: colors.accent },
 
   section: { gap: spacing.sm },

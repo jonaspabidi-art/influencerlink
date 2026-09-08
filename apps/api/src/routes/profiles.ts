@@ -9,6 +9,7 @@ import {
   platformSchema,
   problemSchema,
   recogniseLink,
+  retainerPackages,
   showcaseItemInputSchema,
   showcaseItemSchema,
   showcaseSelectionSchema,
@@ -52,6 +53,18 @@ const publicInfluencerSchema = z.object({
   platforms: z.array(platformSchema),
   socialAccounts: z.array(socialAccountSchema),
   showcase: z.array(showcaseItemSchema),
+  /**
+   * Tar hon löpande uppdrag, och till vilket pris?
+   *
+   * Ligger på den publika profilen därför att det är där företaget står när
+   * frågan uppstår. Platserna är ett riktigt tal: visas en ledig plats ska
+   * hon kunna ta emot den.
+   */
+  acceptsRetainers: z.boolean(),
+  retainerSlots: z.number().int(),
+  retainerPackages: z.array(
+    z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
+  ),
 });
 
 /** Så många inlägg får en profil visa upp. Fler blir bara brus i kortet. */
@@ -925,6 +938,9 @@ export function toPublicInfluencer(profile: {
   priceMin: number;
   priceTarget: number;
   payoutsEnabled: boolean;
+  acceptsRetainers: boolean;
+  retainerSlots: number;
+  retainerBaseRate: number | null;
   socialAccounts: SocialAccountRow[];
   showcase?: ShowcaseRow[];
 }) {
@@ -945,6 +961,11 @@ export function toPublicInfluencer(profile: {
     platforms: profile.socialAccounts.map((account) => account.platform),
     socialAccounts: profile.socialAccounts.map(toPublicSocialAccount),
     showcase: (profile.showcase ?? []).map(toPublicShowcaseItem),
+    // Utan pris finns inget att fråga om, så då räknas hon inte som öppen.
+    acceptsRetainers: profile.acceptsRetainers && profile.retainerBaseRate !== null,
+    retainerSlots: profile.retainerSlots,
+    retainerPackages:
+      profile.retainerBaseRate === null ? [] : retainerPackages(profile.retainerBaseRate),
   };
 }
 

@@ -3,6 +3,15 @@ import {
   checkReviewEligibility,
   creatorInsights,
   daysLeftToReview,
+  discountedMonthlyRate,
+  periodEnd,
+  renderRetainerTerms,
+  retainerMonthlyRate,
+  retainerPackages,
+  retainerPeriodMoney,
+  PREPAY_DISCOUNT_BPS,
+  PREPAY_MONTHS,
+  RETAINER_PACKAGES,
   emptyRatingSummary,
   overallRating,
   rankCampaigns,
@@ -159,6 +168,59 @@ interface DemoExpertOrder {
   paymentStatus: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED';
 }
 
+/**
+ * Ett löpande uppdrag i demoläget.
+ *
+ * Samma form som API:et svarar med, platt i stället för normaliserat: demon
+ * har ingen databas att joina i, och skärmarna läser ändå hela uppdraget.
+ */
+interface DemoRetainerPost {
+  id: string;
+  platform: string;
+  fileName: string;
+  caption: string;
+  note: string;
+  status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED' | 'PUBLISHED';
+  revision: number;
+  reviewNote: string;
+  submittedAt: string;
+  publishedAt: string | null;
+  publishedUrl: string | null;
+  playbackUrl: string | null;
+}
+
+interface DemoRetainerPeriod {
+  id: string;
+  index: number;
+  startsAt: string;
+  endsAt: string;
+  videosAgreed: number;
+  grossAmount: number;
+  chargeAmount: number;
+  releasedAmount: number;
+  refundedAmount: number;
+  status: 'AWAITING_PAYMENT' | 'ACTIVE' | 'CLOSED';
+  posts: DemoRetainerPost[];
+}
+
+interface DemoRetainer {
+  id: string;
+  businessId: string;
+  influencerId: string;
+  status: 'REQUESTED' | 'DECLINED' | 'ACTIVE' | 'CANCELLING' | 'ENDED';
+  videosPerMonth: number;
+  listRate: number;
+  monthlyRate: number;
+  prepaidMonths: number;
+  requestNote: string;
+  terms: string;
+  accessGranted: boolean;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+  periods: DemoRetainerPeriod[];
+}
+
 interface State {
   users: DemoUser[];
   influencers: DemoInfluencer[];
@@ -172,6 +234,7 @@ interface State {
   reviews: DemoReview[];
   usageRights: DemoUsageRights[];
   expertOrders: DemoExpertOrder[];
+  retainers: DemoRetainer[];
   accounts: DemoAccountRecord[];
   orders: BankIdOrder[];
   sessionUserId: string | null;
@@ -213,6 +276,7 @@ const STATE_ARRAYS = [
   'reviews',
   'usageRights',
   'expertOrders',
+  'retainers',
   'accounts',
   'orders',
 ] as const;
@@ -259,6 +323,7 @@ function freshState(): State {
     matches: [],
     messages: [],
     applications: DEMO_APPLICATIONS.map((application) => ({ ...application })),
+    retainers: [],
     contracts: [],
     reviews: DEMO_REVIEWS.map((item) => ({ ...item, scores: { ...item.scores } })),
     usageRights: [],
@@ -1093,6 +1158,11 @@ route('GET', '/influencers/:id', ({ params }) => {
       lastSyncedAt: null,
     })),
     showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
+    acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
+    retainerSlots: profile.retainerSlots ?? 0,
+    retainerPackages: profile.retainerBaseRate
+      ? retainerPackages(profile.retainerBaseRate)
+      : [],
   };
 });
 
@@ -1413,6 +1483,292 @@ route('GET', '/feed/pending', () => {
  * Insikterna i demoläget. Samma uträkning som servern gör – den ligger i det
  * delade paketet – men utan rådet: demoläget har ingen modell att fråga.
  */
+// Löpande uppdrag ------------------------------------------------------------
+
+function retainerById(id: string): DemoRetainer {
+  const retainer = state.retainers.find((item) => item.id === id);
+  if (!retainer) throw new DemoError(404, 'not_found', 'Uppdraget hittades inte.');
+  const user = currentUser();
+  const profileId = requireProfileId(user);
+  const isParty =
+    user.role === 'BUSINESS' ? retainer.businessId === profileId : retainer.influencerId === profileId;
+  if (!isParty) throw new DemoError(404, 'not_found', 'Uppdraget hittades inte.');
+  return retainer;
+}
+
+function retainerSummary(retainer: DemoRetainer) {
+  const business = businessById(retainer.businessId);
+  const influencer = influencerById(retainer.influencerId);
+  return {
+    id: retainer.id,
+    status: retainer.status,
+    videosPerMonth: retainer.videosPerMonth,
+    listRate: retainer.listRate,
+    monthlyRate: retainer.monthlyRate,
+    prepaidMonths: retainer.prepaidMonths,
+    requestNote: retainer.requestNote,
+    businessId: business.id,
+    businessName: business.companyName,
+    businessLogoUrl: business.logoUrl,
+    influencerId: influencer.id,
+    influencerName: influencer.displayName,
+    influencerAvatarUrl: influencer.avatarUrl,
+    accessGranted: retainer.accessGranted,
+    startedAt: retainer.startedAt,
+    endedAt: retainer.endedAt,
+    createdAt: retainer.createdAt,
+  };
+}
+
+function findPost(id: string): { retainer: DemoRetainer; post: DemoRetainerPost } {
+  for (const retainer of state.retainers) {
+    for (const period of retainer.periods) {
+      const post = period.posts.find((item) => item.id === id);
+      if (post) return { retainer, post };
+    }
+  }
+  throw new DemoError(404, 'not_found', 'Videon hittades inte.');
+}
+
+route('GET', '/me/retainer-availability', () => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  return {
+    acceptsRetainers: profile.acceptsRetainers === true,
+    slots: profile.retainerSlots ?? 0,
+    baseRate: profile.retainerBaseRate ?? null,
+    packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
+  };
+});
+
+route('PUT', '/me/retainer-availability', ({ body }) => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const baseRate = body.baseRate === null || body.baseRate === undefined ? null : Number(body.baseRate);
+  if (body.acceptsRetainers === true && baseRate === null) {
+    throw new DemoError(400, 'bad_request', 'Sätt ett månadspris innan du öppnar för löpande uppdrag.');
+  }
+  profile.acceptsRetainers = body.acceptsRetainers === true;
+  profile.retainerSlots = Number(body.slots ?? 0);
+  profile.retainerBaseRate = baseRate;
+  persist();
+  return {
+    acceptsRetainers: profile.acceptsRetainers,
+    slots: profile.retainerSlots,
+    baseRate: profile.retainerBaseRate,
+    packages: baseRate ? retainerPackages(baseRate) : [],
+  };
+});
+
+route('GET', '/retainers', () => {
+  const user = currentUser();
+  const profileId = requireProfileId(user);
+  return state.retainers
+    .filter((retainer) =>
+      user.role === 'BUSINESS' ? retainer.businessId === profileId : retainer.influencerId === profileId,
+    )
+    .map(retainerSummary);
+});
+
+route('GET', '/retainers/:id', ({ params }) => {
+  const retainer = retainerById(params[0]!);
+  return {
+    ...retainerSummary(retainer),
+    terms: retainer.terms,
+    periods: retainer.periods.map((period) => ({
+      ...period,
+      videosDelivered: period.posts.filter(
+        (post) => post.status === 'APPROVED' || post.status === 'PUBLISHED',
+      ).length,
+    })),
+  };
+});
+
+route('POST', '/retainers', ({ body }) => {
+  const businessId = requireProfileId(currentUser());
+  const influencer = influencerById(String(body.influencerId ?? ''));
+  if (!influencer.acceptsRetainers || influencer.retainerBaseRate == null) {
+    throw new DemoError(400, 'bad_request', 'Kreatören tar inte löpande uppdrag just nu.');
+  }
+  if ((influencer.retainerSlots ?? 0) <= 0) {
+    throw new DemoError(409, 'conflict', 'Kreatören har inga lediga platser.');
+  }
+
+  const size = Number(body.videosPerMonth ?? 4);
+  const months = Number(body.prepaidMonths ?? 1) >= PREPAY_MONTHS ? PREPAY_MONTHS : 1;
+  const listRate = retainerMonthlyRate(influencer.retainerBaseRate, size as 4 | 8 | 12);
+
+  const retainer: DemoRetainer = {
+    id: nextId('ret'),
+    businessId,
+    influencerId: influencer.id,
+    status: 'REQUESTED',
+    videosPerMonth: size,
+    listRate,
+    monthlyRate: discountedMonthlyRate(listRate, months),
+    prepaidMonths: months,
+    requestNote: String(body.note ?? ''),
+    terms: '',
+    accessGranted: false,
+    startedAt: null,
+    endedAt: null,
+    createdAt: new Date().toISOString(),
+    periods: [],
+  };
+  state.retainers = [...state.retainers, retainer];
+  persist();
+  return retainerSummary(retainer);
+});
+
+route('POST', '/retainers/:id/respond', ({ params, body }) => {
+  const retainer = retainerById(params[0]!);
+  if (retainer.status !== 'REQUESTED') throw new DemoError(409, 'conflict', 'Förfrågan är redan besvarad.');
+
+  if (body.accept !== true) {
+    retainer.status = 'DECLINED';
+    retainer.endedAt = new Date().toISOString();
+    persist();
+    return retainerSummary(retainer);
+  }
+
+  const business = businessById(retainer.businessId);
+  const influencer = influencerById(retainer.influencerId);
+  const money = retainerPeriodMoney(retainer.monthlyRate, retainer.videosPerMonth as 4 | 8 | 12, FEE_SPLIT);
+  const startsAt = new Date();
+
+  retainer.status = 'ACTIVE';
+  retainer.startedAt = startsAt.toISOString();
+  retainer.terms = renderRetainerTerms({
+    businessName: business.companyName,
+    orgNumber: business.orgNumber,
+    creatorName: influencer.displayName,
+    city: business.city,
+    videosPerMonth: retainer.videosPerMonth as 4 | 8 | 12,
+    monthlyRate: retainer.monthlyRate,
+    listRate: retainer.listRate,
+    prepaidMonths: retainer.prepaidMonths,
+    channels: business.socials.map((social) => `${social.platform} @${social.handle}`),
+    money,
+    startsAt,
+  });
+
+  let cursor = startsAt;
+  for (let index = 1; index <= retainer.prepaidMonths; index += 1) {
+    const ends = periodEnd(cursor);
+    retainer.periods = [
+      ...retainer.periods,
+      {
+        id: nextId('rper'),
+        index,
+        startsAt: cursor.toISOString(),
+        endsAt: ends.toISOString(),
+        videosAgreed: retainer.videosPerMonth,
+        grossAmount: money.fee,
+        chargeAmount: money.charge,
+        releasedAmount: 0,
+        refundedAmount: 0,
+        status: 'AWAITING_PAYMENT',
+        posts: [],
+      },
+    ];
+    cursor = ends;
+  }
+
+  influencer.retainerSlots = Math.max(0, (influencer.retainerSlots ?? 1) - 1);
+  persist();
+  return retainerSummary(retainer);
+});
+
+route('POST', '/retainers/:id/access', ({ params, body }) => {
+  const retainer = retainerById(params[0]!);
+  retainer.accessGranted = body.granted === true;
+  persist();
+  return retainerSummary(retainer);
+});
+
+route('POST', '/retainers/:id/cancel', ({ params }) => {
+  const retainer = retainerById(params[0]!);
+  if (retainer.status !== 'ACTIVE') throw new DemoError(409, 'conflict', 'Uppdraget är inte aktivt.');
+  retainer.status = 'CANCELLING';
+  retainer.endedAt = retainer.periods[retainer.periods.length - 1]?.endsAt ?? new Date().toISOString();
+  persist();
+  return retainerSummary(retainer);
+});
+
+/** Betalningen går igenom direkt i demoläget – ingen Stripe att vänta på. */
+route('POST', '/retainer-periods/:id/payment', ({ params }) => {
+  for (const retainer of state.retainers) {
+    const period = retainer.periods.find((item) => item.id === params[0]);
+    if (!period) continue;
+    if (period.status !== 'AWAITING_PAYMENT') throw new DemoError(409, 'conflict', 'Perioden är redan betald.');
+    period.status = 'ACTIVE';
+    persist();
+    return { clientSecret: 'demo', amount: period.chargeAmount };
+  }
+  throw new DemoError(404, 'not_found', 'Perioden hittades inte.');
+});
+
+route('POST', '/retainer-periods/:id/posts', ({ params, body }) => {
+  for (const retainer of state.retainers) {
+    const period = retainer.periods.find((item) => item.id === params[0]);
+    if (!period) continue;
+    if (period.status !== 'ACTIVE') throw new DemoError(400, 'bad_request', 'Perioden är inte betald ännu.');
+    if (period.posts.length >= period.videosAgreed) {
+      throw new DemoError(400, 'bad_request', `Perioden rymmer ${period.videosAgreed} videor. Alla är inlämnade.`);
+    }
+    const post: DemoRetainerPost = {
+      id: nextId('rpost'),
+      platform: String(body.platform ?? 'INSTAGRAM'),
+      fileName: String(body.fileName ?? ''),
+      caption: String(body.caption ?? ''),
+      note: String(body.note ?? ''),
+      status: 'PENDING',
+      revision: 1,
+      reviewNote: '',
+      submittedAt: new Date().toISOString(),
+      publishedAt: null,
+      publishedUrl: null,
+      playbackUrl: null,
+    };
+    period.posts = [...period.posts, post];
+    persist();
+    return post;
+  }
+  throw new DemoError(404, 'not_found', 'Perioden hittades inte.');
+});
+
+route('POST', '/retainer-posts/:id/review', ({ params, body }) => {
+  const { post } = findPost(params[0]!);
+  if (post.status === 'PUBLISHED') throw new DemoError(409, 'conflict', 'Videon är redan publicerad.');
+  const approve = body.approve === true;
+  if (!approve && String(body.note ?? '').trim().length === 0) {
+    throw new DemoError(400, 'bad_request', 'Skriv vad som ska ändras, annars vet kreatören inte vad hon ska göra.');
+  }
+  post.status = approve ? 'APPROVED' : 'CHANGES_REQUESTED';
+  post.reviewNote = String(body.note ?? '');
+  persist();
+  return post;
+});
+
+route('POST', '/retainer-posts/:id/published', ({ params, body }) => {
+  const { retainer, post } = findPost(params[0]!);
+  if (post.status !== 'APPROVED') {
+    throw new DemoError(400, 'bad_request', 'Videon måste vara godkänd av företaget innan den publiceras.');
+  }
+  if (!retainer.accessGranted) {
+    throw new DemoError(400, 'bad_request', 'Företaget har inte gett dig åtkomst till kanalerna.');
+  }
+  post.status = 'PUBLISHED';
+  post.publishedAt = new Date().toISOString();
+  post.publishedUrl = String(body.url ?? '');
+  persist();
+  return post;
+});
+
+route('GET', '/retainer-terms', () => ({
+  packages: [...RETAINER_PACKAGES],
+  prepayMonths: PREPAY_MONTHS,
+  prepayDiscountBps: PREPAY_DISCOUNT_BPS,
+}));
+
 route('GET', '/me/insights', () => {
   const profile = influencerById(requireProfileId(currentUser()));
   const candidate = toInfluencerCandidate(profile);

@@ -43,6 +43,11 @@ export interface DemoInfluencer {
   stripeAccountId: string | null;
   socials: DemoSocial[];
   showcase: DemoShowcase[];
+  /** Löpande uppdrag: tar hon dem, hur många platser och till vilket pris? */
+  acceptsRetainers?: boolean;
+  retainerSlots?: number;
+  /** Månadspris för grundpaketet, fyra videor, i öre. */
+  retainerBaseRate?: number | null;
 }
 
 export interface DemoBusiness {
@@ -105,6 +110,10 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     priceTarget: kr(4_500),
     payoutsEnabled: true,
     stripeAccountId: 'acct_demo_anna',
+    // Öppen för löpande uppdrag, så demoläget kan visa hela flödet.
+    acceptsRetainers: true,
+    retainerSlots: 2,
+    retainerBaseRate: kr(6_000),
     socials: [
       { id: 'soc_anna_tt', platform: 'TIKTOK', handle: 'annaater', followers: 48_000, avgViews: 39_000, engagementRate: 0.071, verified: false },
       { id: 'soc_anna_ig', platform: 'INSTAGRAM', handle: 'annaater', followers: 21_000, avgViews: 9_000, engagementRate: 0.048, verified: false },

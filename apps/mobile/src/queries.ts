@@ -10,6 +10,8 @@ import type {
   OwnBusinessProfile,
   PayoutStatus,
   PendingReview,
+  Retainer,
+  RetainerAvailability,
 } from './types';
 
 /**
@@ -66,6 +68,19 @@ export const insightsQuery = () =>
     queryFn: () => api.get<CreatorInsights>('/me/insights'),
   });
 
+/** Löpande uppdrag, samma lista för båda rollerna. */
+export const retainersQuery = () =>
+  queryOptions({
+    queryKey: ['retainers'],
+    queryFn: () => api.get<Retainer[]>('/retainers'),
+  });
+
+export const retainerAvailabilityQuery = () =>
+  queryOptions({
+    queryKey: ['retainer-availability'],
+    queryFn: () => api.get<RetainerAvailability>('/me/retainer-availability'),
+  });
+
 export const payoutsQuery = () =>
   queryOptions({
     queryKey: ['payouts'],
@@ -93,6 +108,7 @@ export function prefetchTabs(client: QueryClient, role: Role): void {
     expert: () => void client.prefetchQuery(expertOrdersQuery()),
     payouts: () => void client.prefetchQuery(payoutsQuery()),
     insights: () => void client.prefetchQuery(insightsQuery()),
+    retainers: () => void client.prefetchQuery(retainersQuery()),
   };
 
   if (role === 'BUSINESS') {
@@ -102,6 +118,7 @@ export function prefetchTabs(client: QueryClient, role: Role): void {
     hämta.reviews();
     hämta.business();
     hämta.expert();
+    hämta.retainers();
     return;
   }
   if (role === 'INFLUENCER') {
@@ -110,5 +127,6 @@ export function prefetchTabs(client: QueryClient, role: Role): void {
     hämta.reviews();
     hämta.payouts();
     hämta.insights();
+    hämta.retainers();
   }
 }

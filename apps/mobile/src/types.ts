@@ -154,6 +154,10 @@ export interface InfluencerProfile {
   platforms: Platform[];
   socialAccounts: SocialAccount[];
   showcase: ShowcaseItem[];
+  /** Tar hon löpande uppdrag, och till vilket pris? */
+  acceptsRetainers: boolean;
+  retainerSlots: number;
+  retainerPackages: { videosPerMonth: number; monthlyRate: number }[];
 }
 
 export interface InfluencerCard {
@@ -580,4 +584,72 @@ export interface CreatorInsights {
     platform?: string;
   }[];
   gaps: { field: string; message: string }[];
+}
+
+export type RetainerStatus = 'REQUESTED' | 'DECLINED' | 'ACTIVE' | 'CANCELLING' | 'ENDED';
+export type RetainerPostStatus = 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED' | 'PUBLISHED';
+
+/** En video producerad åt företagets egen kanal. */
+export interface RetainerPost {
+  id: string;
+  platform: string;
+  fileName: string;
+  caption: string;
+  note: string;
+  status: RetainerPostStatus;
+  revision: number;
+  reviewNote: string;
+  submittedAt: string;
+  publishedAt: string | null;
+  publishedUrl: string | null;
+  playbackUrl: string | null;
+}
+
+/** En månad i ett löpande uppdrag. Pengarna rör sig per period. */
+export interface RetainerPeriod {
+  id: string;
+  index: number;
+  startsAt: string;
+  endsAt: string;
+  videosAgreed: number;
+  videosDelivered: number;
+  grossAmount: number;
+  chargeAmount: number;
+  releasedAmount: number;
+  refundedAmount: number;
+  status: 'AWAITING_PAYMENT' | 'ACTIVE' | 'CLOSED';
+  posts: RetainerPost[];
+}
+
+export interface Retainer {
+  id: string;
+  status: RetainerStatus;
+  videosPerMonth: number;
+  listRate: number;
+  monthlyRate: number;
+  prepaidMonths: number;
+  requestNote: string;
+  businessId: string;
+  businessName: string;
+  businessLogoUrl: string | null;
+  influencerId: string;
+  influencerName: string;
+  influencerAvatarUrl: string | null;
+  accessGranted: boolean;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+}
+
+export interface RetainerDetail extends Retainer {
+  terms: string;
+  periods: RetainerPeriod[];
+}
+
+/** Kreatörens läge för löpande uppdrag. */
+export interface RetainerAvailability {
+  acceptsRetainers: boolean;
+  slots: number;
+  baseRate: number | null;
+  packages: { videosPerMonth: number; monthlyRate: number }[];
 }

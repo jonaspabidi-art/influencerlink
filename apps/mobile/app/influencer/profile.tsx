@@ -4,7 +4,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { GridIcon, LinkIcon, SignOutIcon, StarIcon, UserIcon } from '../../src/components/icons';
+import {
+  GridIcon,
+  LinkIcon,
+  SignOutIcon,
+  StarIcon,
+  UserIcon,
+  WalletIcon,
+} from '../../src/components/icons';
 import {
   Avatar,
   Card,
@@ -91,6 +98,12 @@ export default function InfluencerProfileTab() {
           icon={<UserIcon size={20} color={colors.primary} />}
           label="Redigera profil"
           onPress={() => router.push('/profile/edit')}
+        />
+        <MenuRow
+          icon={<WalletIcon size={20} color={colors.primary} />}
+          label="Löpande uppdrag"
+          hint="Fast inkomst"
+          onPress={() => router.push('/retainer/availability')}
         />
         <MenuRow
           icon={<LinkIcon size={20} color={colors.primary} />}
