@@ -1,7 +1,7 @@
 import { CATEGORIES, type Category } from '@pacta/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ownBusinessQuery } from '../../src/queries';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
@@ -44,20 +44,16 @@ export default function BusinessDiscover() {
   const { user } = useAuth();
   const [category, setCategory] = useState<Category | null>(null);
   const [nearby, setNearby] = useState(true);
-  // Kommer man hit från "hitta någon som jobbar löpande" är valet redan gjort.
-  const { retainers } = useLocalSearchParams<{ retainers?: string }>();
-  const [onlyRetainers, setOnlyRetainers] = useState(retainers === '1');
 
   const profile = useQuery(ownBusinessQuery());
 
   const city = profile.data?.city ?? '';
   const creators = useQuery({
-    queryKey: ['browse-influencers', nearby ? city : '', category, onlyRetainers],
+    queryKey: ['browse-influencers', nearby ? city : '', category],
     queryFn: () => {
       const params = new URLSearchParams();
       if (nearby && city) params.set('city', city);
       if (category) params.set('category', category);
-      if (onlyRetainers) params.set('retainers', '1');
       return api.get<Browsable[]>(`/influencers?${params.toString()}`);
     },
     enabled: profile.isSuccess,
@@ -65,6 +61,12 @@ export default function BusinessDiscover() {
 
   const data = creators.data ?? [];
   const waiting = data.filter((creator) => creator.interest !== null).length;
+  // Bara ett pekfinger, inte produkten själv: den som vill ha någon varje
+  // månad ska hamna på sidan som förklarar det, inte i en lista med
+  // kampanjknappar.
+  const retainerCount = data.filter(
+    (creator) => creator.acceptsRetainers && creator.retainerSlots > 0,
+  ).length;
 
   return (
     <Screen>
@@ -74,8 +76,8 @@ export default function BusinessDiscover() {
         subtitle={
           creators.isSuccess
             ? `${data.length} ${data.length === 1 ? 'kreatör' : 'kreatörer'}${
-                onlyRetainers ? ' som tar löpande uppdrag' : ''
-              }${nearby && city ? ` i ${city}` : ''}`
+                nearby && city ? ` i ${city}` : ''
+              }`
             : 'Kreatörer att samarbeta med'
         }
         /*
@@ -107,17 +109,6 @@ export default function BusinessDiscover() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterRow}
             >
-              {/*
-                Först i raden, före stad och nisch: det är ett annat sorts köp
-                än en kampanj, och den som kommit hit för att hitta någon som
-                jobbar varje vecka ska inte behöva öppna profiler en och en för
-                att se vem som är öppen.
-              */}
-              <Chip
-                label="Tar löpande uppdrag"
-                selected={onlyRetainers}
-                onPress={() => setOnlyRetainers((current) => !current)}
-              />
               {city ? (
                 <Chip
                   label={city}
@@ -161,9 +152,8 @@ export default function BusinessDiscover() {
             <Card>
               <Text style={styles.emptyTitle}>Ingen som matchar just det</Text>
               <Body>
-                {onlyRetainers
-                  ? 'Ingen i listan har en ledig plats för löpande uppdrag just nu. Ta bort filtret för att se alla, eller skapa en enstaka kampanj så länge.'
-                  : 'Prova utan filter, eller skapa ett samarbete ändå – kreatörer ser era kampanjer och kan söka själva.'}
+                Prova utan filter, eller skapa ett samarbete ändå – kreatörer ser era kampanjer
+                och kan söka själva.
               </Body>
             </Card>
           ) : null
@@ -175,6 +165,22 @@ export default function BusinessDiscover() {
               stod här också och upprepade det som redan står i kortleken och i
               kampanjguiden – tre gånger samma mening gör den inte tryggare.
             */}
+            {retainerCount > 0 ? (
+              <Card tone="raised">
+                <Text style={styles.footerTitle}>Vill ni ha någon varje månad?</Text>
+                <Body>
+                  {retainerCount} av dem tar även löpande uppdrag och producerar innehåll till
+                  era egna kanaler i stället för sina. Det är ett annat upplägg, med en egen
+                  sida.
+                </Body>
+                <Button
+                  label="Läs om löpande uppdrag"
+                  variant="secondary"
+                  onPress={() => router.push('/retainer/start')}
+                />
+              </Card>
+            ) : null}
+
             <Card tone="raised">
               <Text style={styles.footerTitle}>Redo att samarbeta?</Text>
               <Body>Beskriv vad ni vill ha i två meningar, så skriver vi kampanjen åt er.</Body>
@@ -260,14 +266,6 @@ function CreatorRow({ creator }: { creator: Browsable }) {
           </Text>
           <Text style={styles.price}>Från {formatSek(creator.priceMin)} per samarbete</Text>
 
-          {/* Bristen är sann: platserna är ett tal kreatören själv satt. */}
-          {creator.acceptsRetainers && creator.retainerSlots > 0 ? (
-            <Text style={styles.retainer} numberOfLines={1}>
-              Löpande från {formatSek(creator.retainerPackages[0]?.monthlyRate ?? 0)}/mån ·{' '}
-              {creator.retainerSlots} {creator.retainerSlots === 1 ? 'plats' : 'platser'}
-            </Text>
-          ) : null}
-
           {creator.interest ? (
             <Text style={styles.interest} numberOfLines={2}>
               Visade intresse för {creator.interest.campaignTitle}
@@ -299,7 +297,6 @@ const styles = StyleSheet.create({
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
   header: { gap: spacing.md, paddingBottom: spacing.sm },
   filterRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.base },
-  retainer: { ...type.secondary, color: colors.positive },
   interest: { fontFamily: type.listTitle.fontFamily, fontSize: 13, color: colors.primary },
   explain: { ...type.secondary, color: colors.muted },
 
