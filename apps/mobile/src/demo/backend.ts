@@ -1102,10 +1102,18 @@ route('GET', '/businesses/:id', ({ params }) => {
 route('GET', '/influencers', ({ query }) => {
   const city = query.get('city')?.toLowerCase();
   const category = query.get('category');
+  const onlyRetainers = query.get('retainers') !== null;
   return state.influencers
     .filter((profile) => profile.socials.length > 0)
     .filter((profile) => !city || profile.city.toLowerCase() === city)
     .filter((profile) => !category || profile.categories.includes(category as Category))
+    .filter(
+      (profile) =>
+        !onlyRetainers ||
+        (profile.acceptsRetainers === true &&
+          profile.retainerBaseRate != null &&
+          (profile.retainerSlots ?? 0) > 0),
+    )
     .map((profile) => {
       const stats = aggregate(profile);
       return {
@@ -1130,6 +1138,11 @@ route('GET', '/influencers', ({ query }) => {
         })),
         showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
         rating: ratingFor('INFLUENCER', profile.id),
+        acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
+        retainerSlots: profile.retainerSlots ?? 0,
+        retainerPackages: profile.retainerBaseRate
+          ? retainerPackages(profile.retainerBaseRate)
+          : [],
       };
     });
 });

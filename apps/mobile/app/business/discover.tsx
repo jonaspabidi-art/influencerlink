@@ -39,17 +39,19 @@ export default function BusinessDiscover() {
   const { user } = useAuth();
   const [category, setCategory] = useState<Category | null>(null);
   const [nearby, setNearby] = useState(true);
+  const [onlyRetainers, setOnlyRetainers] = useState(false);
   const [pickingDeck, setPickingDeck] = useState(false);
 
   const profile = useQuery(ownBusinessQuery());
 
   const city = profile.data?.city ?? '';
   const creators = useQuery({
-    queryKey: ['browse-influencers', nearby ? city : '', category],
+    queryKey: ['browse-influencers', nearby ? city : '', category, onlyRetainers],
     queryFn: () => {
       const params = new URLSearchParams();
       if (nearby && city) params.set('city', city);
       if (category) params.set('category', category);
+      if (onlyRetainers) params.set('retainers', '1');
       return api.get<Browsable[]>(`/influencers?${params.toString()}`);
     },
     enabled: profile.isSuccess,
@@ -116,6 +118,17 @@ export default function BusinessDiscover() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterRow}
             >
+              {/*
+                Först i raden, före stad och nisch: det är ett annat sorts köp
+                än en kampanj, och den som kommit hit för att hitta någon som
+                jobbar varje vecka ska inte behöva öppna profiler en och en för
+                att se vem som är öppen.
+              */}
+              <Chip
+                label="Tar löpande uppdrag"
+                selected={onlyRetainers}
+                onPress={() => setOnlyRetainers((current) => !current)}
+              />
               {city ? (
                 <Chip
                   label={city}
@@ -176,8 +189,9 @@ export default function BusinessDiscover() {
             <Card>
               <Text style={styles.emptyTitle}>Ingen som matchar just det</Text>
               <Body>
-                Prova utan filter, eller skapa ett samarbete ändå – kreatörer ser era kampanjer och
-                kan söka själva.
+                {onlyRetainers
+                  ? 'Ingen i listan har en ledig plats för löpande uppdrag just nu. Ta bort filtret för att se alla, eller skapa en enstaka kampanj så länge.'
+                  : 'Prova utan filter, eller skapa ett samarbete ändå – kreatörer ser era kampanjer och kan söka själva.'}
               </Body>
             </Card>
           ) : null
@@ -249,6 +263,14 @@ function CreatorRow({ creator }: { creator: Browsable }) {
             .join(', ')}
         </Text>
         <Text style={styles.price}>Från {formatSek(creator.priceMin)}</Text>
+
+        {/* Bristen är sann: platserna är ett tal hon själv satt. */}
+        {creator.acceptsRetainers && creator.retainerSlots > 0 ? (
+          <Text style={styles.retainer} numberOfLines={1}>
+            Löpande från {formatSek(creator.retainerPackages[0]?.monthlyRate ?? 0)}/mån ·{' '}
+            {creator.retainerSlots} {creator.retainerSlots === 1 ? 'plats' : 'platser'}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -266,6 +288,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   deckTitle: { ...type.listTitle, color: colors.text },
+  retainer: { ...type.secondary, color: colors.positive },
   advisor: {
     flexDirection: 'row',
     alignItems: 'center',

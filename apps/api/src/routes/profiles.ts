@@ -175,6 +175,17 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         querystring: z.object({
           city: z.string().max(80).optional(),
           category: categorySchema.optional(),
+          /**
+           * Bara de som tar löpande uppdrag och har en plats ledig.
+           *
+           * Utan filtret låg utbudet gömt: erbjudandet syntes först när man
+           * öppnat en profil, så företaget fick leta blint. En ledig plats är
+           * inget att bläddra efter en i taget.
+           */
+          retainers: z
+            .enum(['1', 'true'])
+            .optional()
+            .transform((value) => value !== undefined),
           limit: z.coerce.number().int().min(1).max(50).default(30),
         }),
         response: {
@@ -188,13 +199,16 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       },
     },
     async (request) => {
-      const { city, category, limit } = request.query;
+      const { city, category, retainers, limit } = request.query;
       const profiles = await prisma.influencerProfile.findMany({
         where: {
           user: { onboardingComplete: true },
           socialAccounts: { some: {} },
           ...(city ? { city: { equals: city, mode: 'insensitive' } } : {}),
           ...(category ? { categories: { has: category } } : {}),
+          ...(retainers
+            ? { acceptsRetainers: true, retainerBaseRate: { not: null }, retainerSlots: { gt: 0 } }
+            : {}),
         },
         include: {
           socialAccounts: true,
