@@ -7,7 +7,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { DeckIcon, LockIcon, PlusIcon, SparkIcon } from '../../src/components/icons';
+import { PlusIcon, SparkIcon } from '../../src/components/icons';
 import {
   Avatar,
   Body,
@@ -16,6 +16,7 @@ import {
   Chip,
   ErrorState,
   Header,
+  IconButton,
   Loading,
   Photo,
   Rating,
@@ -23,7 +24,7 @@ import {
 } from '../../src/components/ui';
 import { CATEGORY_LABELS, formatFollowers, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
-import type { Campaign, InfluencerProfile, OwnBusinessProfile, RatingSummary } from '../../src/types';
+import type { InfluencerProfile, RatingSummary } from '../../src/types';
 
 type Browsable = InfluencerProfile & { rating: RatingSummary };
 
@@ -40,7 +41,6 @@ export default function BusinessDiscover() {
   const [category, setCategory] = useState<Category | null>(null);
   const [nearby, setNearby] = useState(true);
   const [onlyRetainers, setOnlyRetainers] = useState(false);
-  const [pickingDeck, setPickingDeck] = useState(false);
 
   const profile = useQuery(ownBusinessQuery());
 
@@ -59,26 +59,10 @@ export default function BusinessDiscover() {
 
   const data = creators.data ?? [];
 
-  // Kortleken hör till en kampanj – den är där högersvepet får en betydelse.
-  // Med en enda publicerad kampanj hoppar vi över frågan.
-  const campaigns = useQuery({
-    queryKey: ['campaigns', 'mine', 'ACTIVE'],
-    queryFn: () => api.get<Campaign[]>('/campaigns/mine?status=ACTIVE'),
-  });
-  const active = campaigns.data ?? [];
-
-  const openDeck = () => {
-    if (active.length === 1 && active[0]) {
-      router.push(`/discover/${active[0].id}`);
-      return;
-    }
-    setPickingDeck((current) => !current);
-  };
-
   return (
     <Screen>
       <Header
-        title="Upptäck"
+        title="Kreatörer"
         large
         subtitle={
           creators.isSuccess
@@ -86,6 +70,17 @@ export default function BusinessDiscover() {
                 nearby && city ? ` i ${city}` : ''
               }`
             : 'Kreatörer att samarbeta med'
+        }
+        /*
+          Rådgivaren som ikon i stället för en egen rad.
+          Den tävlade om samma beslut som listan: en full bredd med "fråga oss
+          i stället" innan man ens hunnit titta. Som ikon finns den kvar för
+          den som fastnar, utan att stå i vägen för den som bara vill bläddra.
+        */
+        right={
+          <IconButton label="Fråga Pacta om vem du ska välja" onPress={() => router.push('/assistant')}>
+            <SparkIcon size={20} color={colors.accent} />
+          </IconButton>
         }
       />
 
@@ -98,21 +93,8 @@ export default function BusinessDiscover() {
           <View style={styles.header}>
             {/*
               En rad som scrollar i sidled. Tretton nischer staplade på varandra
-              sköt ned första kreatören under skärmkanten, och utbudet är det
-              man kom hit för att se.
+              hade tagit hela skärmen innan man sett en enda kreatör.
             */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Fråga Pacta om vem du ska välja"
-              onPress={() => router.push('/assistant')}
-              style={({ pressed }) => [styles.advisor, pressed && styles.pressed]}
-            >
-              <SparkIcon size={18} color={colors.accent} />
-              <Text style={styles.advisorText}>
-                Osäker på vem du ska välja? Fråga Pacta.
-              </Text>
-            </Pressable>
-
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -146,35 +128,6 @@ export default function BusinessDiscover() {
               ))}
             </ScrollView>
 
-            {active.length > 0 ? (
-              <>
-                <Button
-                  label={pickingDeck ? 'Välj kampanj att svepa i' : 'Svep i stället'}
-                  variant="secondary"
-                  icon={<DeckIcon size={18} color={colors.text} />}
-                  onPress={openDeck}
-                />
-                {pickingDeck
-                  ? active.map((campaign) => (
-                      <Pressable
-                        key={campaign.id}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Svep bland kreatörer för ${campaign.title}`}
-                        onPress={() => router.push(`/discover/${campaign.id}`)}
-                        style={({ pressed }) => [styles.deckRow, pressed && styles.pressed]}
-                      >
-                        <Text style={styles.deckTitle} numberOfLines={1}>
-                          {campaign.title}
-                        </Text>
-                        <Text style={styles.meta}>
-                          {campaign.slots - campaign.slotsFilled} lediga platser
-                        </Text>
-                      </Pressable>
-                    ))
-                  : null}
-              </>
-            ) : null}
-
             {creators.isLoading ? <Loading /> : null}
             {creators.isError ? (
               <ErrorState
@@ -198,24 +151,19 @@ export default function BusinessDiscover() {
         }
         ListFooterComponent={
           <View style={styles.footer}>
+            {/*
+              En uppmaning under listan, inte fyra runt den. Trygghetstexten
+              stod här också och upprepade det som redan står i kortleken och i
+              kampanjguiden – tre gånger samma mening gör den inte tryggare.
+            */}
             <Card tone="raised">
               <Text style={styles.footerTitle}>Redo att samarbeta?</Text>
-              <Body>
-                Beskriv vad ni vill ha i två meningar, så föreslår vi rubrik, brief och ersättning.
-                Ni ändrar fritt innan ni publicerar.
-              </Body>
+              <Body>Beskriv vad ni vill ha i två meningar, så skriver vi kampanjen åt er.</Body>
               <Button
                 label="Skapa samarbete"
                 icon={<PlusIcon size={18} color={colors.ink} />}
                 onPress={() => router.push('/campaign/new')}
               />
-              <View style={styles.trust}>
-                <LockIcon size={14} color={colors.positive} />
-                <Text style={styles.secondary}>
-                  Inget kostar något förrän ett avtal signerats. Arvodet ligger hos oss tills ni
-                  godkänt leveransen.
-                </Text>
-              </View>
             </Card>
             <DemoBanner />
           </View>
@@ -279,25 +227,8 @@ function CreatorRow({ creator }: { creator: Browsable }) {
 const styles = StyleSheet.create({
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
   header: { gap: spacing.md, paddingBottom: spacing.sm },
-  headerScroll: { marginHorizontal: -spacing.base },
   filterRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.base },
-  deckRow: {
-    backgroundColor: colors.raised,
-    borderRadius: radius.control,
-    padding: spacing.md,
-    gap: 2,
-  },
-  deckTitle: { ...type.listTitle, color: colors.text },
   retainer: { ...type.secondary, color: colors.positive },
-  advisor: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.tint,
-    borderRadius: radius.control,
-    padding: spacing.md,
-  },
-  advisorText: { ...type.bodySmall, color: colors.text, flex: 1 },
 
   row: {
     flexDirection: 'row',
@@ -315,10 +246,8 @@ const styles = StyleSheet.create({
   name: { ...type.listTitle, color: colors.text, flexShrink: 1 },
   meta: { ...type.secondary, color: colors.muted },
   price: { fontFamily: type.rowTitle.fontFamily, fontSize: 14, color: colors.accent },
-  secondary: { ...type.secondary, color: colors.muted, flex: 1 },
 
   footer: { gap: spacing.md, paddingTop: spacing.md },
   footerTitle: { ...type.sectionTitle, color: colors.text },
   emptyTitle: { ...type.listTitle, color: colors.text },
-  trust: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
 });

@@ -28,7 +28,7 @@ export default function BusinessTabs() {
       <Tabs.Screen
         name="discover"
         options={{
-          title: 'Upptäck',
+          title: 'Kreatörer',
           tabBarIcon: ({ color }) => <DeckIcon size={21} color={color} />,
         }}
       />
