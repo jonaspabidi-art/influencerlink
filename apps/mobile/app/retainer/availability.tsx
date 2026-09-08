@@ -1,4 +1,12 @@
-import { MIN_RETAINER_BASE_RATE, retainerPackages } from '@pacta/shared';
+import {
+  MIN_RETAINER_BASE_RATE,
+  PREPAY_DISCOUNT_CHOICES,
+  PREPAY_DISCOUNT_LABELS,
+  PREPAY_MONTHS,
+  RATE_CONFIDENCE_LABELS,
+  retainerPackages,
+  type PrepayDiscountBps,
+} from '@pacta/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -16,7 +24,9 @@ import {
   ScrollScreen,
 } from '../../src/components/ui';
 import { formatSek } from '../../src/format';
-import { retainerAvailabilityQuery } from '../../src/queries';
+import { api as client } from '../../src/api';
+import { SparkIcon } from '../../src/components/icons';
+import { retainerAvailabilityQuery, retainerRateQuery } from '../../src/queries';
 import { colors, radius, spacing, type } from '../../src/theme';
 import type { RetainerAvailability } from '../../src/types';
 
@@ -39,6 +49,7 @@ export default function RetainerAvailabilityScreen() {
   const [enabled, setEnabled] = useState(false);
   const [slots, setSlots] = useState('2');
   const [rate, setRate] = useState('');
+  const [discount, setDiscount] = useState<PrepayDiscountBps>(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,11 +58,16 @@ export default function RetainerAvailabilityScreen() {
     setEnabled(data.acceptsRetainers);
     setSlots(String(data.slots));
     setRate(data.baseRate === null ? '' : String(Math.round(data.baseRate / 100)));
+    setDiscount(data.prepayDiscountBps as PrepayDiscountBps);
   }, [availability.data]);
 
   const save = useMutation({
-    mutationFn: (input: { acceptsRetainers: boolean; slots: number; baseRate: number | null }) =>
-      api.put<RetainerAvailability>('/me/retainer-availability', input),
+    mutationFn: (input: {
+      acceptsRetainers: boolean;
+      slots: number;
+      baseRate: number | null;
+      prepayDiscountBps: PrepayDiscountBps;
+    }) => api.put<RetainerAvailability>('/me/retainer-availability', input),
     onSuccess: (saved) => {
       queryClient.setQueryData(retainerAvailabilityQuery().queryKey, saved);
       router.back();
@@ -86,6 +102,7 @@ export default function RetainerAvailabilityScreen() {
       acceptsRetainers: enabled,
       slots: Math.max(0, Math.min(20, Number(slots) || 0)),
       baseRate,
+      prepayDiscountBps: discount,
     });
   };
 
@@ -124,6 +141,8 @@ export default function RetainerAvailabilityScreen() {
 
       {enabled ? (
         <>
+          <RateHelp onUse={(suggested) => setRate(String(Math.round(suggested / 100)))} />
+
           <Card>
             <Field
               label="Vad vill du ha i månaden för fyra videor?"
@@ -163,18 +182,131 @@ export default function RetainerAvailabilityScreen() {
                   </View>
                 ))}
               </Card>
-              <Text style={styles.footnote}>
-                Från beloppen dras 10 % i förmedlingsavgift. Betalar företaget tre månader i
-                förskott får de 10 % rabatt, och den dras på arvodet.
-              </Text>
+              <Text style={styles.footnote}>Från beloppen dras 10 % i förmedlingsavgift.</Text>
             </View>
           ) : null}
+
+          {/*
+            Rabatten är hennes pengar. Den dras på arvodet, inte på vår avgift,
+            så en sats vi satt åt henne hade varit att förhandla bort en del av
+            hennes betalning i ett samtal hon inte var med i. Noll är förvalt.
+          */}
+          <View style={styles.section}>
+            <Label>RABATT VID {PREPAY_MONTHS} MÅNADER I FÖRSKOTT</Label>
+            <Card>
+              <Body>
+                Betalar företaget flera månader på en gång vet du vad som kommer in – vill du ge
+                något för det? Rabatten dras på ditt arvode.
+              </Body>
+              <View style={styles.discountRow}>
+                {PREPAY_DISCOUNT_CHOICES.map((choice) => (
+                  <Pressable
+                    key={choice}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: discount === choice }}
+                    onPress={() => setDiscount(choice)}
+                    style={[styles.discount, discount === choice && styles.discountOn]}
+                  >
+                    <Text
+                      style={[
+                        styles.discountLabel,
+                        discount === choice && styles.discountLabelOn,
+                      ]}
+                    >
+                      {PREPAY_DISCOUNT_LABELS[choice]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              {discount > 0 && preview[0] ? (
+                <Text style={styles.footnote}>
+                  Ett företag som binder sig i {PREPAY_MONTHS} månader betalar då{' '}
+                  {formatSek(Math.round((preview[0].monthlyRate * (10_000 - discount)) / 10_000))}{' '}
+                  i månaden i stället för {formatSek(preview[0].monthlyRate)}.
+                </Text>
+              ) : (
+                <Text style={styles.footnote}>
+                  Utan rabatt syns inte förskottsbetalning som ett val för företaget.
+                </Text>
+              )}
+            </Card>
+          </View>
         </>
       ) : null}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Button label="Spara" onPress={submit} loading={save.isPending} />
     </ScrollScreen>
+  );
+}
+
+/**
+ * Vad är hon värd?
+ *
+ * Den fråga kreatörer är sämst rustade att svara på: ett enstaka samarbete går
+ * att jämföra med tidigare samarbeten, men ett månadspris har hon oftast aldrig
+ * satt. Spannet räknas fram ur hennes eget riktpris, vad andra i staden tar och
+ * vad företagen där budgeterar – och skärmen säger vilket av dem som saknas.
+ *
+ * Rådet ligger bakom en knapp. Siffrorna är räknade och står där de står; att
+ * starta ett modellanrop bara för att någon öppnat skärmen vore att svara på en
+ * fråga ingen ställt.
+ */
+function RateHelp({ onUse }: { onUse: (rate: number) => void }) {
+  const rate = useQuery(retainerRateQuery());
+  const [asked, setAsked] = useState(false);
+
+  const advice = useQuery({
+    queryKey: ['retainer-rate', 'advice'],
+    queryFn: () => client.post<{ available: boolean; advice: string | null }>(
+      '/me/retainer-rate/advice',
+    ),
+    enabled: asked,
+    staleTime: 30 * 60_000,
+    retry: false,
+  });
+
+  if (!rate.data) return null;
+  const data = rate.data;
+
+  return (
+    <Card tone="raised">
+      <View style={styles.headRow}>
+        <SparkIcon size={18} color={colors.accent} />
+        <Text style={styles.rateTitle}>Vad kan du ta?</Text>
+        <Text style={styles.confidence}>{RATE_CONFIDENCE_LABELS[data.confidence]}</Text>
+      </View>
+
+      <Text style={styles.rateRange}>
+        {formatSek(data.low)}–{formatSek(data.high)}
+      </Text>
+      <Text style={styles.secondary}>i månaden för fyra videor, i {data.city}</Text>
+
+      <View style={styles.basis}>
+        {data.basis.map((line) => (
+          <View key={line} style={styles.basisRow}>
+            <View style={styles.dot} />
+            <Text style={styles.basisText}>{line}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Button
+        label={`Använd ${formatSek(data.mid)}`}
+        variant="secondary"
+        onPress={() => onUse(data.mid)}
+      />
+
+      {!asked ? (
+        <Button label="Fråga Pacta var i spannet du bör lägga dig" onPress={() => setAsked(true)} />
+      ) : advice.isFetching ? (
+        <Loading label="Tittar på ditt underlag" />
+      ) : advice.data?.advice ? (
+        <Text style={styles.advice}>{advice.data.advice}</Text>
+      ) : (
+        <Body>Vi kunde inte skriva ihop ett råd just nu. Spannet ovan gäller ändå.</Body>
+      )}
+    </Card>
   );
 }
 
@@ -206,4 +338,29 @@ const styles = StyleSheet.create({
   packText: { flex: 1, gap: 2 },
   packTitle: { ...type.listTitle, color: colors.text },
   packPrice: { fontFamily: type.rowTitle.fontFamily, fontSize: 16, color: colors.accent },
+
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  rateTitle: { ...type.listTitle, color: colors.text, flex: 1 },
+  confidence: { ...type.secondary, color: colors.muted },
+  rateRange: { ...type.amountHero, fontSize: 30, color: colors.accent },
+  basis: { gap: 6 },
+  basisRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.muted, marginTop: 7 },
+  basisText: { ...type.secondary, color: colors.muted, flex: 1 },
+  advice: { ...type.bodySmall, color: colors.text },
+
+  discountRow: { flexDirection: 'row', gap: spacing.sm },
+  discount: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  discountOn: { borderColor: colors.primary, backgroundColor: colors.tint },
+  discountLabel: { ...type.secondary, color: colors.muted },
+  discountLabelOn: { fontFamily: type.listTitle.fontFamily, color: colors.text },
 });

@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import {
   MAX_VIDEO_BYTES,
-  PREPAY_DISCOUNT_BPS,
+  PREPAY_DISCOUNT_CHOICES,
   PREPAY_MONTHS,
   RETAINER_PACKAGES,
   VIDEO_MIME_TYPES,
   MAX_RETAINER_BASE_RATE,
   MIN_RETAINER_BASE_RATE,
+  PREPAY_DISCOUNT_CHOICES as DISCOUNTS,
   PLATFORMS,
   problemSchema,
   retainerPackages,
@@ -25,6 +26,7 @@ import {
   requestRetainer,
   respondToRequest,
 } from '../services/retainers.js';
+import { buildRateSuggestion } from '../services/pricing.js';
 import { StorageError } from '../services/storage.js';
 
 const postSchema = z.object({
@@ -88,9 +90,26 @@ const availabilitySchema = z.object({
   slots: z.number().int().min(0).max(20),
   /** Månadspris för grundpaketet, i öre. Null när hon inte satt något. */
   baseRate: z.number().int().nullable(),
+  /** Rabatt hon ger vid förskottsbetalning, i baspunkter. Noll = ingen. */
+  prepayDiscountBps: z.number().int(),
   packages: z.array(
     z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
   ),
+});
+
+const rateSuggestionSchema = z.object({
+  city: z.string(),
+  low: z.number().int(),
+  mid: z.number().int(),
+  high: z.number().int(),
+  confidence: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  /**
+   * Antal jämförbara kreatörer. Deras enskilda priser lämnar aldrig servern –
+   * de har lämnat dem för matchningens skull, inte för konkurrenternas insyn.
+   */
+  peerCount: z.number().int(),
+  peerMedian: z.number().int().nullable(),
+  basis: z.array(z.string()),
 });
 
 /**
@@ -103,7 +122,7 @@ const availabilitySchema = z.object({
  */
 export async function retainerRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();
-  const { prisma, payments, storage } = services;
+  const { prisma, payments, storage, ai } = services;
 
   const playback = async (path: string): Promise<string | null> => {
     if (!storage) return null;
@@ -215,6 +234,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
         acceptsRetainers: profile.acceptsRetainers,
         slots: profile.retainerSlots,
         baseRate: profile.retainerBaseRate,
+        prepayDiscountBps: profile.retainerPrepayDiscountBps,
         packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
       };
     },
@@ -229,12 +249,19 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
           acceptsRetainers: z.boolean(),
           slots: z.number().int().min(0).max(20),
           baseRate: z.number().int().min(MIN_RETAINER_BASE_RATE).max(MAX_RETAINER_BASE_RATE).nullable(),
+          /** Hennes egen sats. Rabatten dras på hennes arvode, inte på vår avgift. */
+          prepayDiscountBps: z.union([
+            z.literal(DISCOUNTS[0]),
+            z.literal(DISCOUNTS[1]),
+            z.literal(DISCOUNTS[2]),
+            z.literal(DISCOUNTS[3]),
+          ]),
         }),
         response: { 200: availabilitySchema, 400: problemSchema },
       },
     },
     async (request) => {
-      const { acceptsRetainers, slots, baseRate } = request.body;
+      const { acceptsRetainers, slots, baseRate, prepayDiscountBps } = request.body;
       // Ett läge som säger "tar uppdrag" utan pris är ett löfte utan innehåll:
       // företaget ser en ledig plats men får inget att ta ställning till.
       if (acceptsRetainers && baseRate === null) {
@@ -242,14 +269,64 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
       }
       const profile = await prisma.influencerProfile.update({
         where: { id: requireProfileId(request) },
-        data: { acceptsRetainers, retainerSlots: slots, retainerBaseRate: baseRate },
+        data: {
+          acceptsRetainers,
+          retainerSlots: slots,
+          retainerBaseRate: baseRate,
+          retainerPrepayDiscountBps: prepayDiscountBps,
+        },
       });
       return {
         acceptsRetainers: profile.acceptsRetainers,
         slots: profile.retainerSlots,
         baseRate: profile.retainerBaseRate,
+        prepayDiscountBps: profile.retainerPrepayDiscountBps,
         packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
       };
+    },
+  );
+
+  /**
+   * Vad hon är värd i ett löpande uppdrag.
+   *
+   * Uträkningen först och rådet separat, som på insiktsvyn: talen är räknade
+   * och kan visas direkt, medan modellen kostar ett anrop och några sekunder.
+   */
+  server.get(
+    '/me/retainer-rate',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: { response: { 200: rateSuggestionSchema } },
+    },
+    async (request) => {
+      const { suggestion, city } = await buildRateSuggestion(prisma, requireProfileId(request));
+      return {
+        city,
+        low: suggestion.low,
+        mid: suggestion.mid,
+        high: suggestion.high,
+        confidence: suggestion.confidence,
+        peerCount: suggestion.peerCount,
+        peerMedian: suggestion.peerMedian,
+        basis: suggestion.basis,
+      };
+    },
+  );
+
+  server.post(
+    '/me/retainer-rate/advice',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      config: { rateLimit: { max: 10, timeWindow: '1 hour' } },
+      schema: {
+        response: {
+          200: z.object({ available: z.boolean(), advice: z.string().nullable() }),
+        },
+      },
+    },
+    async (request) => {
+      const { suggestion, city } = await buildRateSuggestion(prisma, requireProfileId(request));
+      return { available: ai.enabled, advice: await ai.adviseRate(city, suggestion) };
     },
   );
 
@@ -728,7 +805,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
           200: z.object({
             packages: z.array(z.number().int()),
             prepayMonths: z.number().int(),
-            prepayDiscountBps: z.number().int(),
+            prepayDiscountChoices: z.array(z.number().int()),
           }),
         },
       },
@@ -736,7 +813,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
     async () => ({
       packages: [...RETAINER_PACKAGES],
       prepayMonths: PREPAY_MONTHS,
-      prepayDiscountBps: PREPAY_DISCOUNT_BPS,
+      prepayDiscountChoices: [...PREPAY_DISCOUNT_CHOICES],
     }),
   );
 }

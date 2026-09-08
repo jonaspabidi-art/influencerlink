@@ -157,6 +157,8 @@ export interface InfluencerProfile {
   /** Tar hon löpande uppdrag, och till vilket pris? */
   acceptsRetainers: boolean;
   retainerSlots: number;
+  /** Noll när hon inte erbjuder rabatt vid förskottsbetalning. */
+  retainerPrepayDiscountBps: number;
   retainerPackages: { videosPerMonth: number; monthlyRate: number }[];
 }
 
@@ -651,5 +653,19 @@ export interface RetainerAvailability {
   acceptsRetainers: boolean;
   slots: number;
   baseRate: number | null;
+  /** Rabatt hon ger vid förskottsbetalning, i baspunkter. Noll = ingen. */
+  prepayDiscountBps: number;
   packages: { videosPerMonth: number; monthlyRate: number }[];
+}
+
+/** Vad hon rimligen kan ta i månaden, räknat på det vi vet. */
+export interface RetainerRateSuggestion {
+  city: string;
+  low: number;
+  mid: number;
+  high: number;
+  confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+  peerCount: number;
+  peerMedian: number | null;
+  basis: string[];
 }

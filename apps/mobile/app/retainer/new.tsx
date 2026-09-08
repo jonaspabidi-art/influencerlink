@@ -48,7 +48,7 @@ export default function NewRetainer() {
       api.post<Retainer>('/retainers', {
         influencerId,
         videosPerMonth: videos,
-        prepaidMonths: prepay ? PREPAY_MONTHS : 1,
+        prepaidMonths: discounted ? PREPAY_MONTHS : 1,
         note: note.trim(),
       }),
     onSuccess: (retainer) => {
@@ -71,7 +71,15 @@ export default function NewRetainer() {
   const profile = creator.data;
   const packages = profile?.retainerPackages ?? [];
   const chosen = packages.find((pack) => pack.videosPerMonth === videos);
-  const monthly = chosen ? (prepay ? Math.round(chosen.monthlyRate * 0.9) : chosen.monthlyRate) : 0;
+  // Rabatten är hennes, inte plattformens. Erbjuder hon ingen finns valet inte.
+  const discountBps = profile?.retainerPrepayDiscountBps ?? 0;
+  const offersPrepay = discountBps > 0;
+  const discounted = prepay && offersPrepay;
+  const monthly = chosen
+    ? discounted
+      ? Math.round((chosen.monthlyRate * (10_000 - discountBps)) / 10_000)
+      : chosen.monthlyRate
+    : 0;
   // Företaget betalar arvodet plus sin del av avgiften. Beloppet nedan är det
   // som faktiskt dras, inte ett "från"-pris.
   const charge = Math.round(monthly * 1.1);
@@ -120,18 +128,22 @@ export default function NewRetainer() {
         ))}
       </View>
 
-      <Pressable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: prepay }}
-        onPress={() => setPrepay((value) => !value)}
-        style={[styles.option, prepay && styles.optionSelected]}
-      >
-        <View style={styles.optionText}>
-          <Text style={styles.optionTitle}>Betala {PREPAY_MONTHS} månader i förskott</Text>
-          <Text style={styles.secondary}>10 % rabatt. Outnyttjade månader betalas tillbaka.</Text>
-        </View>
-        {prepay ? <CheckIcon size={18} color={colors.primary} /> : null}
-      </Pressable>
+      {offersPrepay ? (
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: prepay }}
+          onPress={() => setPrepay((value) => !value)}
+          style={[styles.option, prepay && styles.optionSelected]}
+        >
+          <View style={styles.optionText}>
+            <Text style={styles.optionTitle}>Betala {PREPAY_MONTHS} månader i förskott</Text>
+            <Text style={styles.secondary}>
+              {discountBps / 100} % rabatt. Outnyttjade månader betalas tillbaka.
+            </Text>
+          </View>
+          {prepay ? <CheckIcon size={18} color={colors.primary} /> : null}
+        </Pressable>
+      ) : null}
 
       <Card>
         <Field

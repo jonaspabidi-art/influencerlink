@@ -11,6 +11,7 @@ import {
   type CampaignCandidate,
   type CreatorInsights,
   type InfluencerCandidate,
+  type RetainerRateSuggestion,
 } from '@pacta/shared';
 import { z } from 'zod';
 import type { Config } from '../../config.js';
@@ -19,10 +20,12 @@ import {
   CAMPAIGN_DRAFT_SYSTEM_PROMPT,
   CREATOR_ADVISOR_SYSTEM_PROMPT,
   MATCHING_SYSTEM_PROMPT,
+  RATE_ADVISOR_SYSTEM_PROMPT,
   describeCampaign,
   describeCandidateForAdvisor,
   describeCreatorInsights,
   describeInfluencer,
+  describeRateSuggestion,
 } from './prompts.js';
 import type { CampaignDraft, RankedCampaign, RankedInfluencer } from './types.js';
 
@@ -168,6 +171,7 @@ export class AiService {
   private log: AiLogger | undefined;
   private readonly rankings = new TtlCache<RankedInfluencer[]>(RANKING_TTL_MS);
   private readonly creatorAdvice = new TtlCache<string>(CREATOR_ADVICE_TTL_MS);
+  private readonly rateAdvice = new TtlCache<string>(CREATOR_ADVICE_TTL_MS);
 
   constructor(
     private readonly config: Config,
@@ -429,6 +433,50 @@ export class AiService {
       return text;
     } catch (caught) {
       this.logFailure('adviseCreator', caught);
+      return null;
+    }
+  }
+
+  /**
+   * Hjälper kreatören sätta sitt månadspris.
+   *
+   * Spannet är uträknat innan modellen ser det, och den får inte räkna om
+   * något. Det den tillför är valet inom spannet – och ärligheten om hur tunt
+   * underlaget är. Ett grovt förslag som låter som ett facit är värre än inget
+   * förslag: hon låser in sig i priset i månader.
+   */
+  async adviseRate(
+    city: string,
+    suggestion: RetainerRateSuggestion,
+  ): Promise<string | null> {
+    if (!this.client) return null;
+
+    const facts = describeRateSuggestion(city, suggestion);
+    const cached = this.rateAdvice.get(facts);
+    if (cached) return cached;
+
+    try {
+      const response = await this.client.messages.create({
+        model: this.config.ANTHROPIC_MODEL,
+        max_tokens: 500,
+        system: RATE_ADVISOR_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: `${facts}\n\nHon frågar: vad ska jag ta i månaden, och varför?`,
+          },
+        ],
+      });
+      const text = response.content
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map((block) => block.text)
+        .join('\n')
+        .trim();
+      if (text.length === 0) return null;
+      this.rateAdvice.set(facts, text);
+      return text;
+    } catch (caught) {
+      this.logFailure('adviseRate', caught);
       return null;
     }
   }

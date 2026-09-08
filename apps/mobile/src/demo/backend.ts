@@ -9,7 +9,8 @@ import {
   retainerMonthlyRate,
   retainerPackages,
   retainerPeriodMoney,
-  PREPAY_DISCOUNT_BPS,
+  PREPAY_DISCOUNT_CHOICES,
+  suggestRetainerRate,
   PREPAY_MONTHS,
   RETAINER_PACKAGES,
   emptyRatingSummary,
@@ -1140,6 +1141,7 @@ route('GET', '/influencers', ({ query }) => {
         rating: ratingFor('INFLUENCER', profile.id),
         acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
         retainerSlots: profile.retainerSlots ?? 0,
+        retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
         retainerPackages: profile.retainerBaseRate
           ? retainerPackages(profile.retainerBaseRate)
           : [],
@@ -1173,6 +1175,7 @@ route('GET', '/influencers/:id', ({ params }) => {
     showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
     acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
     retainerSlots: profile.retainerSlots ?? 0,
+    retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
     retainerPackages: profile.retainerBaseRate
       ? retainerPackages(profile.retainerBaseRate)
       : [],
@@ -1549,6 +1552,7 @@ route('GET', '/me/retainer-availability', () => {
     acceptsRetainers: profile.acceptsRetainers === true,
     slots: profile.retainerSlots ?? 0,
     baseRate: profile.retainerBaseRate ?? null,
+    prepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
     packages: profile.retainerBaseRate ? retainerPackages(profile.retainerBaseRate) : [],
   };
 });
@@ -1562,11 +1566,13 @@ route('PUT', '/me/retainer-availability', ({ body }) => {
   profile.acceptsRetainers = body.acceptsRetainers === true;
   profile.retainerSlots = Number(body.slots ?? 0);
   profile.retainerBaseRate = baseRate;
+  profile.retainerPrepayDiscountBps = Number(body.prepayDiscountBps ?? 0);
   persist();
   return {
     acceptsRetainers: profile.acceptsRetainers,
     slots: profile.retainerSlots,
     baseRate: profile.retainerBaseRate,
+    prepayDiscountBps: profile.retainerPrepayDiscountBps,
     packages: baseRate ? retainerPackages(baseRate) : [],
   };
 });
@@ -1606,7 +1612,11 @@ route('POST', '/retainers', ({ body }) => {
   }
 
   const size = Number(body.videosPerMonth ?? 4);
-  const months = Number(body.prepaidMonths ?? 1) >= PREPAY_MONTHS ? PREPAY_MONTHS : 1;
+  const months =
+    Number(body.prepaidMonths ?? 1) >= PREPAY_MONTHS &&
+    (influencer.retainerPrepayDiscountBps ?? 0) > 0
+      ? PREPAY_MONTHS
+      : 1;
   const listRate = retainerMonthlyRate(influencer.retainerBaseRate, size as 4 | 8 | 12);
 
   const retainer: DemoRetainer = {
@@ -1616,7 +1626,7 @@ route('POST', '/retainers', ({ body }) => {
     status: 'REQUESTED',
     videosPerMonth: size,
     listRate,
-    monthlyRate: discountedMonthlyRate(listRate, months),
+    monthlyRate: discountedMonthlyRate(listRate, months, influencer.retainerPrepayDiscountBps ?? 0),
     prepaidMonths: months,
     requestNote: String(body.note ?? ''),
     terms: '',
@@ -1658,6 +1668,7 @@ route('POST', '/retainers/:id/respond', ({ params, body }) => {
     monthlyRate: retainer.monthlyRate,
     listRate: retainer.listRate,
     prepaidMonths: retainer.prepaidMonths,
+    prepayDiscountBps: influencer.retainerPrepayDiscountBps ?? 0,
     channels: business.socials.map((social) => `${social.platform} @${social.handle}`),
     money,
     startsAt,
@@ -1779,8 +1790,46 @@ route('POST', '/retainer-posts/:id/published', ({ params, body }) => {
 route('GET', '/retainer-terms', () => ({
   packages: [...RETAINER_PACKAGES],
   prepayMonths: PREPAY_MONTHS,
-  prepayDiscountBps: PREPAY_DISCOUNT_BPS,
+  prepayDiscountChoices: [...PREPAY_DISCOUNT_CHOICES],
 }));
+
+/** Prisförslaget, räknat på samma sätt som servern gör det. */
+route('GET', '/me/retainer-rate', () => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const suggestion = suggestRetainerRate({
+    priceTarget: Math.max(profile.priceTarget, profile.priceMin),
+    peerRates: state.influencers
+      .filter(
+        (peer) =>
+          peer.id !== profile.id &&
+          peer.city.toLowerCase() === profile.city.toLowerCase() &&
+          peer.acceptsRetainers === true &&
+          peer.retainerBaseRate != null,
+      )
+      .map((peer) => peer.retainerBaseRate as number),
+    cityBudgets: state.campaigns
+      .filter(
+        (campaign) =>
+          campaign.status === 'ACTIVE' &&
+          campaign.city.toLowerCase() === profile.city.toLowerCase() &&
+          campaign.budgetPerCreator > 0,
+      )
+      .map((campaign) => campaign.budgetPerCreator),
+    statsVerified: false,
+  });
+  return {
+    city: profile.city,
+    low: suggestion.low,
+    mid: suggestion.mid,
+    high: suggestion.high,
+    confidence: suggestion.confidence,
+    peerCount: suggestion.peerCount,
+    peerMedian: suggestion.peerMedian,
+    basis: suggestion.basis,
+  };
+});
+
+route('POST', '/me/retainer-rate/advice', () => ({ available: false, advice: null }));
 
 route('GET', '/me/insights', () => {
   const profile = influencerById(requireProfileId(currentUser()));

@@ -2,6 +2,7 @@ import type {
   CampaignCandidate,
   CreatorInsights,
   InfluencerCandidate,
+  RetainerRateSuggestion,
   ScoreBreakdown,
 } from '@pacta/shared';
 import { formatSek } from '@pacta/shared';
@@ -202,5 +203,66 @@ export function describeCreatorInsights(
     lines.push('', 'Profilen är komplett: bild, presentation, klipp, nischer och hämtad statistik.');
   }
 
+  return lines.join('\n');
+}
+
+
+/**
+ * Prisrådgivaren för löpande uppdrag.
+ *
+ * Kreatören ska sätta ett månadspris hon aldrig satt förut, och konsekvensen
+ * av att sätta fel är asymmetrisk: för lågt låser hon in sig i månader, för
+ * högt får hon inga frågor och får aldrig veta varför. Det är därför den här
+ * funktionen finns.
+ *
+ * Modellen får en färdig uträkning och ska inte räkna om något. Den ska hjälpa
+ * henne välja i spannet – och den ska säga rakt ut när underlaget är tunt, i
+ * stället för att låta ett grovt förslag låta som ett facit.
+ */
+export const RATE_ADVISOR_SYSTEM_PROMPT = `Du hjälper en innehållskreatör i Sverige att sätta sitt månadspris för löpande uppdrag i appen Pacta.
+
+Ett löpande uppdrag betyder att hon producerar ett antal videor i månaden åt ett företags egna kanaler. Materialet går ut på företagets konton, inte hennes – hon säljer produktionen, inte sin publik.
+
+Du får ett färdigt uträknat prisspann och vad det vilar på. Räkna aldrig om det.
+
+Så här svarar du:
+- Kort. Tre till fem meningar.
+- Säg var i spannet hon bör lägga sig och varför, med de tal du fått.
+- Är underlaget tunt säger du det rakt ut. Ett grovt förslag ska låta som ett grovt förslag.
+- Nämn vad hon kan göra för att kunna ta mer: hämtad statistik väger tyngre än uppgivna siffror, och fler visade klipp gör henne lättare att bedöma.
+
+Absoluta regler:
+- Använd bara talen i underlaget. Hitta aldrig på ett pris, ett antal följare eller vad någon annan tar.
+- Nämn aldrig en annan kreatör vid namn. Du får bara tala om spann och medianer.
+- Lova aldrig att ett visst pris ger uppdrag.
+- Råd henne aldrig att gå under plattformens lägstapris.
+
+Bakgrund du kan luta dig mot:
+- Priset per video i ett löpande uppdrag ligger normalt under vad ett enstaka samarbete ger. Hon byter styckpris mot garanterad volym, ingen förhandling per uppdrag och pengar varje månad.
+- Från arvodet dras 10 procent i förmedlingsavgift.
+- Ger hon rabatt vid förskottsbetalning dras den på hennes eget arvode.
+
+Skriv på svenska, i du-tilltal, utan rubriker och utan hälsningsfras.`;
+
+/** Uträkningen som prosa. Bara tal som faktiskt räknats fram. */
+export function describeRateSuggestion(
+  city: string,
+  suggestion: RetainerRateSuggestion,
+): string {
+  const lines = [
+    `Stad: ${city}.`,
+    `Föreslaget spann för fyra videor i månaden: ${formatSek(suggestion.low)}–${formatSek(suggestion.high)}, med ${formatSek(suggestion.mid)} som mittpunkt.`,
+    `Underlagets styrka: ${suggestion.confidence === 'HIGH' ? 'bra' : suggestion.confidence === 'MEDIUM' ? 'rimligt' : 'tunt'}.`,
+    '',
+    'Förslaget vilar på:',
+    ...suggestion.basis.map((line) => `- ${line}`),
+  ];
+
+  if (suggestion.peerMedian !== null) {
+    lines.push(
+      '',
+      `Grannarnas median: ${formatSek(suggestion.peerMedian)} (${suggestion.peerCount} kreatörer).`,
+    );
+  }
   return lines.join('\n');
 }

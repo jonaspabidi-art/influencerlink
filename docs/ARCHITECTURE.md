@@ -205,6 +205,42 @@ varumärke är en skada som inte går att reparera.
 Uppsägning träder i kraft vid periodens slut, aldrig mitt i. Företaget har
 betalat för månaden och kreatören har planerat in den.
 
+## Vad kreatören är värd i ett löpande uppdrag
+
+Ett enstaka samarbete kan hon prissätta – hon har gjort dem förut. Ett
+månadspris har hon oftast aldrig satt, och konsekvensen av att sätta fel är
+asymmetrisk: för lågt låser hon in sig i månader, för högt får hon inga frågor
+och får aldrig veta varför.
+
+`suggestRetainerRate` i det delade paketet räknar fram ett spann ur tre saker
+vi faktiskt vet: hennes eget riktpris för ett enstaka samarbete, vad andra
+kreatörer i samma stad tar för grundpaketet, och vad företagen där budgeterar
+per kreatör och kampanj. Hennes eget pris väger alltid tyngst – det är det enda
+talet som säkert hör till just henne. Grannarnas median vägs in till hälften,
+men bara från tre kreatörer och uppåt; färre än så säger ingenting, och två
+grannar ska inte få bestämma hennes pris.
+
+En video i ett löpande uppdrag räknas till 50–70 procent av ett enstaka
+samarbete. Det är ingen rabatt hon ger bort: ett enstaka samarbete betalar för
+hennes publik, ett löpande uppdrag för produktionen. Materialet går ut på
+företagets kanaler, så hon säljer inte sin räckvidd.
+
+Uträkningen säger också hur mycket den vet. Ett grovt förslag ska låta som ett
+grovt förslag, och skärmen skriver ut vad det saknas underlag för – "ingen annan
+i din stad har satt ett månadspris än" är ett ärligare svar än ett tal med två
+decimaler. Sonnet läggs ovanpå den färdiga uträkningen och får inte räkna om
+något; det den tillför är valet inom spannet.
+
+Grannarnas enskilda priser lämnar aldrig servern. De har lämnat dem till oss för
+matchningens skull, inte för konkurrenternas insyn, så appen får bara antal,
+median och ytterlägen.
+
+Rabatten vid förskottsbetalning är kreatörens eget val – noll, fem, tio eller
+femton procent, med noll som förval. Den dras på hennes arvode, inte på vår
+avgift, så en sats vi satt åt henne hade varit att förhandla bort en del av
+hennes betalning i ett samtal hon inte var med i. Erbjuder hon ingen rabatt
+visas inte förskottsbetalning som ett val för företaget.
+
 ## Varför kreatören får få matchningar
 
 Kortleken visar alla kampanjer kreatören är behörig till. Den visar aldrig dem

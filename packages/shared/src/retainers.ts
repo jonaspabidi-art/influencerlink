@@ -46,10 +46,30 @@ const PACKAGE_MULTIPLIER: Record<RetainerPackage, number> = {
   12: 2.5,
 };
 
-/** Antal månader i förskott som ger rabatt. */
+/** Antal månader i förskott som kan ge rabatt. */
 export const PREPAY_MONTHS = 3;
-/** Rabatten vid förskottsbetalning, i baspunkter. Tio procent. */
-export const PREPAY_DISCOUNT_BPS = 1000;
+
+/**
+ * Rabattsatser kreatören kan välja mellan vid förskottsbetalning, i baspunkter.
+ *
+ * Noll står först och är förvalt. Rabatten är hennes pengar, inte plattformens
+ * – att sätta den åt henne vore att förhandla bort en del av hennes arvode i
+ * ett samtal hon inte var med i.
+ */
+export const PREPAY_DISCOUNT_CHOICES = [0, 500, 1000, 1500] as const;
+export type PrepayDiscountBps = (typeof PREPAY_DISCOUNT_CHOICES)[number];
+
+/** Vad appen kallar respektive sats. */
+export const PREPAY_DISCOUNT_LABELS: Record<PrepayDiscountBps, string> = {
+  0: 'Ingen rabatt',
+  500: '5 %',
+  1000: '10 %',
+  1500: '15 %',
+};
+
+export function isPrepayDiscount(bps: number): bps is PrepayDiscountBps {
+  return (PREPAY_DISCOUNT_CHOICES as readonly number[]).includes(bps);
+}
 
 /** Lägsta respektive högsta grundpris en kreatör får sätta, i öre. */
 export const MIN_RETAINER_BASE_RATE = 200_000;
@@ -85,14 +105,18 @@ export function retainerPackages(baseRate: Ore): { videosPerMonth: RetainerPacka
 /**
  * Rabatterat månadsarvode vid förskottsbetalning.
  *
- * Rabatten dras på arvodet, inte på avgiften: det är kreatören och företaget
- * som gör upp om priset, och plattformens andel följer med nedåt. Att låta
- * rabatten bara belasta Pacta hade sett generöst ut och gjort längre avtal
- * olönsamma för oss.
+ * Satsen är kreatörens egen. Rabatten dras på arvodet, inte på avgiften: det
+ * är hon och företaget som gör upp om priset, och plattformens andel följer
+ * med nedåt. Att låta rabatten bara belasta Pacta hade sett generöst ut och
+ * gjort längre avtal olönsamma för oss.
  */
-export function discountedMonthlyRate(monthlyRate: Ore, months: number): Ore {
-  if (months < PREPAY_MONTHS) return monthlyRate;
-  return Math.round((monthlyRate * (10_000 - PREPAY_DISCOUNT_BPS)) / 10_000);
+export function discountedMonthlyRate(
+  monthlyRate: Ore,
+  months: number,
+  discountBps: number,
+): Ore {
+  if (months < PREPAY_MONTHS || discountBps <= 0) return monthlyRate;
+  return Math.round((monthlyRate * (10_000 - discountBps)) / 10_000);
 }
 
 export interface RetainerPeriodMoney extends FeeBreakdown {
@@ -190,6 +214,8 @@ export interface RetainerTermsInput {
   monthlyRate: Ore;
   listRate: Ore;
   prepaidMonths: number;
+  /** Rabatten som faktiskt tillämpats, i baspunkter. */
+  prepayDiscountBps: number;
   /** Kanalerna innehållet publiceras på, t.ex. ["Instagram @kajutan"]. */
   channels: string[];
   money: FeeBreakdown;
@@ -221,7 +247,7 @@ export function renderRetainerTerms(input: RetainerTermsInput): string {
   const channels = input.channels.length > 0 ? input.channels.join(', ') : 'anges vid start';
   const prepay =
     input.prepaidMonths > 1
-      ? `Uppdragsgivaren har betalat ${input.prepaidMonths} månader i förskott till rabatterat pris (ordinarie ${formatSek(input.listRate)} per månad).`
+      ? `Uppdragsgivaren har betalat ${input.prepaidMonths} månader i förskott och fått ${(input.prepayDiscountBps / 100).toFixed(0)} % rabatt som uppdragstagaren erbjudit (ordinarie ${formatSek(input.listRate)} per månad).`
       : 'Uppdraget löper månad för månad utan bindningstid.';
 
   return `# Avtal om löpande innehållsproduktion

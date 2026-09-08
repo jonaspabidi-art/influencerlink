@@ -12,6 +12,7 @@ import type {
   PendingReview,
   Retainer,
   RetainerAvailability,
+  RetainerRateSuggestion,
 } from './types';
 
 /**
@@ -79,6 +80,13 @@ export const retainerAvailabilityQuery = () =>
   queryOptions({
     queryKey: ['retainer-availability'],
     queryFn: () => api.get<RetainerAvailability>('/me/retainer-availability'),
+  });
+
+/** Prisförslaget är räknat och billigt. Rådet ovanpå kostar och hämtas separat. */
+export const retainerRateQuery = () =>
+  queryOptions({
+    queryKey: ['retainer-rate'],
+    queryFn: () => api.get<RetainerRateSuggestion>('/me/retainer-rate'),
   });
 
 export const payoutsQuery = () =>

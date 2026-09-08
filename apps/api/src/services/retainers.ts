@@ -79,7 +79,11 @@ export async function requestRetainer(
   if (existing) throw conflict('Ni har redan ett löpande uppdrag med den här kreatören.');
 
   const listRate = retainerMonthlyRate(influencer.retainerBaseRate, size);
-  const months = input.prepaidMonths >= PREPAY_MONTHS ? PREPAY_MONTHS : 1;
+  // Förskott är bara ett alternativ när hon faktiskt erbjuder något för det.
+  const months =
+    input.prepaidMonths >= PREPAY_MONTHS && influencer.retainerPrepayDiscountBps > 0
+      ? PREPAY_MONTHS
+      : 1;
 
   const retainer = await prisma.retainer.create({
     data: {
@@ -87,7 +91,7 @@ export async function requestRetainer(
       influencerId: input.influencerId,
       videosPerMonth: size,
       listRate,
-      monthlyRate: discountedMonthlyRate(listRate, months),
+      monthlyRate: discountedMonthlyRate(listRate, months, influencer.retainerPrepayDiscountBps),
       prepaidMonths: months,
       businessFeeBps: DEFAULT_FEE_SPLIT.businessFeeBps,
       creatorFeeBps: DEFAULT_FEE_SPLIT.creatorFeeBps,
@@ -159,6 +163,7 @@ export async function respondToRequest(
     monthlyRate: retainer.monthlyRate,
     listRate: retainer.listRate,
     prepaidMonths: retainer.prepaidMonths,
+    prepayDiscountBps: retainer.influencer.retainerPrepayDiscountBps,
     channels: retainer.business.socials.map(
       (social) => `${social.platform} @${social.handle}`,
     ),

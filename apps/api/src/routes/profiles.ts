@@ -62,6 +62,8 @@ const publicInfluencerSchema = z.object({
    */
   acceptsRetainers: z.boolean(),
   retainerSlots: z.number().int(),
+  /** Noll när hon inte erbjuder rabatt – då visas inte förskott som val. */
+  retainerPrepayDiscountBps: z.number().int(),
   retainerPackages: z.array(
     z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
   ),
@@ -955,6 +957,7 @@ export function toPublicInfluencer(profile: {
   acceptsRetainers: boolean;
   retainerSlots: number;
   retainerBaseRate: number | null;
+  retainerPrepayDiscountBps: number;
   socialAccounts: SocialAccountRow[];
   showcase?: ShowcaseRow[];
 }) {
@@ -978,6 +981,7 @@ export function toPublicInfluencer(profile: {
     // Utan pris finns inget att fråga om, så då räknas hon inte som öppen.
     acceptsRetainers: profile.acceptsRetainers && profile.retainerBaseRate !== null,
     retainerSlots: profile.retainerSlots,
+    retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps,
     retainerPackages:
       profile.retainerBaseRate === null ? [] : retainerPackages(profile.retainerBaseRate),
   };

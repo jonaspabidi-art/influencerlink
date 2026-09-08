@@ -7,6 +7,7 @@ export * from './matching.js';
 export * from './insights.js';
 export * from './media.js';
 export * from './money.js';
+export * from './pricing.js';
 export * from './results.js';
 export * from './retainers.js';
 export * from './reviews.js';

@@ -49,12 +49,17 @@ describe('retainerPackages', () => {
 
 describe('discountedMonthlyRate', () => {
   it('lämnar månadspriset orört under gränsen för förskott', () => {
-    expect(discountedMonthlyRate(900_000, 1)).toBe(900_000);
-    expect(discountedMonthlyRate(900_000, PREPAY_MONTHS - 1)).toBe(900_000);
+    expect(discountedMonthlyRate(900_000, 1, 1000)).toBe(900_000);
+    expect(discountedMonthlyRate(900_000, PREPAY_MONTHS - 1, 1000)).toBe(900_000);
   });
 
-  it('drar tio procent vid förskott', () => {
-    expect(discountedMonthlyRate(900_000, PREPAY_MONTHS)).toBe(810_000);
+  it('drar kreatörens egen sats vid förskott', () => {
+    expect(discountedMonthlyRate(900_000, PREPAY_MONTHS, 1000)).toBe(810_000);
+    expect(discountedMonthlyRate(900_000, PREPAY_MONTHS, 500)).toBe(855_000);
+  });
+
+  it('lämnar priset orört när hon valt att inte ge rabatt', () => {
+    expect(discountedMonthlyRate(900_000, PREPAY_MONTHS, 0)).toBe(900_000);
   });
 });
 
