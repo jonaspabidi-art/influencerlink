@@ -124,12 +124,40 @@ export default function BusinessAssignments() {
         ListHeaderComponent={
           <View style={styles.header}>
             <ExpertOrderStatus />
-            <Choice />
 
-            {running.length > 0 ? (
-              <View style={styles.section}>
+            {/*
+              Båda rubrikerna står alltid, även när sektionen är tom.
+              Ett löpande uppdrag hade tidigare ingen fast plats: rubriken
+              renderades först när man redan hade ett, så den som ville veta
+              vad det var hittade det bara i ett förklarande kort. En rubrik som
+              försvinner är ingen adress.
+            */}
+            <View style={styles.section}>
+              <View style={styles.sectionHead}>
                 <Label>LÖPANDE UPPDRAG</Label>
-                {running.map((retainer) => (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/retainer/start')}
+                  hitSlop={8}
+                >
+                  <Text style={styles.link}>Så funkar det</Text>
+                </Pressable>
+              </View>
+
+              {running.length === 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/retainer/start')}
+                  style={({ pressed }) => [styles.emptyRow, pressed && styles.pressed]}
+                >
+                  <Text style={styles.emptyRowTitle}>Ingen jobbar löpande åt er än</Text>
+                  <Text style={styles.secondary}>
+                    En kreatör producerar innehåll till era egna kanaler varje månad. Från
+                    6 000 kr i månaden, ingen bindningstid.
+                  </Text>
+                </Pressable>
+              ) : (
+                running.map((retainer) => (
                   <Pressable
                     key={retainer.id}
                     accessibilityRole="button"
@@ -164,11 +192,20 @@ export default function BusinessAssignments() {
                       {formatSek(Math.round(retainer.monthlyRate * 1.1))}
                     </Text>
                   </Pressable>
-                ))}
-              </View>
-            ) : null}
+                ))
+              )}
+            </View>
 
-            {data.length > 0 ? <Label>ENGÅNGSKAMPANJER</Label> : null}
+            <View style={styles.sectionHead}>
+              <Label>ENGÅNGSKAMPANJER</Label>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/campaign/new')}
+                hitSlop={8}
+              >
+                <Text style={styles.link}>Ny kampanj</Text>
+              </Pressable>
+            </View>
           </View>
         }
         ListFooterComponent={
@@ -278,6 +315,14 @@ function Choice({ expanded = false }: { expanded?: boolean }) {
 const styles = StyleSheet.create({
   header: { gap: spacing.md },
   section: { gap: spacing.sm },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  emptyRow: {
+    gap: 4,
+    backgroundColor: colors.raised,
+    borderRadius: radius.card,
+    padding: spacing.base,
+  },
+  emptyRowTitle: { ...type.listTitle, color: colors.text },
   list: { gap: 10, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
   row: {
     backgroundColor: colors.surface,
