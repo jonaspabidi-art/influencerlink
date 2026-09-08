@@ -76,7 +76,8 @@ const MAX_SHOWCASE_ITEMS = 12;
 const ownBusinessSchema = z.object({
   id: z.string(),
   companyName: z.string(),
-  orgNumber: z.string(),
+  /** Tomt tills företaget fyller i det – det behövs först när avtalet skrivs. */
+  orgNumber: z.string().nullable(),
   city: z.string(),
   address: z.string(),
   description: z.string(),
@@ -691,17 +692,19 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
     },
     async (request) => {
       const body = request.body;
-      const taken = await prisma.businessProfile.findFirst({
-        where: { orgNumber: body.orgNumber, userId: { not: request.user.sub } },
-        select: { id: true },
-      });
-      if (taken) {
-        throw conflict('Organisationsnumret är redan registrerat på ett annat konto.');
+      if (body.orgNumber) {
+        const taken = await prisma.businessProfile.findFirst({
+          where: { orgNumber: body.orgNumber, userId: { not: request.user.sub } },
+          select: { id: true },
+        });
+        if (taken) {
+          throw conflict('Organisationsnumret är redan registrerat på ett annat konto.');
+        }
       }
 
       const data = {
         companyName: body.companyName,
-        orgNumber: body.orgNumber,
+        orgNumber: body.orgNumber ?? null,
         city: body.city,
         address: body.address,
         description: body.description,

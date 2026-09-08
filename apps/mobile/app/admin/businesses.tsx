@@ -55,7 +55,7 @@ export default function AdminBusinesses() {
           >
             <Text style={styles.title}>{item.companyName}</Text>
             <Text style={styles.meta}>
-              {item.city} · org.nr {item.orgNumber}
+              {item.city} · org.nr {item.orgNumber ?? "–"}
             </Text>
             <Text style={styles.meta}>
               {item.campaigns} kampanjer · {item.contracts} avtal

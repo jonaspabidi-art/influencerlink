@@ -96,7 +96,7 @@ export default function AdminBusinessDetail() {
       {data ? (
         <>
           <Card>
-            <DetailRow label="Org.nr" value={data.orgNumber} />
+            <DetailRow label="Org.nr" value={data.orgNumber ?? "Ej ifyllt"} />
             <DetailRow label="Stad" value={data.city} />
             <DetailRow label="Kontakt" value={data.contactName} />
             {data.websiteUrl ? <DetailRow label="Hemsida" value={data.websiteUrl} /> : null}

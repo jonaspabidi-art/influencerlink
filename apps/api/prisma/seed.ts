@@ -347,7 +347,7 @@ async function main(): Promise<void> {
  * båda parter. Utan det syns aldrig betygen i kortleken efter en seed.
  */
 async function seedCompletedCollaboration(input: {
-  business: { id: string; companyName: string; orgNumber: string; userId: string };
+  business: { id: string; companyName: string; orgNumber: string | null; userId: string };
   influencer: { id: string; displayName: string; userId: string };
 }): Promise<void> {
   const { business, influencer } = input;
@@ -407,7 +407,7 @@ async function seedCompletedCollaboration(input: {
       terms: renderContractTerms({
         contractId: 'seed-fredagsfika',
         businessName: business.companyName,
-        businessOrgNumber: business.orgNumber,
+        businessOrgNumber: business.orgNumber ?? 'okänt',
         influencerName: influencer.displayName,
         influencerPersonalNumberMask: '19900101-****',
         campaignTitle: campaign.title,

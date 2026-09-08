@@ -55,7 +55,7 @@ export default function EditBusinessProfile() {
   useEffect(() => {
     if (!loaded) return;
     setCompanyName(loaded.companyName);
-    setOrgNumber(loaded.orgNumber);
+    setOrgNumber(loaded.orgNumber ?? '');
     setCity(loaded.city);
     setAddress(loaded.address);
     setDescription(loaded.description);
@@ -102,7 +102,7 @@ export default function EditBusinessProfile() {
     setError(null);
     setSaved(false);
     if (companyName.trim().length < 2) return setError('Ange företagets namn.');
-    if (!/^\d{10}$/.test(orgNumber.trim())) {
+    if (orgNumber.trim() && !/^\d{10}$/.test(orgNumber.trim())) {
       return setError('Organisationsnummer ska vara 10 siffror utan bindestreck.');
     }
     if (city.trim().length < 2) return setError('Ange vilken stad ni finns i.');
@@ -116,7 +116,7 @@ export default function EditBusinessProfile() {
     try {
       const result = await api.put<{ accessToken: string }>('/me/business-profile', {
         companyName: companyName.trim(),
-        orgNumber: orgNumber.trim(),
+        orgNumber: orgNumber.trim() || null,
         city: city.trim(),
         address: address.trim(),
         description: description.trim(),
@@ -177,7 +177,7 @@ export default function EditBusinessProfile() {
                 setOrgNumber(value);
               }}
               keyboardType="numeric"
-              hint="10 siffror utan bindestreck. Står på avtalen ni signerar."
+              hint="10 siffror utan bindestreck. Behövs innan ni skriver ert första avtal – tills dess kan fältet stå tomt."
             />
             <Field
               label="Stad"

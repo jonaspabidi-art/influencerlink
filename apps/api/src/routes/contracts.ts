@@ -27,7 +27,13 @@ import {
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { badRequest, forbidden, notFound, serviceUnavailable } from '../lib/errors.js';
+import {
+  badRequest,
+  forbidden,
+  notFound,
+  requireOrgNumber,
+  serviceUnavailable,
+} from '../lib/errors.js';
 import { StorageError } from '../services/storage.js';
 import { createTikTokClient } from '../services/social/index.js';
 import { refreshMetrics } from '../services/results.js';
@@ -127,7 +133,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
       const terms = renderContractTerms({
         contractId,
         businessName: match.campaign.business.companyName,
-        businessOrgNumber: match.campaign.business.orgNumber,
+        businessOrgNumber: requireOrgNumber(match.campaign.business),
         influencerName: match.influencer.displayName,
         influencerPersonalNumberMask: match.influencer.user.personalNumberMask ?? 'okänt',
         campaignTitle: match.campaign.title,

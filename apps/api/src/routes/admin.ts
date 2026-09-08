@@ -118,7 +118,7 @@ export async function adminRoutes(app: FastifyInstance, services: Services): Pro
   const businessRow = z.object({
     id: z.string(),
     companyName: z.string(),
-    orgNumber: z.string(),
+    orgNumber: z.string().nullable(),
     city: z.string(),
     campaigns: z.number().int(),
     contracts: z.number().int(),
@@ -172,7 +172,7 @@ export async function adminRoutes(app: FastifyInstance, services: Services): Pro
           200: z.object({
             id: z.string(),
             companyName: z.string(),
-            orgNumber: z.string(),
+            orgNumber: z.string().nullable(),
             city: z.string(),
             address: z.string(),
             description: z.string(),

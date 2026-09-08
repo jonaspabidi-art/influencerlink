@@ -11,7 +11,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { recordAudit } from '../lib/audit.js';
-import { badRequest, conflict, notFound } from '../lib/errors.js';
+import { badRequest, conflict, notFound, requireOrgNumber } from '../lib/errors.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 
@@ -183,7 +183,7 @@ export async function expertRoutes(app: FastifyInstance, services: Services): Pr
         customerId = await payments.createCustomer({
           businessId: order.business.id,
           companyName: order.business.companyName,
-          orgNumber: order.business.orgNumber,
+          orgNumber: requireOrgNumber(order.business),
         });
         await prisma.businessProfile.update({
           where: { id: order.business.id },

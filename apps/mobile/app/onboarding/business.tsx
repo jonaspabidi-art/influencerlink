@@ -30,7 +30,6 @@ export default function BusinessOnboarding() {
 
   const [step, setStep] = useState(1);
   const [companyName, setCompanyName] = useState('');
-  const [orgNumber, setOrgNumber] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
@@ -48,7 +47,7 @@ export default function BusinessOnboarding() {
     );
   };
 
-  const save = async () => {
+  const save = async (then: 'browse' | 'campaign') => {
     setError(null);
     if (categories.length === 0) return setError('Välj minst en kategori.');
 
@@ -56,7 +55,6 @@ export default function BusinessOnboarding() {
     try {
       const saved = await api.put<SavedProfile>('/me/business-profile', {
         companyName: companyName.trim(),
-        orgNumber: orgNumber.replace(/\D/g, ''),
         city: city.trim(),
         address: address.trim(),
         description: description.trim(),
@@ -64,9 +62,15 @@ export default function BusinessOnboarding() {
       });
       await replaceToken(saved.accessToken);
       await refresh();
-      // Utbudet först. Att tvinga fram en kampanj innan man sett om det finns
-      // någon att samarbeta med är fel ordning.
-      router.replace('/business/discover');
+      /*
+       * Ägaren väljer själv var det börjar.
+       *
+       * Att tvinga fram en kampanj innan man sett om det finns någon att
+       * samarbeta med är fel ordning – men att bestämma åt någon att titta
+       * först är också ett beslut. Här står båda vägarna, och den som vill
+       * skriva sitt samarbete direkt slipper leta rätt på knappen efteråt.
+       */
+      router.replace(then === 'campaign' ? '/campaign/new' : '/business/discover');
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Kunde inte spara uppgifterna.');
     } finally {
@@ -74,16 +78,13 @@ export default function BusinessOnboarding() {
     }
   };
 
-  const next = () => {
+  const next = (then: 'browse' | 'campaign' = 'browse') => {
     setError(null);
     if (step === 1) {
       if (companyName.trim().length < 2) return setError('Ange företagets namn.');
-      if (orgNumber.replace(/\D/g, '').length !== 10) {
-        return setError('Organisationsnumret ska ha tio siffror.');
-      }
     }
     if (step === 2 && city.trim().length < 2) return setError('Ange stad.');
-    if (step === TOTAL_STEPS) return void save();
+    if (step === TOTAL_STEPS) return void save(then);
     setStep((current) => current + 1);
   };
 
@@ -104,7 +105,7 @@ export default function BusinessOnboarding() {
         <>
           <Question
             title="Vad heter företaget?"
-            lead="Namnet och organisationsnumret står i avtalen mot kreatören."
+            lead="Namnet kreatörerna ser. Organisationsnumret fyller ni i under Profil, det behövs först när ett avtal ska skrivas."
           />
           <Card>
             <Field
@@ -112,13 +113,6 @@ export default function BusinessOnboarding() {
               value={companyName}
               onChangeText={setCompanyName}
               placeholder="Restaurang Kajutan"
-            />
-            <Field
-              label="Organisationsnummer"
-              value={orgNumber}
-              onChangeText={setOrgNumber}
-              placeholder="556012-3456"
-              keyboardType="numeric"
             />
           </Card>
         </>
@@ -169,11 +163,23 @@ export default function BusinessOnboarding() {
       ) : null}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Button
-        label={step === TOTAL_STEPS ? 'Klar – skapa ert första samarbete' : 'Fortsätt'}
-        onPress={next}
-        loading={saving}
-      />
+
+      {step === TOTAL_STEPS ? (
+        <>
+          <Button label="Klar – visa kreatörer" onPress={() => next('browse')} loading={saving} />
+          <Button
+            label="Skapa vårt första samarbete"
+            variant="secondary"
+            onPress={() => next('campaign')}
+          />
+          <Text style={styles.footnote}>
+            Samarbetet kan ni skriva när ni vill. Inget kostar något förrän ett avtal är
+            signerat.
+          </Text>
+        </>
+      ) : (
+        <Button label="Fortsätt" onPress={() => next()} loading={saving} />
+      )}
     </ScrollScreen>
   );
 }
@@ -194,5 +200,6 @@ const styles = StyleSheet.create({
   questionTitle: { ...type.display, color: colors.text },
   questionLead: { ...type.body, color: colors.muted },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  footnote: { ...type.secondary, color: colors.muted },
   error: { ...type.secondary, color: colors.danger },
 });

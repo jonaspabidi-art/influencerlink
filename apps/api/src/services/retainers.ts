@@ -12,7 +12,7 @@ import {
 } from '@pacta/shared';
 import type { Prisma, PrismaClient, Retainer, RetainerPeriod } from '@prisma/client';
 import { recordAudit } from '../lib/audit.js';
-import { badRequest, conflict, notFound } from '../lib/errors.js';
+import { badRequest, conflict, notFound, requireOrgNumber } from '../lib/errors.js';
 import type { PaymentProvider } from './payments/types.js';
 
 /**
@@ -160,7 +160,7 @@ export async function respondToRequest(
 
   const terms = renderRetainerTerms({
     businessName: retainer.business.companyName,
-    orgNumber: retainer.business.orgNumber,
+    orgNumber: requireOrgNumber(retainer.business),
     creatorName: retainer.influencer.displayName,
     city: retainer.business.city,
     videosPerMonth: size,
@@ -246,7 +246,7 @@ export async function payPeriod(
     customerId = await payments.createCustomer({
       businessId: business.id,
       companyName: business.companyName,
-      orgNumber: business.orgNumber,
+      orgNumber: requireOrgNumber(business),
     });
     await prisma.businessProfile.update({
       where: { id: business.id },

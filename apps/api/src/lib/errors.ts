@@ -32,3 +32,19 @@ export const failedDependency = (message: string, details?: unknown) =>
 /** Funktionen finns i koden men är inte påslagen i den här miljön. */
 export const serviceUnavailable = (message: string) =>
   new AppError(503, 'service_unavailable', message);
+
+/**
+ * Organisationsnumret krävs först när ett avtal ska skrivas.
+ *
+ * Det låg tidigare i onboardingen och stängde ute alla som bara ville titta.
+ * Nu frågas det när det faktiskt behövs – men då är det obligatoriskt, för det
+ * står i avtalet och hos betaltjänsten.
+ */
+export function requireOrgNumber(business: { orgNumber: string | null }): string {
+  if (!business.orgNumber) {
+    throw badRequest(
+      'Fyll i organisationsnumret under Profil innan ni går vidare. Det står i avtalet och behövs för utbetalningen.',
+    );
+  }
+  return business.orgNumber;
+}

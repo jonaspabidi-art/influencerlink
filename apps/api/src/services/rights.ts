@@ -5,7 +5,7 @@ import {
   USAGE_RIGHTS_MONTHS,
 } from '@pacta/shared';
 import type { PrismaClient, UsageRights } from '@prisma/client';
-import { badRequest, conflict, notFound } from '../lib/errors.js';
+import { badRequest, conflict, notFound, requireOrgNumber } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { sha256Hex } from '../lib/crypto.js';
 import type { PaymentProvider } from './payments/types.js';
@@ -126,7 +126,7 @@ export async function payUsageRights(
     customerId = await payments.createCustomer({
       businessId: business.id,
       companyName: business.companyName,
-      orgNumber: business.orgNumber,
+      orgNumber: requireOrgNumber(business),
     });
     await prisma.businessProfile.update({
       where: { id: business.id },

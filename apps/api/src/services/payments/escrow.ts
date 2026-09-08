@@ -1,6 +1,6 @@
 import { splitFee } from '@pacta/shared';
 import type { PrismaClient } from '@prisma/client';
-import { badRequest, conflict } from '../../lib/errors.js';
+import { badRequest, conflict, requireOrgNumber } from '../../lib/errors.js';
 import { recordAudit } from '../../lib/audit.js';
 import type { PaymentProvider } from './types.js';
 
@@ -36,7 +36,7 @@ export async function createEscrow(
     customerId = await payments.createCustomer({
       businessId: business.id,
       companyName: business.companyName,
-      orgNumber: business.orgNumber,
+      orgNumber: requireOrgNumber(business),
     });
     await prisma.businessProfile.update({
       where: { id: business.id },

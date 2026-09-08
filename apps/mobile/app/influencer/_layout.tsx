@@ -9,6 +9,19 @@ export default function InfluencerTabs() {
   // Efter utloggning ska flikarna inte ligga kvar bakom en tom session.
   if (!loading && !user) return <Redirect href="/login" />;
 
+  /*
+   * En halvfärdig profil hör hemma i onboardingen, inte i flikarna.
+   *
+   * Avbryter någon mitt i – laddar om sidan, stänger appen, trycker bakåt –
+   * finns kontot men ingen profil, och då svarade varje flik "kunde inte
+   * hämta". Tre felmeddelanden i rad ser ut som en trasig app, inte som ett
+   * halvfärdigt formulär. Det spelar särskilt roll som webbapp, där adressen
+   * är riktig och omladdningsknappen finns.
+   */
+  if (!loading && user && !user.onboardingComplete) {
+    return <Redirect href="/onboarding/influencer" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

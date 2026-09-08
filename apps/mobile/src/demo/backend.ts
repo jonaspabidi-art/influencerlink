@@ -368,6 +368,18 @@ function businessById(id: string): DemoBusiness {
   return business;
 }
 
+/** Samma krav som i API:t: numret måste finnas när ett avtal ska skrivas. */
+function requireOrgNumber(business: DemoBusiness): string {
+  if (!business.orgNumber) {
+    throw new DemoError(
+      400,
+      'bad_request',
+      'Fyll i organisationsnumret under Profil innan ni går vidare. Det står i avtalet och behövs för utbetalningen.',
+    );
+  }
+  return business.orgNumber;
+}
+
 function campaignById(id: string): DemoCampaign {
   const campaign = state.campaigns.find((item) => item.id === id);
   if (!campaign) throw new DemoError(404, 'not_found', 'Kampanjen hittades inte.');
@@ -1298,7 +1310,7 @@ route('PUT', '/me/business-profile', ({ body }) => {
     id: existing?.id ?? nextId('biz'),
     userId: user.id,
     companyName: String(body.companyName ?? ''),
-    orgNumber: String(body.orgNumber ?? ''),
+    orgNumber: typeof body.orgNumber === 'string' && body.orgNumber ? body.orgNumber : null,
     city: String(body.city ?? ''),
     address: String(body.address ?? ''),
     description: String(body.description ?? ''),
@@ -1696,7 +1708,7 @@ route('POST', '/retainers/:id/respond', ({ params, body }) => {
   retainer.startedAt = startsAt.toISOString();
   retainer.terms = renderRetainerTerms({
     businessName: business.companyName,
-    orgNumber: business.orgNumber,
+    orgNumber: requireOrgNumber(business),
     creatorName: influencer.displayName,
     city: business.city,
     videosPerMonth: retainer.videosPerMonth as 4 | 8 | 12,
@@ -2047,7 +2059,7 @@ route('POST', '/contracts', ({ body }) => {
     terms: renderContractTerms({
       contractId,
       businessName: business.companyName,
-      businessOrgNumber: business.orgNumber,
+      businessOrgNumber: requireOrgNumber(business),
       influencerName: influencer.displayName,
       influencerPersonalNumberMask: influencerUser?.personalNumberMask ?? 'okänt',
       campaignTitle: campaign.title,

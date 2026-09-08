@@ -57,7 +57,8 @@ export interface DemoBusiness {
   id: string;
   userId: string;
   companyName: string;
-  orgNumber: string;
+  /** Tomt tills företaget fyller i det – behövs först vid första avtalet. */
+  orgNumber: string | null;
   city: string;
   address: string;
   description: string;

@@ -851,6 +851,11 @@ ALTER TABLE "InfluencerProfile" ADD COLUMN     "retainerPrepayDiscountBps" INTEG
 -- AlterTable
 ALTER TABLE "InfluencerProfile" ADD COLUMN     "retainerVolumeDiscountBps" INTEGER NOT NULL DEFAULT 0;
 
+-- === 20260920000000_optional_org_number ===
+
+-- AlterTable
+ALTER TABLE "BusinessProfile" ALTER COLUMN "orgNumber" DROP NOT NULL;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -943,6 +948,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         '9889c8769428fcd5dfe14e6d02299cc44570ac426486a49a5b184daa561fe12f',
         now(), '20260919000000_volume_discount', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '0904ee68eda3418aae153e2a731ddbdaaac4ff40848c8bd7fa033788b07bfb04',
+        now(), '20260920000000_optional_org_number', now(), 1);
 
 -- === Demodata ===
 

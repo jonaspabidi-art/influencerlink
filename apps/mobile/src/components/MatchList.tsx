@@ -46,10 +46,10 @@ export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             <Text style={styles.emptyText}>
               {role === 'INFLUENCER'
                 ? 'När en restaurang också svepar höger på dig hamnar samarbetet här, med en chatt där ni kommer överens om detaljerna.'
-                : 'Svep på kreatörer i en av dina kampanjer. När ni båda svepat höger öppnas en chatt där ni kommer överens.'}
+                : 'En matchning uppstår när ni båda sagt ja. Kreatörer söker själva till era kampanjer – de som gjort det står under Kreatörer med knappen Matcha. Ni kan också bjuda in någon direkt.'}
             </Text>
             <Button
-              label={role === 'INFLUENCER' ? 'Till kortleken' : 'Hitta kreatörer'}
+              label={role === 'INFLUENCER' ? 'Till kortleken' : 'Se kreatörer'}
               onPress={() =>
                 router.push(role === 'INFLUENCER' ? '/influencer/swipe' : '/business/discover')
               }

@@ -185,7 +185,8 @@ export type InfluencerProfileInput = z.infer<typeof influencerProfileInputSchema
 
 export const businessProfileInputSchema = z.object({
   companyName: z.string().min(2).max(120),
-  orgNumber: orgNumberSchema,
+  /** Valfritt tills ett avtal ska skrivas. Då krävs det. */
+  orgNumber: orgNumberSchema.optional().nullable(),
   city: z.string().min(2).max(80),
   address: z.string().max(200).default(''),
   description: z.string().max(600).default(''),

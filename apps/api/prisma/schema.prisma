@@ -252,7 +252,12 @@ model BusinessProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   companyName String
-  orgNumber   String     @unique
+  /// Fylls i först när det behövs, alltså innan det första avtalet skrivs.
+  ///
+  /// Låg tidigare i onboardingen, som steg ett av tre. En krögare som ville
+  /// titta i appen behövde alltså först leta upp sitt organisationsnummer, och
+  /// det är en hög tröskel för någon som ännu inte vet vad appen är.
+  orgNumber   String?    @unique
   city        String
   address     String     @default("")
   description String     @default("")

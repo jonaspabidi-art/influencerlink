@@ -102,7 +102,8 @@ export interface ShowcaseItem {
 export interface OwnBusinessProfile {
   id: string;
   companyName: string;
-  orgNumber: string;
+  /** Tomt tills företaget fyller i det – behövs först vid första avtalet. */
+  orgNumber: string | null;
   city: string;
   address: string;
   description: string;
@@ -444,7 +445,7 @@ export interface AdminOverview {
 export interface AdminBusinessRow {
   id: string;
   companyName: string;
-  orgNumber: string;
+  orgNumber: string | null;
   city: string;
   campaigns: number;
   contracts: number;
@@ -453,7 +454,7 @@ export interface AdminBusinessRow {
 export interface AdminBusiness {
   id: string;
   companyName: string;
-  orgNumber: string;
+  orgNumber: string | null;
   city: string;
   address: string;
   description: string;
