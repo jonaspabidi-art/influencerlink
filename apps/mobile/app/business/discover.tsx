@@ -1,7 +1,7 @@
 import { CATEGORIES, type Category } from '@pacta/shared';
 import { useQuery } from '@tanstack/react-query';
 import { ownBusinessQuery } from '../../src/queries';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
@@ -40,7 +40,9 @@ export default function BusinessDiscover() {
   const { user } = useAuth();
   const [category, setCategory] = useState<Category | null>(null);
   const [nearby, setNearby] = useState(true);
-  const [onlyRetainers, setOnlyRetainers] = useState(false);
+  // Kommer man hit från "hitta någon som jobbar löpande" är valet redan gjort.
+  const { retainers } = useLocalSearchParams<{ retainers?: string }>();
+  const [onlyRetainers, setOnlyRetainers] = useState(retainers === '1');
 
   const profile = useQuery(ownBusinessQuery());
 
@@ -67,8 +69,8 @@ export default function BusinessDiscover() {
         subtitle={
           creators.isSuccess
             ? `${data.length} ${data.length === 1 ? 'kreatör' : 'kreatörer'}${
-                nearby && city ? ` i ${city}` : ''
-              }`
+                onlyRetainers ? ' som tar löpande uppdrag' : ''
+              }${nearby && city ? ` i ${city}` : ''}`
             : 'Kreatörer att samarbeta med'
         }
         /*

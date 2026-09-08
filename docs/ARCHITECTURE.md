@@ -205,6 +205,18 @@ varumärke är en skada som inte går att reparera.
 Uppsägning träder i kraft vid periodens slut, aldrig mitt i. Företaget har
 betalat för månaden och kreatören har planerat in den.
 
+De två sätten att jobba med en kreatör låg länge i olika flikar: en kampanj
+under Kampanjer, ett löpande uppdrag under Avtal. Företaget kunde alltså inte
+se att det gick att välja. Båda ligger nu under Uppdrag med egna rubriker, och
+skillnaden – vems kanal innehållet går ut på – står skriven ovanför listorna i
+stället för att behöva räknas ut.
+
+Steget från kampanj till löpande uppdrag föreslås en enda gång: när ett
+samarbete är avslutat och siffrorna finns. Det är det enda ögonblick då
+företaget vet vad just den kreatören är värd för dem. Förslaget visas bara när
+det finns riktiga visningar att visa upp och kreatören har en plats ledig – ett
+erbjudande om något som ändå inte går att boka är sämre än inget.
+
 ## Vad kreatören är värd i ett löpande uppdrag
 
 Ett enstaka samarbete kan hon prissätta – hon har gjort dem förut. Ett

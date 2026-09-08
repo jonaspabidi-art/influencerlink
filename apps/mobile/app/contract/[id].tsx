@@ -9,6 +9,7 @@ import { DraftReview } from '../../src/components/DraftReview';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
 import { CheckIcon, ChevronRightIcon, LockIcon, StarIcon } from '../../src/components/icons';
+import { RetainerOffer } from '../../src/components/RetainerOffer';
 import { ReviewCard } from '../../src/components/ReviewList';
 import {
   Body,
@@ -265,12 +266,19 @@ export default function ContractDetail() {
       {data.status === 'DELIVERED' || data.status === 'COMPLETED' ? (
         <>
           <CampaignResult contractId={data.id} fee={data.fee} />
-          {/* Erbjudandet hör hemma direkt under siffrorna det bygger på. */}
+          {/* Erbjudandena hör hemma direkt under siffrorna de bygger på. */}
           <UsageRightsOffer
             contractId={data.id}
             role={isBusiness ? 'BUSINESS' : 'INFLUENCER'}
             counterpart={counterpart}
           />
+          {isBusiness && data.status === 'COMPLETED' ? (
+            <RetainerOffer
+              contractId={data.id}
+              influencerId={data.influencerId}
+              influencerName={data.influencerName}
+            />
+          ) : null}
         </>
       ) : null}
 

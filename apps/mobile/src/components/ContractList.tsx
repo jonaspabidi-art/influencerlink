@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { contractsQuery, pendingReviewsQuery, retainersQuery } from '../queries';
+import { contractsQuery, pendingReviewsQuery } from '../queries';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../api';
 import { formatDate, formatSek } from '../format';
 import { colors, radius, spacing, type } from '../theme';
-import type { Contract, PendingReview, Retainer } from '../types';
+import type { Contract, PendingReview } from '../types';
 import { StarIcon } from './icons';
 import { Avatar, Button, ErrorState, Header, Loading, Logo, Photo, Screen } from './ui';
 
@@ -34,9 +34,6 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   const router = useRouter();
   const contracts = useQuery(contractsQuery());
   const pendingReviews = useQuery(pendingReviewsQuery());
-  // Löpande uppdrag är inte avtal om en kampanj, men det är här man letar
-  // efter "vad har jag på gång": samma flik, egen rubrik.
-  const retainers = useQuery(retainersQuery());
 
   if (contracts.isLoading) {
     return (
@@ -56,11 +53,8 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   }
 
   const data = contracts.data ?? [];
-  const running = (retainers.data ?? []).filter(
-    (retainer) => retainer.status === 'REQUESTED' || retainer.status === 'ACTIVE' || retainer.status === 'CANCELLING',
-  );
 
-  if (data.length === 0 && running.length === 0) {
+  if (data.length === 0) {
     return (
       <Screen>
         <Header title="Avtal" large subtitle="Inga avtal ännu" />
@@ -93,15 +87,9 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <>
-            {pendingReviews.data && pendingReviews.data.length > 0 ? (
-              <ReviewPrompt items={pendingReviews.data} />
-            ) : null}
-            {running.length > 0 ? <RetainerRows items={running} role={role} /> : null}
-            {running.length > 0 && data.length > 0 ? (
-              <Text style={styles.groupLabel}>AVTAL PER KAMPANJ</Text>
-            ) : null}
-          </>
+          pendingReviews.data && pendingReviews.data.length > 0 ? (
+            <ReviewPrompt items={pendingReviews.data} />
+          ) : null
         }
         renderItem={({ item }) => (
           <Pressable
@@ -181,65 +169,6 @@ function ReviewPrompt({ items }: { items: PendingReview[] }) {
   );
 }
 
-/**
- * Löpande uppdrag överst i avtalslistan.
- *
- * De hör inte till en kampanj och har ingen deadline – det som betyder något
- * är takten: hur många videor av månadens som är godkända.
- */
-function RetainerRows({ items, role }: { items: Retainer[]; role: 'INFLUENCER' | 'BUSINESS' }) {
-  const router = useRouter();
-
-  return (
-    <View style={styles.retainerBlock}>
-      <Text style={styles.groupLabel}>LÖPANDE UPPDRAG</Text>
-      {items.map((retainer) => (
-        <Pressable
-          key={retainer.id}
-          accessibilityRole="button"
-          onPress={() => router.push(`/retainer/${retainer.id}`)}
-          style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-        >
-          <View style={styles.rowTop}>
-            {role === 'BUSINESS' ? (
-              <Avatar uri={retainer.influencerAvatarUrl} name={retainer.influencerName} size={44} />
-            ) : (
-              <Logo uri={retainer.businessLogoUrl} name={retainer.businessName} size={44} />
-            )}
-            <View style={styles.rowText}>
-              <Text style={styles.title} numberOfLines={1}>
-                {role === 'BUSINESS' ? retainer.influencerName : retainer.businessName}
-              </Text>
-              <Text style={styles.secondary}>
-                {retainer.videosPerMonth} videor i månaden
-              </Text>
-              <Text
-                style={[
-                  styles.status,
-                  { color: retainer.status === 'ACTIVE' ? colors.positive : colors.accent },
-                ]}
-              >
-                {retainer.status === 'REQUESTED'
-                  ? 'Väntar på svar'
-                  : retainer.status === 'CANCELLING'
-                    ? 'Avslutas efter månaden'
-                    : 'Pågår'}
-              </Text>
-            </View>
-            <Text style={styles.amount}>
-              {formatSek(
-                role === 'BUSINESS'
-                  ? Math.round(retainer.monthlyRate * 1.1)
-                  : Math.round(retainer.monthlyRate * 0.9),
-              )}
-            </Text>
-          </View>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 export { STATUS_LABELS as CONTRACT_STATUS_LABELS };
 
 const styles = StyleSheet.create({
@@ -283,8 +212,6 @@ const styles = StyleSheet.create({
   promptText: { flex: 1, gap: 2 },
   promptTitle: { ...type.listTitle, fontSize: 15, color: colors.text },
 
-  retainerBlock: { gap: 10, marginBottom: 10 },
-  groupLabel: { ...type.label, color: colors.muted, marginBottom: 2 },
   emptyBody: { flex: 1, paddingHorizontal: spacing.base },
   emptyCard: {
     backgroundColor: colors.surface,

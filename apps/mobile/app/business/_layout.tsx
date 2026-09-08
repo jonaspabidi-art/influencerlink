@@ -35,7 +35,7 @@ export default function BusinessTabs() {
       <Tabs.Screen
         name="campaigns"
         options={{
-          title: 'Kampanjer',
+          title: 'Uppdrag',
           tabBarIcon: ({ color }) => <GridIcon size={21} color={color} />,
         }}
       />
