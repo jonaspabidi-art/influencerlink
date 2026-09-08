@@ -9,7 +9,7 @@ import type { PrismaClient } from '@prisma/client';
  *
  * Två av de tre talen kommer från andra användare, och därför lämnar de aldrig
  * det här lagret som enskilda priser – bara som antal, median och ytterlägen.
- * Att visa "Sara tar 8 000" för en konkurrent vore att lämna ut något hon
+ * Att visa "Sara tar 8 000" för en konkurrent vore att lämna ut något kreatören
  * lämnat till oss för matchningens skull, inte för insyn.
  */
 
@@ -36,8 +36,8 @@ export async function buildRateSuggestion(
     take: SAMPLE_LIMIT,
   });
 
-  // Vad företagen i staden faktiskt budgeterar. Det är taket hon förhandlar
-  // mot, oavsett vad hon själv tycker att arbetet är värt.
+  // Vad företagen i staden faktiskt budgeterar. Det är taket kreatören förhandlar
+  // mot, oavsett vad kreatören själv tycker att arbetet är värt.
   const campaigns = await prisma.campaign.findMany({
     where: {
       city: { equals: profile.city, mode: 'insensitive' },

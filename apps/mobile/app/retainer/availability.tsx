@@ -31,13 +31,13 @@ import type { RetainerAvailability } from '../../src/types';
 /**
  * Kreatörens läge för löpande uppdrag.
  *
- * Ett tal att fylla i, inte tre: hon säger vad hon vill ha för fyra videor i
- * månaden, och de större paketen kostar rakt av så många gånger mer. Vill hon
- * belöna volym eller förskott gör hon det som ett eget val, under Dina
- * rabatter – båda dras på hennes arvode, så ingen av dem får uppstå av sig
+ * Ett tal att fylla i, inte tre: kreatören säger vad hen vill ha för fyra videor i
+ * månaden, och de större paketen kostar rakt av så många gånger mer. Vill kreatören
+ * belöna volym eller förskott gör kreatören det som ett eget val, under Dina
+ * rabatter – båda dras på kreatörens arvode, så ingen av dem får uppstå av sig
  * själv.
  *
- * Platserna är ett riktigt tal. Visar vi en ledig plats ska hon kunna ta emot
+ * Platserna är ett riktigt tal. Visar vi en ledig plats ska kreatören kunna ta emot
  * den; en dag i veckan går inte att sälja två gånger.
  */
 export default function RetainerAvailabilityScreen() {
@@ -183,11 +183,11 @@ export default function RetainerAvailabilityScreen() {
           </Card>
 
           {/*
-            Båda rabatterna på ett ställe, båda hennes.
-            Volymrabatten fanns tidigare som en osynlig skala: hon valde ingen
+            Båda rabatterna på ett ställe, båda kreatörens.
+            Volymrabatten fanns tidigare som en osynlig skala: kreatören valde ingen
             rabatt och fick ändå ett lägre pris per video i de större paketen,
             av skäl bara vi kände till. Nu kostar tolv videor exakt tre gånger
-            fyra tills hon säger något annat.
+            fyra tills kreatören säger något annat.
           */}
           <Card>
             <Text style={styles.cardTitle}>Dina rabatter</Text>
@@ -262,11 +262,11 @@ function DiscountRow({
 }
 
 /**
- * Vad är hon värd?
+ * Vad är kreatören värd?
  *
  * Den fråga kreatörer är sämst rustade att svara på: ett enstaka samarbete går
- * att jämföra med tidigare samarbeten, men ett månadspris har hon oftast aldrig
- * satt. Spannet räknas fram ur hennes eget riktpris, vad andra i staden tar och
+ * att jämföra med tidigare samarbeten, men ett månadspris har kreatören oftast aldrig
+ * satt. Spannet räknas fram ur kreatörens eget riktpris, vad andra i staden tar och
  * vad företagen där budgeterar.
  *
  * Underlaget ligger hopfällt. Det är fyra rader som svarar på "hur vet ni det?"

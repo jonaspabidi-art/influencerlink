@@ -236,7 +236,9 @@ function Choice({ expanded = false }: { expanded?: boolean }) {
 
       <View style={styles.option}>
         <Text style={styles.optionTitle}>Kampanj</Text>
-        <Text style={styles.optionLead}>Hon lägger upp på sin kanal. Hennes följare ser er.</Text>
+        <Text style={styles.optionLead}>
+          Kreatören lägger upp på sin egen kanal, inför sina följare.
+        </Text>
         {expanded ? (
           <Body>
             En video, ett tillfälle. Bra för att synas snabbt eller testa om det funkar – och ni
@@ -255,7 +257,7 @@ function Choice({ expanded = false }: { expanded?: boolean }) {
       <View style={styles.option}>
         <Text style={styles.optionTitle}>Löpande uppdrag</Text>
         <Text style={styles.optionLead}>
-          Hon producerar åt era egna kanaler, varje månad.
+          Kreatören producerar åt era egna kanaler, varje månad.
         </Text>
         {expanded ? (
           <Body>

@@ -109,7 +109,7 @@ export default function CreatorProfile() {
 
           {/*
             Löpande uppdrag står här och inte under en egen flik: frågan uppstår
-            när man tittar på en profil och tänker "henne skulle vi vilja ha
+            när man tittar på en profil och tänker "kreatören skulle vi vilja ha
             varje vecka". Platserna är ett riktigt tal, så bristen är sann.
           */}
           {user?.role === 'BUSINESS' && data.acceptsRetainers && data.retainerSlots > 0 ? (

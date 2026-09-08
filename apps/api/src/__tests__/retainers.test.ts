@@ -49,7 +49,7 @@ describe('discountedMonthlyRate', () => {
     expect(discountedMonthlyRate(900_000, PREPAY_MONTHS, 500)).toBe(855_000);
   });
 
-  it('lämnar priset orört när hon valt att inte ge rabatt', () => {
+  it('lämnar priset orört när kreatören valt att inte ge rabatt', () => {
     expect(discountedMonthlyRate(900_000, PREPAY_MONTHS, 0)).toBe(900_000);
   });
 });
@@ -132,13 +132,13 @@ describe('volymrabatt', () => {
     expect(retainerMonthlyRate(600_000, 12)).toBe(1_800_000);
   });
 
-  it('håller priset per video konstant när hon inte valt rabatt', () => {
+  it('håller priset per video konstant när kreatören inte valt rabatt', () => {
     const packs = retainerPackages(600_000);
     const perVideo = packs.map((pack) => pack.monthlyRate / pack.videosPerMonth);
     expect(new Set(perVideo).size).toBe(1);
   });
 
-  it('sänker priset per video först när hon valt det', () => {
+  it('sänker priset per video först när kreatören valt det', () => {
     const packs = retainerPackages(600_000, 1000);
     expect(packs[0]!.monthlyRate).toBe(600_000);
     expect(packs[1]!.monthlyRate).toBe(1_080_000);

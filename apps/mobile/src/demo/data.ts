@@ -43,12 +43,12 @@ export interface DemoInfluencer {
   stripeAccountId: string | null;
   socials: DemoSocial[];
   showcase: DemoShowcase[];
-  /** Löpande uppdrag: tar hon dem, hur många platser och till vilket pris? */
+  /** Löpande uppdrag: tar kreatören dem, hur många platser och till vilket pris? */
   acceptsRetainers?: boolean;
   retainerSlots?: number;
   /** Månadspris för grundpaketet, fyra videor, i öre. */
   retainerBaseRate?: number | null;
-  /** Rabatter hon ger, i baspunkter. Noll = ingen. */
+  /** Rabatter kreatören ger, i baspunkter. Noll = ingen. */
   retainerPrepayDiscountBps?: number;
   retainerVolumeDiscountBps?: number;
 }
@@ -413,7 +413,7 @@ export const DEMO_REVIEWS: DemoReview[] = [
   review('rev_8', 'ctr_h5', 'Lunch på Avenyn', 'BUSINESS', 'Petra Sandell', 'inf_johan', 'biz_kajutan', [3, 4, 3],
     'Innehållet blev bra men det var svårt att få tag på honom under veckan före. Deadline höll knappt.', -11),
   review('rev_9', 'ctr_h6', 'Fikapaus', 'BUSINESS', 'Ali Rahimi', 'inf_maja', 'biz_solrosen', [5, 4, 5],
-    'Väldigt lätt att jobba med. Vi bad om en story till och det fixade hon utan diskussion.', -8),
+    'Väldigt lätt att jobba med. Vi bad om en story till och det fixade kreatören utan diskussion.', -8),
 ];
 
 /** Kortform så att listan ovan går att läsa som en tabell. */

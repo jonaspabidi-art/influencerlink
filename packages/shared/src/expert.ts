@@ -3,10 +3,10 @@ import type { Ore } from './money.js';
 /**
  * "Låt en Pacta-expert skapa kampanjen."
  *
- * Företagaren beskriver vad hon vill uppnå, och vi bygger kampanjen åt henne
+ * Företagaren beskriver vad kreatören vill uppnå, och vi bygger kampanjen åt hen
  * med plattformens egna data och rådgivaren som underlag. Vi signerar dock
- * aldrig något: kampanjen levereras till hennes konto och hon publicerar den
- * själv. I samma sekund som vi trycker på knappen åt henne är vi part i
+ * aldrig något: kampanjen levereras till kreatörens konto och hen publicerar den
+ * själv. I samma sekund som vi trycker på knappen åt kreatören är vi part i
  * affären i stället för förmedlare.
  */
 

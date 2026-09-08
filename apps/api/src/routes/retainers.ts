@@ -85,7 +85,7 @@ const retainerDetailSchema = retainerSchema.extend({
   periods: z.array(periodSchema),
 });
 
-/** Samma stege för båda rabatterna hon kan ge. */
+/** Samma stege för båda rabatterna kreatören kan ge. */
 const discountSchema = z.union([
   z.literal(DISCOUNTS[0]),
   z.literal(DISCOUNTS[1]),
@@ -96,9 +96,9 @@ const discountSchema = z.union([
 const availabilitySchema = z.object({
   acceptsRetainers: z.boolean(),
   slots: z.number().int().min(0).max(20),
-  /** Månadspris för grundpaketet, i öre. Null när hon inte satt något. */
+  /** Månadspris för grundpaketet, i öre. Null när kreatören inte satt något. */
   baseRate: z.number().int().nullable(),
-  /** Rabatter hon ger, i baspunkter. Noll = ingen. */
+  /** Rabatter kreatören ger, i baspunkter. Noll = ingen. */
   prepayDiscountBps: z.number().int(),
   volumeDiscountBps: z.number().int(),
   packages: z.array(
@@ -261,7 +261,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
           acceptsRetainers: z.boolean(),
           slots: z.number().int().min(0).max(20),
           baseRate: z.number().int().min(MIN_RETAINER_BASE_RATE).max(MAX_RETAINER_BASE_RATE).nullable(),
-          /** Hennes egna satser. Rabatterna dras på hennes arvode, inte på vår avgift. */
+          /** Kreatörens egna satser. Rabatterna dras på hens arvode, inte på vår avgift. */
           prepayDiscountBps: discountSchema,
           volumeDiscountBps: discountSchema,
         }),
@@ -300,7 +300,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
   );
 
   /**
-   * Vad hon är värd i ett löpande uppdrag.
+   * Vad kreatören är värd i ett löpande uppdrag.
    *
    * Uträkningen först och rådet separat, som på insiktsvyn: talen är räknade
    * och kan visas direkt, medan modellen kostar ett anrop och några sekunder.
@@ -464,7 +464,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
    *
    * Åtkomsten ges i plattformarnas egna verktyg, utanför Pacta – vi tar aldrig
    * emot ett lösenord. Det här är bara en kvittens, och den behövs för att
-   * kreatören ska få publicera: utan den kan hon producera men inte lägga upp.
+   * kreatören ska få publicera: utan den kan hen producera men inte lägga upp.
    */
   server.post(
     '/retainers/:id/access',
@@ -709,7 +709,7 @@ export async function retainerRoutes(app: FastifyInstance, services: Services): 
         throw conflict('Videon är redan publicerad.');
       }
       if (!request.body.approve && request.body.note.trim().length === 0) {
-        throw badRequest('Skriv vad som ska ändras, annars vet kreatören inte vad hon ska göra.');
+        throw badRequest('Skriv vad som ska ändras, annars vet kreatören inte vad hen ska göra.');
       }
 
       const updated = await prisma.retainerPost.update({

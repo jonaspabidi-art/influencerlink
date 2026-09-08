@@ -1,7 +1,7 @@
 /**
  * Igenkänning av länkar till sociala inlägg.
  *
- * Kreatören klistrar in en adress hon kopierat i TikTok- eller YouTube-appen.
+ * Kreatören klistrar in en adress hen kopierat i TikTok- eller YouTube-appen.
  * De adresserna kommer i flera former – delningslänkar, korta länkar, med och
  * utan spårningsparametrar – och alla ska landa i samma sak: vilken plattform
  * det är och en ren adress att slå upp och länka vidare till.

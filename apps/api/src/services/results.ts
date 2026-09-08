@@ -7,7 +7,7 @@ import { tiktokAccessToken } from './social/tokens.js';
  * Mätning av vad ett samarbete gav.
  *
  * Siffrorna finns bara hos plattformen, och plattformen lämnar bara ut dem
- * till kreatören själv. Vi hämtar dem alltså med hennes token och sparar en
+ * till kreatören själv. Vi hämtar dem alltså med hens token och sparar en
  * mätning per publicerad länk. Företaget ser resultatet utan att någonsin
  * komma åt kreatörens konto.
  *

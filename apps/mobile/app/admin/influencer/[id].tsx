@@ -19,7 +19,7 @@ import { colors, radius, spacing, type } from '../../../src/theme';
 import type { AdminInfluencer } from '../../../src/types';
 
 /**
- * En kreatör med allt vi har på henne.
+ * En kreatör med allt vi har på kreatören.
  *
  * Personnumret visas maskerat – hela numret finns bara som hash och går inte
  * att få fram. Åtkomstnycklarna till plattformarna visas aldrig, bara om ett

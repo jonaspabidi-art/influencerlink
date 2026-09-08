@@ -319,7 +319,7 @@ function freshState(): State {
     })),
     businesses: DEMO_BUSINESSES.map((business) => ({ ...business })),
     campaigns: DEMO_CAMPAIGNS.map((campaign) => ({ ...campaign })),
-    // Anna har redan swipat höger på lunchkampanjen: restaurangen ser henne direkt.
+    // Anna har redan swipat höger på lunchkampanjen: restaurangen ser kreatören direkt.
     swipes: [{ campaignId: 'cmp_lunch', influencerId: 'inf_anna', actor: 'INFLUENCER', direction: 'LIKE' }],
     matches: [],
     messages: [],
@@ -1773,7 +1773,7 @@ route('POST', '/retainer-posts/:id/review', ({ params, body }) => {
   if (post.status === 'PUBLISHED') throw new DemoError(409, 'conflict', 'Videon är redan publicerad.');
   const approve = body.approve === true;
   if (!approve && String(body.note ?? '').trim().length === 0) {
-    throw new DemoError(400, 'bad_request', 'Skriv vad som ska ändras, annars vet kreatören inte vad hon ska göra.');
+    throw new DemoError(400, 'bad_request', 'Skriv vad som ska ändras, annars vet kreatören inte vad hen ska göra.');
   }
   post.status = approve ? 'APPROVED' : 'CHANGES_REQUESTED';
   post.reviewNote = String(body.note ?? '');

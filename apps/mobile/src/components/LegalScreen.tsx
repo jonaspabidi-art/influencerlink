@@ -9,7 +9,7 @@ import { Header, ScrollScreen } from './ui';
  *
  * Sidorna måste gå att läsa utan konto: TikTok, Apple och Google öppnar dem
  * innan de granskar appen, och en besökare ska kunna läsa vad vi gör med
- * hennes uppgifter innan hon registrerar sig.
+ * kreatörens uppgifter innan hen registrerar sig.
  */
 export function LegalScreen({
   title,

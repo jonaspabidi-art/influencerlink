@@ -145,8 +145,8 @@ export default function RetainerScreen() {
           <Card>
             <Text style={styles.cardTitle}>Väntar på {counterpart}</Text>
             <Body>
-              Hon ser förfrågan i appen. Svarar hon ja betalar ni första månaden och uppdraget
-              startar.
+              Kreatören ser förfrågan i appen. Vid ett ja betalar ni första månaden och
+              uppdraget startar.
             </Body>
           </Card>
         ) : (
@@ -164,7 +164,7 @@ export default function RetainerScreen() {
         )
       ) : null}
 
-      {/* Åtkomsten. Utan den får hon producera men inte publicera. */}
+      {/* Åtkomsten. Utan den får kreatören producera men inte publicera. */}
       {data.status === 'ACTIVE' || data.status === 'CANCELLING' ? (
         <Card tone={data.accessGranted ? 'raised' : 'primary'}>
           <View style={styles.headRow}>
@@ -175,7 +175,7 @@ export default function RetainerScreen() {
           </View>
           <Body>
             {isBusiness
-              ? 'Lägg till henne i Meta Business Suite och TikTok Business Center. Lämna aldrig ut ditt lösenord – varken till henne eller till oss.'
+              ? 'Lägg till kreatören i Meta Business Suite och TikTok Business Center. Lämna aldrig ut ditt lösenord – varken till kreatören eller till oss.'
               : data.accessGranted
                 ? 'Du kan publicera godkända videor på deras kanaler.'
                 : 'Företaget har inte lagt till dig ännu. Du kan producera, men inte publicera.'}
@@ -316,7 +316,7 @@ function PeriodCard({
  * Videorna i månaden.
  *
  * Företaget godkänner varje video innan den får publiceras, och ingenting
- * auto-godkänns: hon publicerar i deras namn, på deras konto, och ett inlägg
+ * auto-godkänns: kreatören publicerar i deras namn, på deras konto, och ett inlägg
  * som inte borde ha gått ut går inte att ta tillbaka.
  */
 function Posts({

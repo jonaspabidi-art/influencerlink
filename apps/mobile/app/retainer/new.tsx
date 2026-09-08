@@ -23,7 +23,7 @@ import type { InfluencerProfile, Retainer } from '../../src/types';
 /**
  * Företaget frågar en kreatör om en plats.
  *
- * Ingen förhandling och inget bud: hon har satt sitt pris, och företaget
+ * Ingen förhandling och inget bud: kreatören har satt sitt pris, och företaget
  * väljer hur många videor och om de vill betala tre månader i förskott. Att
  * öppna för prisdiskussion här skulle göra varje förfrågan till ett samtal,
  * och det är just det den här produkten ska slippa.
@@ -71,7 +71,7 @@ export default function NewRetainer() {
   const profile = creator.data;
   const packages = profile?.retainerPackages ?? [];
   const chosen = packages.find((pack) => pack.videosPerMonth === videos);
-  // Rabatten är hennes, inte plattformens. Erbjuder hon ingen finns valet inte.
+  // Rabatten är kreatörens, inte plattformens. Erbjuder hen ingen finns valet inte.
   const discountBps = profile?.retainerPrepayDiscountBps ?? 0;
   const offersPrepay = discountBps > 0;
   const discounted = prepay && offersPrepay;
@@ -152,7 +152,7 @@ export default function NewRetainer() {
           onChangeText={setNote}
           multiline
           placeholder="Vi vill visa lunchen och få fler att hitta hit på vardagar."
-          hint="Hon ser det här innan hon svarar. Två meningar räcker."
+          hint="Det här är det första kreatören läser. Två meningar räcker."
         />
       </Card>
 
@@ -162,7 +162,7 @@ export default function NewRetainer() {
           <Text style={styles.summaryAmount}>{formatSek(charge)}</Text>
           <Text style={styles.secondary}>
             {formatSek(monthly)} till {profile?.displayName} plus 10 % förmedlingsavgift. Första
-            månaden betalas när hon tackat ja.
+            månaden betalas när kreatören tackat ja.
           </Text>
         </Card>
       ) : null}

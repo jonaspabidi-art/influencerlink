@@ -40,8 +40,8 @@ const matchSchema = z.object({
   }),
   contractId: z.string().nullable(),
   /**
-   * Vad kreatören begärt för uppdraget, om hon sökt med ett eget pris.
-   * Företaget ska se det när avtalet skrivs – annars försvinner hennes bud.
+   * Vad kreatören begärt för uppdraget, om hen sökt med ett eget pris.
+   * Företaget ska se det när avtalet skrivs – annars försvinner kreatörens bud.
    */
   proposedFee: z.number().int().nullable(),
   lastMessage: z.string().nullable(),

@@ -225,8 +225,8 @@ export default function MatchDetail() {
             <Button
               label="Skicka avtal"
               onPress={() => {
-                // Kreatörens eget bud går före kampanjens riktbudget. Hon har
-                // sagt vad hon vill ha; att föreslå något annat utan att veta
+                // Kreatörens eget bud går före kampanjens riktbudget. hen har
+                // sagt vad kreatören vill ha; att föreslå något annat utan att veta
                 // om det är ett sätt att tappa bort förhandlingen.
                 setFee(
                   String(

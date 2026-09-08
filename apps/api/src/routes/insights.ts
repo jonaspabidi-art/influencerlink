@@ -36,7 +36,7 @@ const insightsSchema = z.object({
  *
  * Två slutpunkter och inte en, med flit. Fakta är uträknade och kan visas
  * omedelbart; rådet kostar ett modellanrop och några sekunder. Slår man ihop
- * dem får hon vänta på gissningen innan hon ser det som redan är sant.
+ * dem får kreatören vänta på gissningen innan hen ser det som redan är sant.
  */
 export async function insightRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();

@@ -5,7 +5,7 @@ import type { SocialStats } from './index.js';
  * TikTok Login Kit och Display API (v2).
  *
  * Det här är enda vägen till siffror som faktiskt stämmer. Kreatören loggar in
- * hos TikTok, vi får en token, och läser följarantal och statistik på hennes
+ * hos TikTok, vi får en token, och läser följarantal och statistik på kreatörens
  * senaste videor direkt från källan. Ett användarnamn räcker inte – det finns
  * ingen öppen väg att slå upp någon annans konto, och det ska det inte heller.
  *
@@ -174,7 +174,7 @@ export class TikTokClient {
   /**
    * Kreatörens senaste videor, med miniatyr och permalänk.
    *
-   * Används när hon ska välja vilka som ska synas på profilen. Miniatyren
+   * Används när kreatören ska välja vilka som ska synas på profilen. Miniatyren
    * kommer med i svaret, så vi slipper slå upp varje inlägg för sig.
    */
   async recentVideos(accessToken: string, limit = 20): Promise<TikTokVideo[]> {

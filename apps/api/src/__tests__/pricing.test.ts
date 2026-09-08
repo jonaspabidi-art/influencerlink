@@ -13,7 +13,7 @@ function inputs(overrides: Partial<RateInputs> = {}): RateInputs {
 }
 
 describe('suggestRetainerRate', () => {
-  it('utgår från hennes eget riktpris när inget annat finns', () => {
+  it('utgår från kreatörens eget riktpris när inget annat finns', () => {
     const suggestion = suggestRetainerRate(inputs());
 
     // 3 000 kr × 4 videor × 0,6 = 7 200 kr, avrundat till närmaste 500.
@@ -41,7 +41,7 @@ describe('suggestRetainerRate', () => {
     );
 
     expect(suggestion.peerMedian).toBe(1_200_000);
-    // Mitt emellan hennes egen uträkning (7 200) och grannarnas median (12 000).
+    // Mitt emellan kreatörens egen uträkning (7 200) och grannarnas median (12 000).
     expect(suggestion.mid).toBe(950_000);
   });
 

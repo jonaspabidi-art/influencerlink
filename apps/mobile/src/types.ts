@@ -110,7 +110,7 @@ export interface OwnBusinessProfile {
   /** Bilder på verksamheten, i visningsordning. */
   photos: string[];
   categories: Category[];
-  /** Hemsidan, om de har en. Kreatören vill se vad hon tackar ja till. */
+  /** Hemsidan, om de har en. Kreatören vill se vad hen tackar ja till. */
   websiteUrl: string | null;
   /** Företagets egna konton – det är dem kreatören ska tagga. */
   socials: { platform: Platform; handle: string }[];
@@ -154,10 +154,10 @@ export interface InfluencerProfile {
   platforms: Platform[];
   socialAccounts: SocialAccount[];
   showcase: ShowcaseItem[];
-  /** Tar hon löpande uppdrag, och till vilket pris? */
+  /** Tar kreatören löpande uppdrag, och till vilket pris? */
   acceptsRetainers: boolean;
   retainerSlots: number;
-  /** Noll när hon inte erbjuder rabatt vid förskottsbetalning. */
+  /** Noll när kreatören inte erbjuder rabatt vid förskottsbetalning. */
   retainerPrepayDiscountBps: number;
   retainerPackages: { videosPerMonth: number; monthlyRate: number }[];
 }
@@ -202,7 +202,7 @@ export interface Match {
   };
   influencer: { id: string; displayName: string; avatarUrl: string | null; city: string };
   contractId: string | null;
-  /** Vad kreatören begärt, om hon sökt med ett eget pris. */
+  /** Vad kreatören begärt, om hen sökt med ett eget pris. */
   proposedFee: number | null;
   lastMessage: string | null;
   counterpartRating: RatingSummary;
@@ -653,13 +653,13 @@ export interface RetainerAvailability {
   acceptsRetainers: boolean;
   slots: number;
   baseRate: number | null;
-  /** Rabatter hon ger, i baspunkter. Noll = ingen. */
+  /** Rabatter kreatören ger, i baspunkter. Noll = ingen. */
   prepayDiscountBps: number;
   volumeDiscountBps: number;
   packages: { videosPerMonth: number; monthlyRate: number }[];
 }
 
-/** Vad hon rimligen kan ta i månaden, räknat på det vi vet. */
+/** Vad kreatören rimligen kan ta i månaden, räknat på det vi vet. */
 export interface RetainerRateSuggestion {
   city: string;
   low: number;

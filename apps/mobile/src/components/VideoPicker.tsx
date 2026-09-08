@@ -14,9 +14,9 @@ const MAX_PICKS = 12;
 /**
  * Väljer vilka TikTok-videor som ska synas på profilen.
  *
- * Kreatören ser sina senaste videor som ett rutnät och trycker på dem hon vill
+ * Kreatören ser sina senaste videor som ett rutnät och trycker på dem hen vill
  * visa. Numret på en vald video är dess plats i ordningen, så profilen får den
- * ordning hon valde i – inte den TikTok råkar leverera.
+ * ordning kreatören valde i – inte den TikTok råkar leverera.
  */
 export function VideoPicker() {
   const queryClient = useQueryClient();

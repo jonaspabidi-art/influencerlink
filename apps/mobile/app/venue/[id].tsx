@@ -31,7 +31,7 @@ const PROFILE_URLS = {
  * Företaget, så som kreatören ser det.
  *
  * Motsvarigheten till kreatörsprofilen. Kreatören ser annars bara en rubrik
- * och en logotyp, och ska ändå avgöra om uppdraget är värt en dag av hennes tid.
+ * och en logotyp, och ska ändå avgöra om uppdraget är värt en dag av kreatörens tid.
  * Här finns lokalen, vad de sagt om sig själva, vad andra tyckt om att jobba
  * med dem, och vad de söker just nu.
  */
@@ -104,7 +104,7 @@ export default function VenueProfileScreen() {
               <Label>KANALER</Label>
               {/*
                 Kontot står också i avtalet – det är det kreatören ska tagga.
-                Här är det till för att hon ska hinna titta innan hon tackar ja.
+                Här är den till för att kreatören ska hinna titta innan hen tackar ja.
               */}
               {data.websiteUrl ? (
                 <LinkRow

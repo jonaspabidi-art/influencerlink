@@ -54,15 +54,15 @@ const publicInfluencerSchema = z.object({
   socialAccounts: z.array(socialAccountSchema),
   showcase: z.array(showcaseItemSchema),
   /**
-   * Tar hon löpande uppdrag, och till vilket pris?
+   * Tar kreatören löpande uppdrag, och till vilket pris?
    *
    * Ligger på den publika profilen därför att det är där företaget står när
    * frågan uppstår. Platserna är ett riktigt tal: visas en ledig plats ska
-   * hon kunna ta emot den.
+   * kreatören kunna ta emot den.
    */
   acceptsRetainers: z.boolean(),
   retainerSlots: z.number().int(),
-  /** Noll när hon inte erbjuder rabatt – då visas inte förskott som val. */
+  /** Noll när kreatören inte erbjuder rabatt – då visas inte förskott som val. */
   retainerPrepayDiscountBps: z.number().int(),
   retainerPackages: z.array(
     z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
@@ -979,7 +979,7 @@ export function toPublicInfluencer(profile: {
     platforms: profile.socialAccounts.map((account) => account.platform),
     socialAccounts: profile.socialAccounts.map(toPublicSocialAccount),
     showcase: (profile.showcase ?? []).map(toPublicShowcaseItem),
-    // Utan pris finns inget att fråga om, så då räknas hon inte som öppen.
+    // Utan pris finns inget att fråga om, så då räknas kreatören inte som öppen.
     acceptsRetainers: profile.acceptsRetainers && profile.retainerBaseRate !== null,
     retainerSlots: profile.retainerSlots,
     retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps,

@@ -1,10 +1,10 @@
 /**
  * Varför en kreatör får få matchningar.
  *
- * Kortleken visar redan alla kampanjer hon är behörig till, rangordnade. Det
+ * Kortleken visar redan alla kampanjer kreatören är behörig till, rangordnade. Det
  * den aldrig visar är kampanjerna som sorterats bort, och varför. Den som får
  * ett tomt däck ser bara tystnad och kan inte veta om det beror på att det inte
- * finns några kampanjer, på att hon prissatt sig utanför dem, eller på att hon
+ * finns några kampanjer, på att kreatören prissatt sig utanför dem, eller på att hen
  * bara har ett konto kopplat.
  *
  * Allt här är räknat, inget gissat. Varje rad går att kontrollera mot
@@ -26,7 +26,7 @@ import { formatSek, type Ore } from './money.js';
 export const HEALTHY_SHOWCASE_COUNT = 3;
 /** En presentation kortare än så säger inget om vad kreatören gör. */
 export const HEALTHY_BIO_LENGTH = 60;
-/** Nischer under det här gör att kampanjer inte hittar henne på ämne. */
+/** Nischer under det här gör att kampanjer inte hittar kreatören på ämne. */
 export const HEALTHY_CATEGORY_COUNT = 2;
 
 export interface BlockerTally {
@@ -37,9 +37,9 @@ export interface BlockerTally {
 
 export interface CreatorAction {
   kind: BlockerKind;
-  /** Vad hon kan göra, skrivet direkt till henne. */
+  /** Vad kreatören kan göra, skrivet direkt till hen. */
   message: string;
-  /** Hur många fler kampanjer hon blir behörig till. Alltid räknat, aldrig antaget. */
+  /** Hur många fler kampanjer kreatören blir behörig till. Alltid räknat, aldrig antaget. */
   unlocks: number;
   /** Föreslaget nytt lägstapris i öre, när åtgärden gäller priset. */
   suggestedPriceMin?: Ore;
@@ -62,13 +62,13 @@ export interface ProfileSignals {
 }
 
 export interface CreatorInsights {
-  /** Kampanjer som är öppna just nu, oavsett om hon är behörig. */
+  /** Kampanjer som är öppna just nu, oavsett om kreatören är behörig. */
   openCampaigns: number;
-  /** Av dem: hur många hon klarar de hårda kraven för. */
+  /** Av dem: hur många kreatören klarar de hårda kraven för. */
   eligible: number;
-  /** Av de behöriga: hur många som ligger i hennes stad. */
+  /** Av de behöriga: hur många som ligger i kreatörens stad. */
   eligibleInCity: number;
-  /** Behöriga kampanjer hon redan sagt ja eller nej till. */
+  /** Behöriga kampanjer kreatören redan sagt ja eller nej till. */
   reviewed: number;
   /** Behöriga kampanjer som ligger kvar i kortleken. */
   waiting: number;
@@ -80,9 +80,9 @@ export interface CreatorInsights {
   gaps: ProfileGap[];
 }
 
-/** En kampanj sedd från insiktsvyn: kandidaten plus om hon redan bedömt den. */
+/** En kampanj sedd från insiktsvyn: kandidaten plus om kreatören redan bedömt den. */
 export interface InsightCampaign extends CampaignCandidate {
-  /** True när hon redan svepat på kampanjen. */
+  /** True när kreatören redan svepat på kampanjen. */
   reviewed: boolean;
 }
 
@@ -132,7 +132,7 @@ function priceActions(
    *
    * De ersätter i mat eller upplevelse, och tröskeln för dem blir noll. Att
    * föreslå "sänk ditt lägsta arvode till 0 kr" är inget råd – det är att be
-   * henne jobba gratis, formulerat som en uträkning.
+   * kreatören jobba gratis, formulerat som en uträkning.
    */
   const blocked = onlyBlockedBy('BUDGET', campaigns, influencer).filter(
     (campaign) => campaign.budgetPerCreator > 0,
@@ -198,7 +198,7 @@ function followerAction(
   const blocked = onlyBlockedBy('FOLLOWERS', campaigns, influencer);
   if (blocked.length === 0) return null;
 
-  // Närmaste kravet, inte det högsta: det är det hon är närmast att nå.
+  // Närmaste kravet, inte det högsta: det är det kreatören är närmast att nå.
   const nearest = Math.min(...blocked.map((campaign) => campaign.minFollowers));
   const unlocks = blocked.filter((campaign) => campaign.minFollowers <= nearest).length;
   return {
@@ -252,7 +252,7 @@ export function profileGaps(
 
 /**
  * Hela underlaget. Kampanjerna som skickas in ska vara alla öppna kampanjer,
- * inte bara de hon är behörig till – det är skillnaden mellan dem som är svaret.
+ * inte bara de kreatören är behörig till – det är skillnaden mellan dem som är svaret.
  */
 export function creatorInsights(input: {
   influencer: InfluencerCandidate;

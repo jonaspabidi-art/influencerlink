@@ -31,7 +31,7 @@ export interface ContractTermsInput {
   reviewDays: number;
   extraTerms: string;
   /**
-   * Uppdragsgivarens egna konton. Kreatören måste veta vilket konto hon ska
+   * Uppdragsgivarens egna konton. Kreatören måste veta vilket konto hen ska
    * tagga, och den uppgiften hör hemma i avtalet – inte i ett chattmeddelande
    * som försvinner uppåt i tråden.
    */

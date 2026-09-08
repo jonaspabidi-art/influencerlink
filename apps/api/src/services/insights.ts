@@ -9,7 +9,7 @@ import { toCampaignCandidate, toInfluencerCandidate } from './feed.js';
 
 /**
  * Så många öppna kampanjer underlaget bygger på. Samma tak som kortleken har,
- * så att siffrorna kreatören ser matchar det hon faktiskt kan mötas av.
+ * så att siffrorna kreatören ser matchar det hen faktiskt kan mötas av.
  */
 const CAMPAIGN_POOL = 100;
 
@@ -17,8 +17,8 @@ const CAMPAIGN_POOL = 100;
  * Underlaget till kreatörens insiktsvy.
  *
  * Skillnaden mot kortlekens hämtning är att den här inte filtrerar bort
- * någonting. Kortleken vill bara ha kampanjer hon kan söka; det här vill veta
- * hur många hon *inte* kan söka, och varför.
+ * någonting. Kortleken vill bara ha kampanjer kreatören kan söka; det här vill veta
+ * hur många kreatören *inte* kan söka, och varför.
  */
 export async function buildCreatorInsights(
   prisma: PrismaClient,

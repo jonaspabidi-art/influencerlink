@@ -85,7 +85,7 @@ export type DeliverableKind = (typeof DELIVERABLE_KINDS)[number];
 /**
  * Förmedlingsavgiften är delad: företaget betalar sin del ovanpå arvodet och
  * kreatören får sin dragen vid utbetalning. Båda ser samma procentsats, och
- * kreatören får mer i handen än när hon bar hela avgiften ensam.
+ * kreatören får mer i handen än när hen bar hela avgiften ensam.
  */
 export const BUSINESS_FEE_BPS = 1000;
 export const CREATOR_FEE_BPS = 1000;

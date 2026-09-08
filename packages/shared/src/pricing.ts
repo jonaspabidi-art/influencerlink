@@ -1,14 +1,14 @@
 /**
- * Vad är hon värd i ett löpande uppdrag?
+ * Vad är kreatören värd i ett löpande uppdrag?
  *
  * Det här är den fråga kreatörer är sämst rustade att svara på. Ett enstaka
- * samarbete går att jämföra med andra samarbeten hon gjort; ett månadspris för
- * återkommande produktion har hon oftast aldrig satt. Sätter hon för lågt
- * låser hon in sig i det i ett år, sätter hon för högt får hon inga frågor och
+ * samarbete går att jämföra med andra samarbeten kreatören gjort; ett månadspris för
+ * återkommande produktion har kreatören oftast aldrig satt. Sätter hen för lågt
+ * låser kreatören in sig i det i ett år, sätter hen för högt får hen inga frågor och
  * vet inte varför.
  *
- * Förslaget räknas fram ur tre saker vi faktiskt vet: hennes eget riktpris för
- * ett enstaka samarbete, vad andra kreatörer i hennes stad tar, och vad
+ * Förslaget räknas fram ur tre saker vi faktiskt vet: kreatörens eget riktpris för
+ * ett enstaka samarbete, vad andra kreatörer i kreatörens stad tar, och vad
  * företagen där budgeterar. Ingen av dem är en gissning. Saknas två av dem
  * säger uträkningen det i stället för att låtsas.
  */
@@ -21,10 +21,10 @@ import { MIN_RETAINER_BASE_RATE } from './retainers.js';
  * Vad en video i ett löpande uppdrag är värd i förhållande till ett enstaka
  * samarbete.
  *
- * Lägre, och det är inte en rabatt hon ger bort. Ett enstaka samarbete betalar
- * för hennes publik; ett löpande uppdrag betalar för produktionen, och
- * materialet går ut på företagets kanaler. Hon säljer inte sin räckvidd, och
- * hon slipper förhandla om varje uppdrag.
+ * Lägre, och det är inte en rabatt kreatören ger bort. Ett enstaka samarbete betalar
+ * för kreatörens publik; ett löpande uppdrag betalar för produktionen, och
+ * materialet går ut på företagets kanaler. Kreatören säljer inte sin räckvidd, och
+ * kreatören slipper förhandla om varje uppdrag.
  */
 const RETAINER_FACTOR_LOW = 0.5;
 const RETAINER_FACTOR_MID = 0.6;
@@ -39,7 +39,7 @@ const CONFIDENT_PEERS = 5;
 const ROUNDING = 50_000;
 
 export interface RateInputs {
-  /** Hennes riktpris för ett enstaka samarbete, i öre. */
+  /** Kreatörens riktpris för ett enstaka samarbete, i öre. */
   priceTarget: Ore;
   /** Vad andra kreatörer i samma stad tar för grundpaketet, i öre. */
   peerRates: Ore[];
@@ -62,7 +62,7 @@ export interface RetainerRateSuggestion {
   peerHigh: Ore | null;
   cityBudgetMedian: Ore | null;
   confidence: RateConfidence;
-  /** Vad förslaget vilar på, formulerat så att hon kan kontrollera det. */
+  /** Vad förslaget vilar på, formulerat så att kreatören kan kontrollera det. */
   basis: string[];
 }
 
@@ -82,10 +82,10 @@ function roundPrice(ore: Ore): Ore {
 /**
  * Föreslaget månadspris för grundpaketet.
  *
- * Hennes eget riktpris väger alltid tyngst – det är det enda talet som säkert
- * hör till just henne. Finns tillräckligt många jämförbara kreatörer vägs
+ * Kreatörens eget riktpris väger alltid tyngst – det är det enda talet som säkert
+ * hör till just kreatören. Finns tillräckligt många jämförbara kreatörer vägs
  * deras median in till hälften; färre än så säger ingenting och lämnas
- * därhän, hellre än att låta två grannar bestämma hennes pris.
+ * därhän, hellre än att låta två grannar bestämma kreatörens pris.
  */
 export function suggestRetainerRate(input: RateInputs): RetainerRateSuggestion {
   const ownMid = input.priceTarget * 4 * RETAINER_FACTOR_MID;

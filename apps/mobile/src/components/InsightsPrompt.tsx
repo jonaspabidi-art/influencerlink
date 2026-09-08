@@ -11,7 +11,7 @@ import { Body, Button, Card } from './ui';
  *
  * Frågan ställs bara när den är befogad. Den som har fullt upp med samarbeten
  * ska inte mötas av en ruta som antyder att det går dåligt, och den som har
- * fyra kampanjer kvar att svepa på har inte något problem att lösa – hon har
+ * fyra kampanjer kvar att svepa på har inte något problem att lösa – kreatören har
  * kort kvar. Därför hänger rutan på uträkningen, inte på en känsla.
  */
 export function InsightsPrompt() {
@@ -21,7 +21,7 @@ export function InsightsPrompt() {
 
   if (!data) return null;
 
-  // Har hon både matchningar och kort kvar är läget inte något att förklara.
+  // Har kreatören både matchningar och kort kvar är läget inte något att förklara.
   if (data.matches >= 3 && data.waiting > 0) return null;
 
   const blocked = data.blockers.followers + data.blockers.platforms + data.blockers.budget;

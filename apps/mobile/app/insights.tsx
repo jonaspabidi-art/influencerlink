@@ -28,7 +28,7 @@ interface Advice {
  * Varför får jag få matchningar?
  *
  * Skärmen är byggd i den ordning frågan faktiskt går att besvara. Först det
- * som är räknat: hur många kampanjer som ligger ute, hur många hon är behörig
+ * som är räknat: hur många kampanjer som ligger ute, hur många kreatören är behörig
  * till, och vad de andra faller på. Sedan stegen, med antalet kampanjer varje
  * steg öppnar – de talen är kontrollerade mot kampanjerna, inte uppskattade.
  * Sist rådet från modellen, som bara får prioritera bland det som redan står.
@@ -41,7 +41,7 @@ export default function Insights() {
   const [asked, setAsked] = useState(false);
 
   /*
-   * Rådet hämtas först när hon ber om det.
+   * Rådet hämtas först när kreatören ber om det.
    *
    * Skärmen är läsbar utan det – siffrorna står där de står. Att starta ett
    * modellanrop bara för att någon öppnat skärmen är att svara på en fråga

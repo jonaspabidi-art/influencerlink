@@ -13,7 +13,7 @@ import { Label, Loading } from './ui';
  * Flera bilder i en rad, som kreatörens rutnät av klipp.
  *
  * Företaget behöver visa upp sig av samma skäl som kreatören: motparten ska
- * kunna avgöra om det är värt en dag av sitt liv innan hon tackar ja.
+ * kunna avgöra om det är värt en dag av sitt liv innan kreatören tackar ja.
  */
 export function PhotoGalleryField({
   label,

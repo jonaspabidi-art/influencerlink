@@ -214,7 +214,7 @@ function CreatorRow({ creator }: { creator: Browsable }) {
         </Text>
         <Text style={styles.price}>Från {formatSek(creator.priceMin)}</Text>
 
-        {/* Bristen är sann: platserna är ett tal hon själv satt. */}
+        {/* Bristen är sann: platserna är ett tal kreatören själv satt. */}
         {creator.acceptsRetainers && creator.retainerSlots > 0 ? (
           <Text style={styles.retainer} numberOfLines={1}>
             Löpande från {formatSek(creator.retainerPackages[0]?.monthlyRate ?? 0)}/mån ·{' '}

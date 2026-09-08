@@ -27,7 +27,7 @@ import type { InfluencerProfile, ShowcaseItem, SocialAccount } from '../src/type
  * Sociala konton och uppvisat innehåll.
  *
  * Kopplingen är ännu inte OAuth mot plattformarna – kreatören anger sitt
- * användarnamn och klistrar in länkar till inlägg hon vill visa upp. När
+ * användarnamn och klistrar in länkar till inlägg kreatören vill visa upp. När
  * TikToks och Metas API:er är godkända byts anslutningsraden mot en riktig
  * inloggning, medan resten av skärmen kan stå kvar som den är.
  */

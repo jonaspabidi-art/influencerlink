@@ -42,8 +42,8 @@ export function packageFor(videosPerMonth: number): RetainerPackage {
 /**
  * Företaget frågar en kreatör om en plats.
  *
- * Priset låses här och inte när hon svarar. Hade det räknats om vid svaret
- * kunde hon höja sitt grundpris mellan förfrågan och accept, och företaget
+ * Priset låses här och inte när kreatören svarar. Hade det räknats om vid svaret
+ * kunde kreatören höja sitt grundpris mellan förfrågan och accept, och företaget
  * skulle sitta med ett annat belopp än det tackade ja till.
  */
 export async function requestRetainer(
@@ -83,7 +83,7 @@ export async function requestRetainer(
     size,
     influencer.retainerVolumeDiscountBps,
   );
-  // Förskott är bara ett alternativ när hon faktiskt erbjuder något för det.
+  // Förskott är bara ett alternativ när kreatören faktiskt erbjuder något för det.
   const months =
     input.prepaidMonths >= PREPAY_MONTHS && influencer.retainerPrepayDiscountBps > 0
       ? PREPAY_MONTHS
@@ -116,7 +116,7 @@ export async function requestRetainer(
 /**
  * Kreatören svarar.
  *
- * Tackar hon ja fryses avtalstexten och alla förskottsbetalda perioder skapas
+ * Tackar kreatören ja fryses avtalstexten och alla förskottsbetalda perioder skapas
  * på en gång. Perioderna finns alltså innan en krona betalats – det är de som
  * betalningen hänger på, och att skapa dem i efterhand skulle betyda att en
  * misslyckad betalning lämnar ett uppdrag utan period att betala.
@@ -199,7 +199,7 @@ export async function respondToRequest(
     }
 
     // Platsen är upptagen. Två uppdrag på samma plats är ett löfte vi inte
-    // kan hålla – hon har bara en dag i veckan att ge.
+    // kan hålla – kreatören har bara en dag i veckan att ge.
     await tx.influencerProfile.update({
       where: { id: retainer.influencerId },
       data: { retainerSlots: { decrement: 1 } },

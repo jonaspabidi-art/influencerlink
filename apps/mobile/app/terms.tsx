@@ -37,7 +37,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       `Förmedlingsavgiften delas mellan parterna. Företaget betalar ${LEGAL.businessFeePercent} % ovanpå arvodet, och ${LEGAL.creatorFeePercent} % dras från kreatörens utbetalning. Båda beloppen står i avtalet innan ni signerar.`,
       'Ingår mat, produkter eller en upplevelse i ersättningen anges värdet i avtalet. Det är kreatörens ansvar att hantera det skattemässigt.',
-      'Kreatören ansvarar själv för skatter och avgifter på sin ersättning. Har kreatören inget företag kan utbetalningen gå via en löneförmedlare, och de villkoren visas innan valet görs.',
+      'Kreatören ansvarar själv för skatter och avgifter på sin ersättning. Har hen inget företag kan utbetalningen gå via en löneförmedlare, och de villkoren visas innan valet görs.',
     ],
   },
   {
@@ -51,7 +51,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Omdömen',
     paragraphs: [
-      'Efter ett avslutat samarbete kan båda parter lämna omdöme. Omdömena publiceras först när båda skrivit sitt, eller när fjorton dagar gått – ingen ska kunna vänta ut motparten och svara på ett omdöme hon redan läst.',
+      'Efter ett avslutat samarbete kan båda parter lämna omdöme. Omdömena publiceras först när båda skrivit sitt, eller när fjorton dagar gått – ingen ska kunna vänta ut motparten och svara på ett omdöme man redan läst.',
       'Ett omdöme ska vara sakligt och gälla samarbetet. Vi kan ta bort omdömen som är kränkande eller uppenbart osanna.',
     ],
   },

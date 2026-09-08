@@ -5,12 +5,12 @@
  * En kampanj går ut på kreatörens egen kanal – det är räckvidd, en gång. Ett
  * löpande uppdrag går ut på företagets kanaler, vecka efter vecka, och bygger
  * något som är deras. Kreatören kan inte posta om samma restaurang varje vecka
- * på sitt eget konto utan att bränna sin publik; på företagets konto kan hon.
+ * på sitt eget konto utan att bränna sin publik; på företagets konto kan kreatören.
  *
  * Ekonomiskt är skillnaden att pengarna rör sig i perioder i stället för i ett
  * enda avslut. Företaget betalar en månad i förskott, videorna levereras under
  * månaden, och vid periodens slut betalas kreatören för det som faktiskt
- * godkänts. Levererar hon färre än avtalat går mellanskillnaden tillbaka.
+ * godkänts. Levererar kreatören färre än avtalat går mellanskillnaden tillbaka.
  */
 
 import {
@@ -38,10 +38,10 @@ const BASE_PACKAGE: RetainerPackage = 4;
 /**
  * Rabattsatser kreatören kan välja mellan, i baspunkter.
  *
- * Samma stege används för båda rabatterna hon kan ge – vid förskott och vid
+ * Samma stege används för båda rabatterna kreatören kan ge – vid förskott och vid
  * fler videor i månaden. Noll står först och är förvalt i båda fallen: en
- * rabatt dras på hennes arvode, och en sats vi satt åt henne hade varit att
- * förhandla bort en del av hennes betalning i ett samtal hon inte var med i.
+ * rabatt dras på kreatörens arvode, och en sats vi satt åt hen hade varit att
+ * förhandla bort en del av kreatörens betalning i ett samtal hen inte var med i.
  */
 export const DISCOUNT_CHOICES = [0, 500, 1000, 1500] as const;
 export type DiscountBps = (typeof DISCOUNT_CHOICES)[number];
@@ -77,11 +77,11 @@ export function isRetainerPackage(videos: number): videos is RetainerPackage {
 /**
  * Månadsarvodet för ett paket, räknat ur kreatörens grundpris.
  *
- * Kreatören sätter ett tal – vad hon vill ha för fyra videor i månaden – och
+ * Kreatören sätter ett tal – vad hen vill ha för fyra videor i månaden – och
  * de större paketen kostar rakt av så många gånger mer. Att låta priset per
- * video sjunka av sig självt vore en rabatt hon aldrig valt: hon skriver
+ * video sjunka av sig självt vore en rabatt kreatören aldrig valt: hen skriver
  * "ingen rabatt" och ser ändå ett lägre pris per video, av skäl bara vi känner
- * till. Vill hon belöna volym väljer hon det, och då syns det som en rabatt.
+ * till. Vill kreatören belöna volym väljer hen det, och då syns det som en rabatt.
  *
  * Avrundas till hela kronor – ett månadspris med ören i ser ut som ett misstag.
  */
@@ -116,7 +116,7 @@ export function retainerPackages(
  * Rabatterat månadsarvode vid förskottsbetalning.
  *
  * Satsen är kreatörens egen. Rabatten dras på arvodet, inte på avgiften: det
- * är hon och företaget som gör upp om priset, och plattformens andel följer
+ * är kreatören och företaget som gör upp om priset, och plattformens andel följer
  * med nedåt. Att låta rabatten bara belasta Pacta hade sett generöst ut och
  * gjort längre avtal olönsamma för oss.
  */
@@ -208,7 +208,7 @@ export function periodEnd(start: Date): Date {
  * Uppsägning tar effekt vid periodens slut, aldrig mitt i.
  *
  * Företaget har betalat för månaden och kreatören har planerat in den. Att
- * bryta mitt i skulle kräva en delåterbetalning och lämna henne med luckor hon
+ * bryta mitt i skulle kräva en delåterbetalning och lämna kreatören med luckor hen
  * inte kan fylla med en dags varsel.
  */
 export function cancellationTakesEffect(currentPeriodEnd: Date): Date {
@@ -243,12 +243,12 @@ function formatDate(date: Date): string {
  * materialet publiceras på företagets kanaler i stället för kreatörens.
  *
  * Godkännandet auto-godkänns aldrig. På en kampanj är det kreatörens eget
- * konto och hennes eget rykte som står på spel om företaget somnar; här är det
+ * konto och kreatörens eget rykte som står på spel om företaget somnar; här är det
  * företagets konto, och ett inlägg som inte borde ha gått ut går inte att ta
  * tillbaka.
  *
  * Företaget får en varaktig rätt att använda materialet i sina egna kanaler.
- * De har betalat för produktionen, inte för hennes publik, och ett klipp de
+ * De har betalat för produktionen, inte för kreatörens publik, och ett klipp de
  * inte får ha kvar på sitt eget konto vore värdelöst för dem.
  *
  * Åtkomsten till kontona ges utanför Pacta. Vi tar aldrig emot lösenord.
@@ -299,7 +299,7 @@ Uppdragsgivaren kan begära ändring med en motivering. Uppdragstagaren lämnar 
 
 Uppdragsgivaren ger uppdragstagaren åtkomst till sina konton genom plattformarnas egna verktyg för delad åtkomst. Lösenord lämnas inte ut och hanteras aldrig av Pacta.
 
-Uppdragstagaren får publicera godkänt material och inget annat. Hon ändrar inte kontots inställningar, kopplingar eller övriga innehåll, och svarar inte i uppdragsgivarens namn utan särskild överenskommelse.
+Uppdragstagaren får publicera godkänt material och inget annat. Kreatören ändrar inte kontots inställningar, kopplingar eller övriga innehåll, och svarar inte i uppdragsgivarens namn utan särskild överenskommelse.
 
 Uppdragsgivaren kan när som helst dra tillbaka åtkomsten. Görs det under en pågående period fortsätter arvodet att löpa för videor som redan producerats och godkänts.
 

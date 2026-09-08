@@ -50,9 +50,9 @@ const RANKING_TTL_MS = 10 * 60 * 1000;
  * Hur länge ett råd till en kreatör återanvänds.
  *
  * Rådet vilar helt på uträkningen, och uträkningen ändras bara när kampanjerna
- * eller profilen gör det. Ändras något får hon ett nytt råd direkt eftersom
+ * eller profilen gör det. Ändras något får kreatören ett nytt råd direkt eftersom
  * nyckeln är själva underlaget – annars är det samma svar, och då ska det inte
- * kosta ett anrop varje gång hon öppnar skärmen.
+ * kosta ett anrop varje gång kreatören öppnar skärmen.
  */
 const CREATOR_ADVICE_TTL_MS = 60 * 60 * 1000;
 
@@ -393,7 +393,7 @@ export class AiService {
   }
 
   /**
-   * Svarar kreatören som undrar varför hon får få matchningar.
+   * Svarar kreatören som undrar varför hen får få matchningar.
    *
    * Uträkningen är gjord innan modellen ser den, och den får inte räkna om
    * något: kampanjerna är räknade, hindren summerade och stegen kvantifierade.
@@ -443,7 +443,7 @@ export class AiService {
    * Spannet är uträknat innan modellen ser det, och den får inte räkna om
    * något. Det den tillför är valet inom spannet – och ärligheten om hur tunt
    * underlaget är. Ett grovt förslag som låter som ett facit är värre än inget
-   * förslag: hon låser in sig i priset i månader.
+   * förslag: kreatören låser in sig i priset i månader.
    */
   async adviseRate(
     city: string,

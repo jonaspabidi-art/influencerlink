@@ -56,8 +56,8 @@ export function RetainerOffer({
       </View>
       <Body>
         Den här filmen gav er {formatFollowers(views)} visningar. Ett löpande uppdrag är något
-        annat: hon producerar fyra videor i månaden till <Text style={styles.strong}>era egna
-        kanaler</Text> i stället för sin, och ni godkänner varje film innan den läggs upp.
+        annat: fyra videor i månaden till <Text style={styles.strong}>era egna kanaler</Text> i
+        stället för {influencerName}s, och ni godkänner varje film innan den läggs upp.
       </Body>
       <Text style={styles.price}>
         Från {formatSek(Math.round(monthly * 1.1))} i månaden · ingen bindningstid

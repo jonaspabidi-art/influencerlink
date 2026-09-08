@@ -246,7 +246,7 @@ export default function EditBusinessProfile() {
                 setSaved(false);
                 setPhotos(next);
               }}
-              hint="Kreatören ser dem innan hon tackar ja. Lokalen, produkten, stämningen."
+              hint="Det här ser kreatören innan hen tackar ja. Lokalen, produkten, stämningen."
             />
           </Card>
 

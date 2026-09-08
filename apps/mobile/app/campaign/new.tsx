@@ -311,7 +311,7 @@ export default function NewCampaign() {
   // Avgiften är delad, så summan de betalar in är större än arvodet. Det ska
   // stå här och inte komma som en överraskning i avtalet.
   const money = splitFee(feeTotal);
-  // Per kreatör, inte totalen: "kreatören får" ska vara det hon faktiskt får.
+  // Per kreatör, inte totalen: "kreatören får" ska vara det hen faktiskt får.
   const perCreator = splitFee(kronorToOre(Number(budget) || 0));
 
   return (
