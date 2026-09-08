@@ -192,7 +192,7 @@ export async function expertRoutes(app: FastifyInstance, services: Services): Pr
       }
 
       const intent = await payments.createEscrowIntent({
-        contractId: `${order.id}:expert`,
+        reference: `${order.id}:expert`,
         amount: order.price,
         customerId,
         description: 'Kampanj skapad av Pacta',

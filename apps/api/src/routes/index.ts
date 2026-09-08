@@ -11,6 +11,7 @@ import { insightRoutes } from './insights.js';
 import { matchRoutes } from './matches.js';
 import { mediaRoutes } from './media.js';
 import { profileRoutes } from './profiles.js';
+import { retainerRoutes } from './retainers.js';
 import { reviewRoutes } from './reviews.js';
 import { swipeRoutes } from './swipes.js';
 import { webhookRoutes } from './webhooks.js';
@@ -53,6 +54,7 @@ export async function registerRoutes(app: FastifyInstance, services: Services): 
     await swipeRoutes(instance, services);
     await matchRoutes(instance, services);
     await contractRoutes(instance, services);
+    await retainerRoutes(instance, services);
     await reviewRoutes(instance, services);
     await assistantRoutes(instance, services);
     await expertRoutes(instance, services);

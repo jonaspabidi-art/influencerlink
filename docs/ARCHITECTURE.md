@@ -166,6 +166,45 @@ systemprompten, så att svaren om hur det går till stämmer med vad koden gör.
 Utan `ANTHROPIC_API_KEY` svarar slutpunkten `available: false` och appen säger
 det rakt ut i stället för att låtsas.
 
+## Löpande uppdrag
+
+En kampanj är räckvidd, en gång: kreatören publicerar på sin egen kanal. Ett
+löpande uppdrag är något annat – hon producerar innehåll åt företagets kanaler,
+vecka efter vecka. Skillnaden är inte storleken utan vems publik det gäller. Att
+posta om samma restaurang varje vecka på sitt eget konto bränner hennes publik;
+på företagets konto gör det inte det.
+
+Modellen ligger skild från `Contract` med flit. Ett kontrakt hör till en kampanj,
+har ett slutdatum och en enda utbetalning. Ett `Retainer` har inget slut förrän
+någon säger upp det, och pengarna rör sig per `RetainerPeriod`.
+
+Perioden är enheten. Företaget betalar in hela månaden i förskott, videorna
+levereras under tiden, och vid stängning avräknas det som faktiskt godkänts:
+full leverans betalar hela arvodet, uteblivna videor dras av per styck och går
+tillbaka till företaget tillsammans med den del av avgiften de bar. Att behålla
+avgiften på en video som aldrig levererades vore att ta betalt för ingenting.
+`settlePeriod` i det delade paketet garanterar att utbetalning, återbetalning
+och avgift alltid summerar till exakt det inbetalda.
+
+Priset sätter kreatören själv: ett tal för grundpaketet, fyra videor i månaden.
+Åtta och tolv följer av paketskalan, där priset per video sjunker med volymen –
+den första videon hos en ny kund kräver att hon lär sig stället, resten gör det
+inte. Betalar företaget tre månader i förskott dras tio procent, och rabatten
+belastar arvodet, inte bara plattformens andel.
+
+Godkännandet auto-godkänns aldrig, till skillnad från utkasten på en kampanj.
+Där publicerar kreatören i sitt eget namn och bär själv följderna av ett tyst
+kök; här publicerar hon i företagets, och ett inlägg som aldrig godkändes går
+inte att ta tillbaka.
+
+Åtkomsten till företagets konton ligger utanför Pacta. Företaget lägger till
+kreatören genom plattformarnas egna verktyg för delad åtkomst; vi sparar att
+åtkomsten är given, aldrig ett lösenord. Ett stulet lösenord till någons
+varumärke är en skada som inte går att reparera.
+
+Uppsägning träder i kraft vid periodens slut, aldrig mitt i. Företaget har
+betalat för månaden och kreatören har planerat in den.
+
 ## Varför kreatören får få matchningar
 
 Kortleken visar alla kampanjer kreatören är behörig till. Den visar aldrig dem

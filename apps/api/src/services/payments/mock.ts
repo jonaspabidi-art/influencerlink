@@ -36,7 +36,7 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   async createEscrowIntent(input: CreateEscrowInput): Promise<EscrowIntent> {
-    const paymentIntentId = `pi_mock_${input.contractId.slice(0, 12)}`;
+    const paymentIntentId = `pi_mock_${input.reference.slice(0, 12)}`;
     return {
       paymentIntentId,
       clientSecret: `${paymentIntentId}_secret_${randomUUID()}`,
@@ -45,11 +45,11 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   async releasePayout(input: {
-    contractId: string;
+    reference: string;
     destinationAccountId: string;
     amount: number;
   }): Promise<PayoutResult> {
-    const result = { transferId: `tr_mock_${input.contractId.slice(0, 12)}`, amount: input.amount };
+    const result = { transferId: `tr_mock_${input.reference.slice(0, 12)}`, amount: input.amount };
     this.transfers.push(result);
     return result;
   }

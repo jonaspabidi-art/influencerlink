@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // Poolad anslutning (Supabase: port 6543) som appen kör frågor genom.
   url       = env("DATABASE_URL")
   // Direktanslutning (port 5432). Migrationer kan inte gå via pgbouncer.
@@ -142,8 +142,8 @@ model User {
   passwordHash       String?
   phone              String?
 
-  bankIdVerifiedAt DateTime?
-  onboardingComplete Boolean @default(false)
+  bankIdVerifiedAt   DateTime?
+  onboardingComplete Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -174,6 +174,17 @@ model InfluencerProfile {
   /// Riktpris för ett standarduppdrag, i öre.
   priceTarget Int @default(0)
 
+  /// Tar hon löpande uppdrag, och hur många platser är kvar?
+  ///
+  /// Ett löpande uppdrag är en dag i veckan som inte går att sälja två gånger.
+  /// Platserna är därför ett riktigt tal och inte en marknadsföringsknep –
+  /// visas de som lediga ska hon kunna ta emot dem.
+  acceptsRetainers Boolean @default(false)
+  retainerSlots    Int     @default(0)
+  /// Vad hon vill ha för grundpaketet, fyra videor i månaden, i öre.
+  /// Priset för åtta och tolv följer av paketskalan i det delade paketet.
+  retainerBaseRate Int?
+
   /// Stripe Connect-konto som utbetalningar går till.
   stripeAccountId String? @unique
   payoutsEnabled  Boolean @default(false)
@@ -188,14 +199,16 @@ model InfluencerProfile {
   applications   Application[]
   contracts      Contract[]
   reviews        Review[]
+  retainers      Retainer[]
 
   @@index([city])
+  @@index([acceptsRetainers])
 }
 
 model SocialAccount {
-  id          String            @id @default(cuid())
+  id           String            @id @default(cuid())
   influencerId String
-  influencer  InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
   platform   Platform
   handle     String
@@ -206,17 +219,17 @@ model SocialAccount {
   /// Engagemang som andel, t.ex. 0.045 för 4,5 %.
   engagementRate Float @default(0)
 
-  verified Boolean @default(false)
+  verified    Boolean     @default(false)
   /// Var siffrorna kommer ifrån. Befintliga rader är genererade.
   statsSource StatsSource @default(DEMO)
   /// Antal videor snittvisningarna bygger på. Null när siffran inte är mätt.
   sampleSize  Int?
 
   /// Krypterad OAuth-token. Läses aldrig ut via API:et.
-  accessTokenEnc String?
+  accessTokenEnc  String?
   refreshTokenEnc String?
-  tokenExpiresAt DateTime?
-  lastSyncedAt   DateTime?
+  tokenExpiresAt  DateTime?
+  lastSyncedAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -247,12 +260,13 @@ model BusinessProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  campaigns Campaign[]
-  socials   BusinessSocial[]
-  reviews   Review[]
+  campaigns    Campaign[]
+  socials      BusinessSocial[]
+  reviews      Review[]
+  retainers    Retainer[]
+  expertOrders ExpertOrder[]
 
   @@index([city])
-  expertOrders ExpertOrder[]
 }
 
 /// Företagets eget konto på en plattform.
@@ -304,9 +318,9 @@ model Campaign {
   matches      Match[]
   applications Application[]
   contracts    Contract[]
+  expertOrder  ExpertOrder?
 
   @@index([status, city])
-  expertOrder ExpertOrder?
 }
 
 /// En swipe per part och kampanj-/influencerpar. Ömsesidig LIKE skapar en Match.
@@ -336,10 +350,10 @@ model Match {
   influencerId String
   influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
-  status MatchStatus @default(NEW)
+  status      MatchStatus @default(NEW)
   /// Poäng 0–100 från matchningsmotorn när matchen skapades.
-  matchScore  Float  @default(0)
-  matchReason String @default("")
+  matchScore  Float       @default(0)
+  matchReason String      @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -418,13 +432,13 @@ model Contract {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  signatures Signature[]
-  payment    Payment?
+  signatures  Signature[]
+  payment     Payment?
   usageRights UsageRights?
-  drafts     Draft[]
-  delivery   Delivery?
-  metrics    PostMetric[]
-  reviews    Review[]
+  drafts      Draft[]
+  delivery    Delivery?
+  metrics     PostMetric[]
+  reviews     Review[]
 
   @@index([status])
 }
@@ -477,19 +491,19 @@ model Draft {
 
   /// Sökvägen i lagringshinken. Adressen signeras vid varje uppspelning.
   storagePath String
-  fileName    String  @default("")
+  fileName    String @default("")
   contentType String
-  sizeBytes   Int     @default(0)
+  sizeBytes   Int    @default(0)
 
   /// Kreatörens medskick, t.ex. "andra klippet är utan musik".
   note String @default("")
 
-  status     DraftStatus @default(PENDING)
+  status       DraftStatus @default(PENDING)
   /// Restaurangens svar när den ber om en ändring.
-  reviewNote String      @default("")
-  reviewedAt DateTime?
+  reviewNote   String      @default("")
+  reviewedAt   DateTime?
   /// Sattes för att restaurangen inte svarade i tid.
-  autoApproved Boolean @default(false)
+  autoApproved Boolean     @default(false)
 
   submittedAt DateTime @default(now())
 
@@ -503,12 +517,12 @@ model Delivery {
   contractId String   @unique
   contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
 
-  urls        String[]
-  note        String   @default("")
-  submittedAt DateTime @default(now())
-  approvedAt  DateTime?
+  urls         String[]
+  note         String    @default("")
+  submittedAt  DateTime  @default(now())
+  approvedAt   DateTime?
   /// Sätts när restaurangen inte hunnit svara inom reviewDays.
-  autoApproved Boolean @default(false)
+  autoApproved Boolean   @default(false)
 }
 
 /// Mätning av ett publicerat inlägg.
@@ -556,8 +570,8 @@ model Payment {
   stripeTransferId      String?
   status                PaymentStatus @default(PENDING)
 
-  escrowedAt DateTime?
-  releasedAt DateTime?
+  escrowedAt    DateTime?
+  releasedAt    DateTime?
   failureReason String?
 
   createdAt DateTime @default(now())
@@ -643,22 +657,22 @@ model ShowcaseItem {
   influencerId String
   influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
-  platform Platform
+  platform   Platform
   /// Ren adress utan spårningsparametrar. Unik per kreatör.
-  url      String
-  postId   String?
-  title    String  @default("")
-  authorName String @default("")
+  url        String
+  postId     String?
+  title      String   @default("")
+  authorName String   @default("")
 
   /// Plattformarnas miniatyrer ligger på CDN-adresser som slutar gälla, så
   /// den här måste hämtas om med jämna mellanrum.
-  thumbnailUrl String?
-  thumbnailWidth Int?
+  thumbnailUrl    String?
+  thumbnailWidth  Int?
   thumbnailHeight Int?
   /// Antal visningar när inlägget hämtades. Null för inklistrade länkar,
   /// där plattformen inte lämnar ut siffran.
-  views        Int?
-  refreshedAt  DateTime?
+  views           Int?
+  refreshedAt     DateTime?
 
   /// Lägre tal först. Det första inlägget är det som syns på kortet.
   position  Int      @default(0)
@@ -807,4 +821,170 @@ model ExpertOrder {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+}
+
+/// Var ett löpande uppdrag befinner sig.
+enum RetainerStatus {
+  /// Företaget har frågat. Kreatören har inte svarat än.
+  REQUESTED
+  DECLINED
+  ACTIVE
+  /// Uppsagt, men löper vidare till den betalda periodens slut.
+  CANCELLING
+  ENDED
+}
+
+enum RetainerPeriodStatus {
+  AWAITING_PAYMENT
+  ACTIVE
+  CLOSED
+}
+
+enum RetainerPostStatus {
+  /// Uppladdad, väntar på företagets svar. Får inte publiceras.
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  /// Kreatören har lagt upp den på företagets kanal.
+  PUBLISHED
+}
+
+/// Ett löpande uppdrag: kreatören producerar innehåll åt företagets kanaler.
+///
+/// Skilt från Contract med flit. Ett kontrakt hör till en kampanj, har ett
+/// slutdatum och en enda utbetalning. Det här har inget slut förrän någon
+/// säger upp det, och pengarna rör sig en gång i månaden. Att tvinga in det i
+/// samma tabell hade gjort campaignId meningslöst och statusflödet oläsligt.
+///
+/// Åtkomsten till företagets konton ligger inte här. Företaget lägger till
+/// kreatören i Meta Business Suite eller TikTok Business Center, utanför
+/// Pacta. Vi sparar att åtkomsten är given, aldrig ett lösenord – ett stulet
+/// lösenord till någons varumärke är en skada vi inte kan reparera.
+model Retainer {
+  id String @id @default(cuid())
+
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  /// Avtalat antal videor per månad. Ett av paketen i det delade paketet.
+  videosPerMonth Int
+  /// Ordinarie månadsarvode, före eventuell förskottsrabatt, i öre.
+  listRate       Int
+  /// Det arvode som faktiskt gäller per period, i öre.
+  monthlyRate    Int
+  /// Antal månader företaget betalat i förskott. 1 = månad för månad.
+  prepaidMonths  Int @default(1)
+
+  /// Avgiftsfördelningen vid tecknandet. Fryst som på ett kontrakt, så att en
+  /// prisändring aldrig räknar om ett löpande uppdrag som redan startat.
+  businessFeeBps Int @default(1000)
+  creatorFeeBps  Int @default(1000)
+
+  status      RetainerStatus @default(REQUESTED)
+  /// Företagets egna rader i förfrågan: vad de vill ha ut av det.
+  requestNote String         @default("")
+  /// Fryst avtalstext i markdown, satt när kreatören tackar ja.
+  terms       String         @default("")
+
+  /// När företaget bekräftat att kreatören fått åtkomst till kanalerna.
+  /// Utan det får hon producera men inte publicera.
+  accessGrantedAt DateTime?
+  accessRevokedAt DateTime?
+
+  startedAt   DateTime?
+  cancelledAt DateTime?
+  endedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  periods RetainerPeriod[]
+
+  @@index([businessId, status])
+  @@index([influencerId, status])
+}
+
+/// En månad i ett löpande uppdrag.
+///
+/// Perioden är enheten pengarna rör sig i: företaget betalar in hela månaden i
+/// förskott, videorna levereras under tiden, och vid stängning betalas
+/// kreatören för det som godkänts. Beloppen fryses här och inte på uppdraget,
+/// eftersom en prisändring ska gälla från nästa period och inte den pågående.
+model RetainerPeriod {
+  id String @id @default(cuid())
+
+  retainerId String
+  retainer   Retainer @relation(fields: [retainerId], references: [id], onDelete: Cascade)
+
+  /// Löpnummer från 1. Används i appen: "period 3 av 3 betalda".
+  index    Int
+  startsAt DateTime
+  endsAt   DateTime
+
+  videosAgreed Int
+  /// Kreatörens arvode för perioden, före avgift, i öre.
+  grossAmount  Int
+  /// Vad företaget betalar in: arvodet plus deras del av avgiften.
+  chargeAmount Int
+
+  /// Utfallet vid stängning. Noll tills perioden stängts.
+  releasedAmount Int @default(0)
+  refundedAmount Int @default(0)
+  platformFee    Int @default(0)
+
+  status                RetainerPeriodStatus @default(AWAITING_PAYMENT)
+  stripePaymentIntentId String?
+  paidAt                DateTime?
+  closedAt              DateTime?
+
+  posts RetainerPost[]
+
+  @@unique([retainerId, index])
+  @@index([status, endsAt])
+}
+
+/// En video som producerats åt företagets kanal.
+///
+/// Godkännandet är obligatoriskt och auto-godkänns aldrig, till skillnad från
+/// utkasten på en kampanj. Där publicerar kreatören i sitt eget namn och bär
+/// själv följderna; här publicerar hon i företagets, och ett inlägg som inte
+/// borde ha gått ut går inte att ta tillbaka.
+model RetainerPost {
+  id String @id @default(cuid())
+
+  periodId String
+  period   RetainerPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  /// Kanalen den är gjord för.
+  platform Platform
+
+  /// Filen ligger i lagringshinken, aldrig hos oss.
+  storagePath String
+  fileName    String @default("")
+  contentType String
+  sizeBytes   Int    @default(0)
+
+  /// Texten som ska följa med inlägget. Godkänns tillsammans med filmen –
+  /// bildtexten är lika mycket företagets röst som klippet är det.
+  caption String @default("")
+  note    String @default("")
+
+  status     RetainerPostStatus @default(PENDING)
+  /// Räknas upp när företaget bett om en ändring och hon laddat upp på nytt.
+  revision   Int                @default(1)
+  reviewNote String             @default("")
+  reviewedAt DateTime?
+
+  publishedAt  DateTime?
+  /// Adressen till det publicerade inlägget på företagets kanal. Klistras in
+  /// av kreatören, och är det enda sättet vi kan mäta vad det gav.
+  publishedUrl String?
+
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([periodId, status])
 }

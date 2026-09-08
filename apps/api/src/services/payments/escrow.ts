@@ -49,7 +49,7 @@ export async function createEscrow(
     creatorFeeBps: contract.creatorFeeBps,
   });
   const intent = await payments.createEscrowIntent({
-    contractId: contract.id,
+    reference: contract.id,
     amount: breakdown.charge,
     customerId,
     description: `${contract.campaign.title} – avtal ${contract.id}`,
@@ -135,7 +135,7 @@ export async function releasePayout(
   }
 
   const transfer = await payments.releasePayout({
-    contractId: contract.id,
+    reference: contract.id,
     destinationAccountId: contract.influencer.stripeAccountId,
     amount: payment.payout,
   });

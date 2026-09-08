@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { badRequest } from '../lib/errors.js';
 import type { Services } from '../services/index.js';
 import { markEscrowed } from '../services/payments/escrow.js';
+import { markPeriodPaid } from '../services/retainers.js';
 import { settleUsageRights } from '../services/rights.js';
 import { StripePaymentProvider } from '../services/payments/index.js';
 
@@ -44,10 +45,12 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
 
     switch (event.type) {
       case 'payment_intent.succeeded': {
-        // Samma händelse bär både arvodet och ett eventuellt annonstillägg.
-        // Bara en av dem känner igen id:t; den andra gör ingenting.
+        // Samma händelse bär arvodet, ett eventuellt annonstillägg och en
+        // månad i ett löpande uppdrag. Bara en av dem känner igen id:t; de
+        // andra gör ingenting.
         await markEscrowed(prisma, event.data.object.id);
         await settleUsageRights(prisma, payments, event.data.object.id);
+        await markPeriodPaid(prisma, event.data.object.id);
         break;
       }
       case 'payment_intent.payment_failed': {
@@ -58,6 +61,12 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
             status: 'FAILED',
             failureReason: intent.last_payment_error?.message ?? 'Betalningen nekades.',
           },
+        });
+        // En period som inte blev betald ligger kvar som AWAITING_PAYMENT och
+        // kan betalas om. Inget att ändra – men intentet ska inte återanvändas.
+        await prisma.retainerPeriod.updateMany({
+          where: { stripePaymentIntentId: intent.id, status: 'AWAITING_PAYMENT' },
+          data: { stripePaymentIntentId: null },
         });
         break;
       }

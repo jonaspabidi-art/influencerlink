@@ -135,7 +135,7 @@ export async function payUsageRights(
   }
 
   const intent = await payments.createEscrowIntent({
-    contractId: paymentKey(rights.contractId),
+    reference: paymentKey(rights.contractId),
     amount: rights.amount,
     customerId,
     description: `Annonsrätt – ${rights.contract.campaign.title}`,
@@ -174,7 +174,7 @@ export async function settleUsageRights(
   if (!accountId) return; // Betalas ut när utbetalningskontot är kopplat.
 
   const transfer = await payments.releasePayout({
-    contractId: paymentKey(rights.contractId),
+    reference: paymentKey(rights.contractId),
     destinationAccountId: accountId,
     amount: rights.creatorShare,
   });

@@ -11,7 +11,7 @@ import type {
 } from './types.js';
 
 /** Transfer group knyter escrow-betalningen och utbetalningen till samma kontrakt. */
-const transferGroup = (contractId: string) => `contract_${contractId}`;
+const transferGroup = (reference: string) => `pacta_${reference}`;
 
 export class StripePaymentProvider implements PaymentProvider {
   private readonly stripe: Stripe;
@@ -85,12 +85,12 @@ export class StripePaymentProvider implements PaymentProvider {
         currency: CURRENCY,
         customer: input.customerId,
         description: input.description,
-        transfer_group: transferGroup(input.contractId),
-        metadata: { contractId: input.contractId },
+        transfer_group: transferGroup(input.reference),
+        metadata: { reference: input.reference },
         automatic_payment_methods: { enabled: true },
       },
       // Samma kontrakt får aldrig ge upphov till två betalningar.
-      { idempotencyKey: `escrow_${input.contractId}` },
+      { idempotencyKey: `escrow_${input.reference}` },
     );
     if (!intent.client_secret) {
       throw failedDependency('Stripe returnerade ingen client secret för betalningen.');
@@ -99,7 +99,7 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   async releasePayout(input: {
-    contractId: string;
+    reference: string;
     destinationAccountId: string;
     amount: number;
   }): Promise<PayoutResult> {
@@ -108,10 +108,10 @@ export class StripePaymentProvider implements PaymentProvider {
         amount: input.amount,
         currency: CURRENCY,
         destination: input.destinationAccountId,
-        transfer_group: transferGroup(input.contractId),
-        metadata: { contractId: input.contractId },
+        transfer_group: transferGroup(input.reference),
+        metadata: { reference: input.reference },
       },
-      { idempotencyKey: `payout_${input.contractId}` },
+      { idempotencyKey: `payout_${input.reference}` },
     );
     return { transferId: transfer.id, amount: input.amount };
   }

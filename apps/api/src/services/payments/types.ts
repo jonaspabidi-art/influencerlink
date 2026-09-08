@@ -19,7 +19,12 @@ export interface PayoutResult {
 }
 
 export interface CreateEscrowInput {
-  contractId: string;
+  /**
+   * Vad betalningen gäller: ett kontrakt eller en period i ett löpande
+   * uppdrag. Används som idempotensnyckel och för att gruppera överföringen,
+   * så den behöver bara vara unik – inte veta vilken sorts sak den pekar på.
+   */
+  reference: string;
   amount: Ore;
   /** Stripe-kund för företaget, skapas vid behov. */
   customerId?: string;
@@ -42,7 +47,7 @@ export interface PaymentProvider {
   createCustomer(input: { businessId: string; companyName: string; orgNumber: string }): Promise<string>;
   createEscrowIntent(input: CreateEscrowInput): Promise<EscrowIntent>;
   releasePayout(input: {
-    contractId: string;
+    reference: string;
     destinationAccountId: string;
     amount: Ore;
   }): Promise<PayoutResult>;

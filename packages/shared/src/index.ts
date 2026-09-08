@@ -8,6 +8,7 @@ export * from './insights.js';
 export * from './media.js';
 export * from './money.js';
 export * from './results.js';
+export * from './retainers.js';
 export * from './reviews.js';
 export * from './rights.js';
 export * from './schemas.js';
