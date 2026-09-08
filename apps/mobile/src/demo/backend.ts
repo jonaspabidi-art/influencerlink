@@ -1100,6 +1100,30 @@ route('GET', '/businesses/:id', ({ params }) => {
   };
 });
 
+/**
+ * Har kreatören svepat höger på en av det inloggade företagets kampanjer utan
+ * att ha fått svar? Det är den enskilt mest användbara upplysningen i
+ * utbudslistan – de här har redan sagt ja.
+ */
+function pendingInterest(influencerId: string): { campaignId: string; campaignTitle: string } | null {
+  const user = state.sessionUserId ? currentUser() : null;
+  if (!user || user.role !== 'BUSINESS') return null;
+  const businessId = requireProfileId(user);
+
+  for (const swipe of [...state.swipes].reverse()) {
+    if (swipe.influencerId !== influencerId) continue;
+    if (swipe.actor !== 'INFLUENCER' || swipe.direction !== 'LIKE') continue;
+    const campaign = state.campaigns.find((item) => item.id === swipe.campaignId);
+    if (!campaign || campaign.businessId !== businessId || campaign.status !== 'ACTIVE') continue;
+    const answered = state.matches.some(
+      (match) => match.campaignId === campaign.id && match.influencerId === influencerId,
+    );
+    if (answered) continue;
+    return { campaignId: campaign.id, campaignTitle: campaign.title };
+  }
+  return null;
+}
+
 route('GET', '/influencers', ({ query }) => {
   const city = query.get('city')?.toLowerCase();
   const category = query.get('category');
@@ -1139,6 +1163,7 @@ route('GET', '/influencers', ({ query }) => {
         })),
         showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
         rating: ratingFor('INFLUENCER', profile.id),
+        interest: pendingInterest(profile.id),
         acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
         retainerSlots: profile.retainerSlots ?? 0,
         retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
@@ -1146,7 +1171,8 @@ route('GET', '/influencers', ({ query }) => {
           ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps ?? 0)
           : [],
       };
-    });
+    })
+    .sort((a, b) => Number(b.interest !== null) - Number(a.interest !== null));
 });
 
 route('GET', '/influencers/:id', ({ params }) => {

@@ -268,7 +268,7 @@ function Choice({ expanded = false }: { expanded?: boolean }) {
         <Button
           label="Hitta någon som jobbar löpande"
           variant="secondary"
-          onPress={() => router.push('/business/discover?retainers=1')}
+          onPress={() => router.push('/retainer/start')}
         />
       </View>
     </Card>

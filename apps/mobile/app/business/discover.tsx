@@ -1,5 +1,5 @@
 import { CATEGORIES, type Category } from '@pacta/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ownBusinessQuery } from '../../src/queries';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -24,9 +24,13 @@ import {
 } from '../../src/components/ui';
 import { CATEGORY_LABELS, formatFollowers, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
-import type { InfluencerProfile, RatingSummary } from '../../src/types';
+import type { InfluencerProfile, RatingSummary, SwipeResult } from '../../src/types';
 
-type Browsable = InfluencerProfile & { rating: RatingSummary };
+type Browsable = InfluencerProfile & {
+  rating: RatingSummary;
+  /** Kreatören har svepat höger på en av era kampanjer och väntar på svar. */
+  interest: { campaignId: string; campaignTitle: string } | null;
+};
 
 /**
  * Företagets ingång.
@@ -60,6 +64,7 @@ export default function BusinessDiscover() {
   });
 
   const data = creators.data ?? [];
+  const waiting = data.filter((creator) => creator.interest !== null).length;
 
   return (
     <Screen>
@@ -130,6 +135,18 @@ export default function BusinessDiscover() {
               ))}
             </ScrollView>
 
+            {/*
+              Regeln fanns men stod ingenstans: ett företag kan svepa, men bara
+              inne i en kampanj, för ett högersvep utan kampanj betyder
+              ingenting. Den som väntar på svar är undantaget – där räcker ett
+              tryck, och det är värt att säga först.
+            */}
+            <Text style={styles.explain}>
+              {waiting > 0
+                ? `${waiting} ${waiting === 1 ? 'kreatör' : 'kreatörer'} har visat intresse för era kampanjer. Tryck Matcha så öppnas en chatt.`
+                : 'Här tittar du. En matchning uppstår när ni båda sagt ja – öppna en kampanj och svep, eller bjud in någon direkt.'}
+            </Text>
+
             {creators.isLoading ? <Loading /> : null}
             {creators.isError ? (
               <ErrorState
@@ -176,53 +193,105 @@ export default function BusinessDiscover() {
   );
 }
 
-/** En rad per kreatör: bild, räckvidd, pris. Tryck öppnar hela profilen. */
+/**
+ * En rad per kreatör: bild, räckvidd, pris – och en handling.
+ *
+ * Raden var tidigare en återvändsgränd. Man såg sju personer och ett pris men
+ * hade ingenting att trycka på, och enda vägen vidare låg gömd inne i
+ * profilen. Nu har varje rad ett verb, och det verbet beror på om kreatören
+ * redan sagt ja: då är matchningen ett tryck bort, annars går vägen via en
+ * inbjudan till en kampanj.
+ */
 function CreatorRow({ creator }: { creator: Browsable }) {
+  const queryClient = useQueryClient();
   const hero = creator.showcase.find((entry) => entry.thumbnailUrl)?.thumbnailUrl ?? null;
 
+  const match = useMutation({
+    mutationFn: () =>
+      api.post<SwipeResult>('/swipes', {
+        campaignId: creator.interest?.campaignId,
+        influencerId: creator.id,
+        direction: 'LIKE',
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ['browse-influencers'] });
+      void queryClient.invalidateQueries({ queryKey: ['matches'] });
+      if (result.match) router.push(`/match/${result.match.id}`);
+    },
+  });
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Öppna ${creator.displayName}s profil`}
-      onPress={() =>
-        router.push({
-          pathname: '/creator/[id]',
-          params: { id: creator.id, name: creator.displayName },
-        })
-      }
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-    >
-      <Photo uri={hero ?? creator.avatarUrl} name={creator.displayName} style={styles.thumb} />
+    /*
+      Raden är två saker: en yta som öppnar profilen och en knapp som gör
+      något. De får inte ligga i varandra – en knapp inuti en knapp är ogiltig
+      på webben, och på mobilen blir det en gissning vilken av dem som svarar.
+    */
+    <View style={styles.row}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Öppna ${creator.displayName}s profil`}
+        onPress={() =>
+          router.push({
+            pathname: '/creator/[id]',
+            params: { id: creator.id, name: creator.displayName },
+          })
+        }
+        style={({ pressed }) => [styles.rowTop, pressed && styles.pressed]}
+      >
+        <Photo uri={hero ?? creator.avatarUrl} name={creator.displayName} style={styles.thumb} />
 
-      <View style={styles.rowText}>
-        <View style={styles.nameRow}>
-          <Avatar uri={creator.avatarUrl} name={creator.displayName} size={22} />
-          <Text style={styles.name} numberOfLines={1}>
-            {creator.displayName}
+        <View style={styles.rowText}>
+          <View style={styles.nameRow}>
+            <Avatar uri={creator.avatarUrl} name={creator.displayName} size={22} />
+            <Text style={styles.name} numberOfLines={1}>
+              {creator.displayName}
+            </Text>
+          </View>
+          <Rating summary={creator.rating} size={11} emptyLabel="Inga omdömen än" />
+          <Text style={styles.meta} numberOfLines={1}>
+            {formatFollowers(creator.followers)} följare · {formatFollowers(creator.avgViews)}{' '}
+            visningar i snitt
           </Text>
+          <Text style={styles.meta} numberOfLines={1}>
+            {creator.categories
+              .slice(0, 2)
+              .map((item) => CATEGORY_LABELS[item] ?? item)
+              .join(', ')}
+          </Text>
+          <Text style={styles.price}>Från {formatSek(creator.priceMin)} per samarbete</Text>
+
+          {/* Bristen är sann: platserna är ett tal kreatören själv satt. */}
+          {creator.acceptsRetainers && creator.retainerSlots > 0 ? (
+            <Text style={styles.retainer} numberOfLines={1}>
+              Löpande från {formatSek(creator.retainerPackages[0]?.monthlyRate ?? 0)}/mån ·{' '}
+              {creator.retainerSlots} {creator.retainerSlots === 1 ? 'plats' : 'platser'}
+            </Text>
+          ) : null}
+
+          {creator.interest ? (
+            <Text style={styles.interest} numberOfLines={2}>
+              Visade intresse för {creator.interest.campaignTitle}
+            </Text>
+          ) : null}
         </View>
-        <Rating summary={creator.rating} size={11} emptyLabel="Inga omdömen än" />
-        <Text style={styles.meta} numberOfLines={1}>
-          {formatFollowers(creator.followers)} följare · {formatFollowers(creator.avgViews)}{' '}
-          visningar i snitt
-        </Text>
-        <Text style={styles.meta} numberOfLines={1}>
-          {creator.categories
-            .slice(0, 2)
-            .map((item) => CATEGORY_LABELS[item] ?? item)
-            .join(', ')}
-        </Text>
-        <Text style={styles.price}>Från {formatSek(creator.priceMin)}</Text>
+      </Pressable>
 
-        {/* Bristen är sann: platserna är ett tal kreatören själv satt. */}
-        {creator.acceptsRetainers && creator.retainerSlots > 0 ? (
-          <Text style={styles.retainer} numberOfLines={1}>
-            Löpande från {formatSek(creator.retainerPackages[0]?.monthlyRate ?? 0)}/mån ·{' '}
-            {creator.retainerSlots} {creator.retainerSlots === 1 ? 'plats' : 'platser'}
-          </Text>
-        ) : null}
-      </View>
-    </Pressable>
+      {creator.interest ? (
+        <Button label="Matcha" compact onPress={() => match.mutate()} loading={match.isPending} />
+      ) : (
+        <Button
+          label="Bjud in till kampanj"
+          variant="secondary"
+          compact
+          onPress={() =>
+            router.push({
+              pathname: '/creator/[id]',
+              params: { id: creator.id, name: creator.displayName },
+            })
+          }
+        />
+      )}
+    </View>
   );
 }
 
@@ -231,9 +300,10 @@ const styles = StyleSheet.create({
   header: { gap: spacing.md, paddingBottom: spacing.sm },
   filterRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.base },
   retainer: { ...type.secondary, color: colors.positive },
+  interest: { fontFamily: type.listTitle.fontFamily, fontSize: 13, color: colors.primary },
+  explain: { ...type.secondary, color: colors.muted },
 
   row: {
-    flexDirection: 'row',
     gap: spacing.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -241,6 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     padding: spacing.md,
   },
+  rowTop: { flexDirection: 'row', gap: spacing.md },
   pressed: { opacity: 0.8 },
   thumb: { width: 76, height: 100, borderRadius: radius.control },
   rowText: { flex: 1, gap: 3 },

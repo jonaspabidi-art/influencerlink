@@ -195,6 +195,17 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
             publicInfluencerSchema.extend({
               rating: ratingSummarySchema,
               showcase: z.array(showcaseItemSchema),
+              /**
+               * Kreatören har svepat höger på en av företagets kampanjer och
+               * väntar på svar.
+               *
+               * Låg tidigare bara inne i kampanjen. Det är den enskilt mest
+               * användbara upplysningen i hela listan – de här har redan sagt
+               * ja, och en matchning är ett tryck bort.
+               */
+              interest: z
+                .object({ campaignId: z.string(), campaignTitle: z.string() })
+                .nullable(),
             }),
           ),
         },
@@ -225,11 +236,21 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         'INFLUENCER',
         profiles.map((profile) => profile.id),
       );
+      const interest = await pendingInterest(
+        prisma,
+        request.user.role === 'BUSINESS' ? request.user.pid : undefined,
+        profiles.map((profile) => profile.id),
+      );
 
-      return profiles.map((profile) => ({
-        ...toPublicInfluencer(profile),
-        rating: ratings.get(profile.id) ?? emptyRatingSummary(),
-      }));
+      // De som redan visat intresse först. Att låta dem ligga utspridda i
+      // bokstavsordning vore att gömma det enda företaget behöver se.
+      return profiles
+        .map((profile) => ({
+          ...toPublicInfluencer(profile),
+          rating: ratings.get(profile.id) ?? emptyRatingSummary(),
+          interest: interest.get(profile.id) ?? null,
+        }))
+        .sort((a, b) => Number(b.interest !== null) - Number(a.interest !== null));
     },
   );
 
@@ -944,6 +965,54 @@ function toPublicShowcaseItem(item: ShowcaseRow) {
 }
 
 /** Tokens finns aldrig med här – de lämnar aldrig servern. */
+/**
+ * Vilka av kreatörerna som väntar på svar från det här företaget.
+ *
+ * Ett intresse räknas som obesvarat tills företaget svepat tillbaka – då finns
+ * en matchning, och då är det inte längre något att visa i utbudslistan.
+ */
+async function pendingInterest(
+  prisma: Services['prisma'],
+  businessId: string | undefined,
+  influencerIds: string[],
+): Promise<Map<string, { campaignId: string; campaignTitle: string }>> {
+  const found = new Map<string, { campaignId: string; campaignTitle: string }>();
+  if (!businessId || influencerIds.length === 0) return found;
+
+  const swipes = await prisma.swipe.findMany({
+    where: {
+      actor: 'INFLUENCER',
+      direction: 'LIKE',
+      influencerId: { in: influencerIds },
+      campaign: {
+        businessId,
+        status: 'ACTIVE',
+        // Har en matchning uppstått är intresset besvarat.
+        matches: { none: {} },
+      },
+    },
+    include: {
+      campaign: {
+        select: { id: true, title: true, matches: { select: { influencerId: true } } },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  for (const swipe of swipes) {
+    if (found.has(swipe.influencerId)) continue;
+    const answered = swipe.campaign.matches.some(
+      (match: { influencerId: string }) => match.influencerId === swipe.influencerId,
+    );
+    if (answered) continue;
+    found.set(swipe.influencerId, {
+      campaignId: swipe.campaign.id,
+      campaignTitle: swipe.campaign.title,
+    });
+  }
+  return found;
+}
+
 export function toPublicInfluencer(profile: {
   id: string;
   displayName: string;
