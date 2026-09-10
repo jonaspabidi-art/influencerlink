@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { HEIGHTS, colors, radius, spacing, type } from '../theme';
 import { CheckIcon, CloseIcon, LockIcon } from './icons';
+import { useTourAnchor } from '../tour/Tour';
 
 /** Andel av skärmbredden kortet måste dras för att räknas som ett svep. */
 const SWIPE_THRESHOLD_RATIO = 0.28;
@@ -50,6 +51,8 @@ export function SwipeDeck<T>({
   onExhausted,
 }: SwipeDeckProps<T>) {
   const [index, setIndex] = useState(0);
+  // Rundturen pekar på ja/nej-knapparna när den förklarar hur man ansöker.
+  const swipeAnchor = useTourAnchor('influencer.swipe');
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
@@ -172,7 +175,7 @@ export function SwipeDeck<T>({
         <Text style={styles.trustText}>{trustText}</Text>
       </View>
 
-      <View style={styles.actions}>
+      <View style={styles.actions} ref={swipeAnchor.ref}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Hoppa över"

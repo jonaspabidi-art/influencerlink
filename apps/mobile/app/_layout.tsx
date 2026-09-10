@@ -16,6 +16,7 @@ import { AuthProvider } from '../src/auth';
 import { Prefetch } from '../src/components/Prefetch';
 import { persistQueryCache, restoreQueryCache } from '../src/querycache';
 import { hideHtmlSplash } from '../src/splash';
+import { TourProvider } from '../src/tour/Tour';
 import { colors, type } from '../src/theme';
 
 const queryClient = new QueryClient({
@@ -63,27 +64,30 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            {/* Ljust tema: mörk statusfältstext. */}
-            <StatusBar style="dark" />
-            {/* Fyller flikarna i bakgrunden medan första skärmen läses. */}
-            <Prefetch />
-            {fontsLoaded ? (
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: colors.bg },
-                  headerStyle: { backgroundColor: colors.bg },
-                  headerTintColor: colors.text,
-                  headerTitleStyle: { fontFamily: type.rowTitleMedium.fontFamily, fontSize: 17 },
-                  headerShadowVisible: false,
-                }}
-              />
-            ) : (
-              // Typsnittet laddas innan något ritas, annars hoppar all text.
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            )}
+            {/* Rundturen ligger ytterst, så att hinnan täcker även flikraden. */}
+            <TourProvider>
+              {/* Ljust tema: mörk statusfältstext. */}
+              <StatusBar style="dark" />
+              {/* Fyller flikarna i bakgrunden medan första skärmen läses. */}
+              <Prefetch />
+              {fontsLoaded ? (
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.bg },
+                    headerStyle: { backgroundColor: colors.bg },
+                    headerTintColor: colors.text,
+                    headerTitleStyle: { fontFamily: type.rowTitleMedium.fontFamily, fontSize: 17 },
+                    headerShadowVisible: false,
+                  }}
+                />
+              ) : (
+                // Typsnittet laddas innan något ritas, annars hoppar all text.
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              )}
+            </TourProvider>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

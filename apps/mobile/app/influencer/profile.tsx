@@ -6,6 +6,7 @@ import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
 import {
   GridIcon,
+  HelpIcon,
   LinkIcon,
   SignOutIcon,
   StarIcon,
@@ -24,6 +25,8 @@ import {
 } from '../../src/components/ui';
 import { formatFollowers, formatPercent } from '../../src/format';
 import { colors, spacing, type } from '../../src/theme';
+import { useTour } from '../../src/tour/Tour';
+import { INFLUENCER_TOUR_KEY, influencerTour } from '../../src/tour/steps';
 import type { InfluencerProfile, ProfileReviews } from '../../src/types';
 
 /**
@@ -35,6 +38,7 @@ import type { InfluencerProfile, ProfileReviews } from '../../src/types';
  */
 export default function InfluencerProfileTab() {
   const { user, signOut } = useAuth();
+  const { restart } = useTour();
 
   const profile = useQuery({
     queryKey: ['influencer', user?.profileId],
@@ -110,6 +114,12 @@ export default function InfluencerProfileTab() {
           label="Sociala konton"
           hint={data ? `${data.socialAccounts.length} av 3` : undefined}
           onPress={() => router.push('/social')}
+        />
+        <MenuRow
+          icon={<HelpIcon size={20} color={colors.primary} />}
+          label="Visa rundturen igen"
+          hint="Vad flikarna gör"
+          onPress={() => restart(INFLUENCER_TOUR_KEY, influencerTour)}
         />
         <MenuRow
           icon={<StarIcon size={20} variant="empty" color={colors.primary} />}

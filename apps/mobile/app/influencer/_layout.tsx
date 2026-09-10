@@ -1,10 +1,20 @@
 import { Redirect, Tabs } from 'expo-router';
+import { useEffect } from 'react';
 import { useAuth } from '../../src/auth';
+import { useTour } from '../../src/tour/Tour';
+import { INFLUENCER_TOUR_KEY, influencerTour } from '../../src/tour/steps';
 import { ChatIcon, DeckIcon, DocIcon, UserIcon, WalletIcon } from '../../src/components/icons';
 import { colors, type } from '../../src/theme';
 
 export default function InfluencerTabs() {
   const { user, loading } = useAuth();
+  const { startOnce } = useTour();
+
+  // Samma som för företagen: turen väntar tills flikraden finns att peka på.
+  const ready = !loading && !!user && user.onboardingComplete;
+  useEffect(() => {
+    if (ready) startOnce(INFLUENCER_TOUR_KEY, influencerTour);
+  }, [ready, startOnce]);
 
   // Efter utloggning ska flikarna inte ligga kvar bakom en tom session.
   if (!loading && !user) return <Redirect href="/login" />;

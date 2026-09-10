@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { SignOutIcon, StarIcon, UserIcon } from '../../src/components/icons';
+import { HelpIcon, SignOutIcon, StarIcon, UserIcon } from '../../src/components/icons';
 import {
   Card,
   Loading,
@@ -15,11 +15,14 @@ import {
   ScrollScreen,
 } from '../../src/components/ui';
 import { colors, spacing, type } from '../../src/theme';
+import { useTour } from '../../src/tour/Tour';
+import { BUSINESS_TOUR_KEY, businessTour } from '../../src/tour/steps';
 import type { OwnBusinessProfile, ProfileReviews } from '../../src/types';
 
 /** Företagets motsvarighet till kreatörernas profilflik. */
 export default function BusinessProfileTab() {
   const { signOut } = useAuth();
+  const { restart } = useTour();
 
   const profile = useQuery({
     queryKey: ['own-business'],
@@ -62,6 +65,12 @@ export default function BusinessProfileTab() {
           icon={<UserIcon size={20} color={colors.primary} />}
           label="Redigera företagsprofil"
           onPress={() => router.push('/profile/business')}
+        />
+        <MenuRow
+          icon={<HelpIcon size={20} color={colors.primary} />}
+          label="Visa rundturen igen"
+          hint="Vad flikarna gör"
+          onPress={() => restart(BUSINESS_TOUR_KEY, businessTour)}
         />
         <MenuRow
           icon={<StarIcon size={20} variant="empty" color={colors.primary} />}

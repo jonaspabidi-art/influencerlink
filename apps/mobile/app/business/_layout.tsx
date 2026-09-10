@@ -1,10 +1,24 @@
 import { Redirect, Tabs } from 'expo-router';
+import { useEffect } from 'react';
 import { useAuth } from '../../src/auth';
+import { useTour } from '../../src/tour/Tour';
+import { BUSINESS_TOUR_KEY, businessTour } from '../../src/tour/steps';
 import { ChatIcon, DeckIcon, DocIcon, GridIcon, UserIcon } from '../../src/components/icons';
 import { colors, type } from '../../src/theme';
 
 export default function BusinessTabs() {
   const { user, loading } = useAuth();
+  const { startOnce } = useTour();
+
+  /*
+   * Rundturen startar först när flikarna faktiskt är på plats, annars pekar
+   * pilen mot en flikrad som ännu inte ritats. Den visas en gång per konto
+   * och enhet, och går att starta om under Profil.
+   */
+  const ready = !loading && !!user && user.onboardingComplete;
+  useEffect(() => {
+    if (ready) startOnce(BUSINESS_TOUR_KEY, businessTour);
+  }, [ready, startOnce]);
 
   if (!loading && !user) return <Redirect href="/login" />;
 

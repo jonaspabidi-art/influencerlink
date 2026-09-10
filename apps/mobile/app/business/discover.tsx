@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { useTourAnchor } from '../../src/tour/Tour';
 import { DemoBanner } from '../../src/components/DemoBanner';
 import { PlusIcon, SparkIcon } from '../../src/components/icons';
 import {
@@ -42,6 +43,8 @@ type Browsable = InfluencerProfile & {
  */
 export default function BusinessDiscover() {
   const { user } = useAuth();
+  // Rundturen pekar hit när den förklarar hur ett samarbete startas.
+  const createAnchor = useTourAnchor('business.create');
   const [category, setCategory] = useState<Category | null>(null);
   const [nearby, setNearby] = useState(true);
 
@@ -181,15 +184,17 @@ export default function BusinessDiscover() {
               </Card>
             ) : null}
 
-            <Card tone="raised">
-              <Text style={styles.footerTitle}>Redo att samarbeta?</Text>
-              <Body>Beskriv vad ni vill ha i två meningar, så skriver vi kampanjen åt er.</Body>
-              <Button
-                label="Skapa samarbete"
-                icon={<PlusIcon size={18} color={colors.ink} />}
-                onPress={() => router.push('/campaign/new')}
-              />
-            </Card>
+            <View ref={createAnchor.ref}>
+              <Card tone="raised">
+                <Text style={styles.footerTitle}>Redo att samarbeta?</Text>
+                <Body>Beskriv vad ni vill ha i två meningar, så skriver vi kampanjen åt er.</Body>
+                <Button
+                  label="Skapa samarbete"
+                  icon={<PlusIcon size={18} color={colors.ink} />}
+                  onPress={() => router.push('/campaign/new')}
+                />
+              </Card>
+            </View>
             <DemoBanner />
           </View>
         }

@@ -195,6 +195,15 @@ export const LinkIcon = (props: IconProps) => (
   </Icon>
 );
 
+/** Rundturen och hjälpavsnitt. */
+export const HelpIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <Circle cx="12" cy="12" r="8.5" />
+    <Path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4" />
+    <Path d="M12 16.6h.01" />
+  </Icon>
+);
+
 export const SignOutIcon = (props: IconProps) => (
   <Icon {...props}>
     <Path d="M14 5.5H6.5v13H14" />
