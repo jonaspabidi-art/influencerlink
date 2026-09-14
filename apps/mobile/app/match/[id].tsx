@@ -193,7 +193,7 @@ export default function MatchDetail() {
             <Card tone="primary">
               <Text style={styles.actionTitle}>Skicka avtal</Text>
               <Body>
-                Avtalet signeras med BankID av båda parter. Ni betalar in arvodet först när det är
+                Avtalet signeras av båda parter. Ni betalar in arvodet först när det är
                 signerat, och pengarna går till kreatören när ni godkänt leveransen.
               </Body>
               <Field
@@ -240,7 +240,7 @@ export default function MatchDetail() {
         ) : (
           <Card tone="raised">
             <Text style={styles.hint}>
-              Företaget skickar avtalet när ni kommit överens. Du signerar med BankID innan
+              Företaget skickar avtalet när ni kommit överens. Du signerar det innan
               något blir bindande.
             </Text>
           </Card>

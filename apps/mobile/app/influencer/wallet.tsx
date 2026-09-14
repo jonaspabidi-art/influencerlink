@@ -22,7 +22,7 @@ import type { Contract, PayoutStatus } from '../../src/types';
 
 /** Stegen i förklaringen av hur pengarna når kreatören. */
 const PAYOUT_STEPS = [
-  'Ni signerar avtalet med BankID.',
+  'Ni signerar avtalet i appen.',
   'Företaget betalar in arvodet. Vi håller pengarna åt er båda tills leveransen är godkänd.',
   'Du levererar, företaget godkänner och pengarna är hos dig inom 1–2 bankdagar.',
 ];

@@ -26,6 +26,7 @@ const ENV_KEYS = [
   ...Object.keys(BASE_ENV),
   'NODE_ENV',
   'BANKID_MODE',
+  'SIGNING_MODE',
   'STRIPE_SECRET_KEY',
   'ALLOW_MOCK_INTEGRATIONS',
   'ENABLE_DEV_LOGIN',
@@ -47,7 +48,12 @@ afterEach(() => {
 
 describe('konfiguration', () => {
   it('markerar BankID och Stripe som simulerade när nycklar saknas', async () => {
-    const config = await loadWith({ NODE_ENV: 'development', BANKID_MODE: 'mock', STRIPE_SECRET_KEY: '' });
+    const config = await loadWith({
+      NODE_ENV: 'development',
+      SIGNING_MODE: 'bankid',
+      BANKID_MODE: 'mock',
+      STRIPE_SECRET_KEY: '',
+    });
     expect(config.mockIntegrations).toEqual(['BankID', 'Stripe']);
   });
 
@@ -55,6 +61,7 @@ describe('konfiguration', () => {
     await expect(
       loadWith({
         NODE_ENV: 'production',
+        SIGNING_MODE: 'bankid',
         BANKID_MODE: 'mock',
         STRIPE_SECRET_KEY: '',
         ALLOW_MOCK_INTEGRATIONS: 'false',
@@ -65,6 +72,7 @@ describe('konfiguration', () => {
   it('tillåter simulering i produktion när flaggan sätts medvetet', async () => {
     const config = await loadWith({
       NODE_ENV: 'production',
+      SIGNING_MODE: 'bankid',
       BANKID_MODE: 'mock',
       STRIPE_SECRET_KEY: '',
       ALLOW_MOCK_INTEGRATIONS: 'true',
@@ -73,9 +81,36 @@ describe('konfiguration', () => {
     expect(config.isProduction).toBe(true);
   });
 
+  /*
+   * Enkel signering är vägen innan BankID-avtalet finns. Då ska en simulerad
+   * BankID inte räknas som en simulerad integration, eftersom den inte används
+   * – annars vägrar produktion att starta för något som inte visas för någon.
+   */
+  it('räknar inte simulerad BankID när signeringen är enkel', async () => {
+    const config = await loadWith({
+      NODE_ENV: 'production',
+      SIGNING_MODE: 'simple',
+      BANKID_MODE: 'mock',
+      STRIPE_SECRET_KEY: 'sk_live_abc',
+    });
+    expect(config.mockIntegrations).toEqual([]);
+    expect(config.bankIdEnabled).toBe(false);
+  });
+
+  it('slår på BankID-slutpunkterna först i bankid-läge', async () => {
+    const live = await loadWith({
+      NODE_ENV: 'production',
+      SIGNING_MODE: 'bankid',
+      BANKID_MODE: 'live',
+      STRIPE_SECRET_KEY: 'sk_live_abc',
+    });
+    expect(live.bankIdEnabled).toBe(true);
+  });
+
   it('rapporterar inga simulerade integrationer när allt är skarpt', async () => {
     const config = await loadWith({
       NODE_ENV: 'production',
+      SIGNING_MODE: 'bankid',
       BANKID_MODE: 'live',
       STRIPE_SECRET_KEY: 'sk_live_abc',
     });

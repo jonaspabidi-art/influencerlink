@@ -40,7 +40,8 @@ import { refreshMetrics } from '../services/results.js';
 import { recordAudit } from '../lib/audit.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
-import { renderContractTerms } from '../services/contracts.js';
+import { hashTerms, renderContractTerms } from '../services/contracts.js';
+import { recordSignature } from '../services/signing.js';
 import {
   payUsageRights,
   requestUsageRights,
@@ -88,6 +89,8 @@ const contractDetailSchema = z.object({
   dueDate: z.string(),
   reviewDays: z.number().int(),
   terms: z.string(),
+  /** SHA-256 av avtalstexten ovan. Skickas tillbaka vid enkel signering. */
+  termsHash: z.string(),
   signedByInfluencerAt: z.string().nullable(),
   signedByBusinessAt: z.string().nullable(),
   deliveredAt: z.string().nullable(),
@@ -215,6 +218,53 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
       return toContractDetail(contract, request.user.role, request.user.sub);
     },
   );
+
+  /*
+   * Enkel signering: den inloggade bekräftar avtalet.
+   *
+   * Finns bara när SIGNING_MODE=simple. Klienten skickar tillbaka hashen av
+   * den text den visade, och den måste stämma med avtalet som ligger här.
+   * Det hindrar att någon signerar en text som hunnit ändras mellan att
+   * skärmen laddades och knappen trycktes – utan den kontrollen vore
+   * bekräftelsen ett löfte om något ingen vet vad det var.
+   */
+  if (!config.bankIdEnabled) {
+    server.post(
+      '/contracts/:id/sign',
+      {
+        preHandler: app.requireRole('INFLUENCER', 'BUSINESS'),
+        schema: {
+          params: z.object({ id: z.string() }),
+          body: z.object({ termsHash: z.string().length(64) }),
+          response: {
+            200: z.object({ bothSigned: z.boolean() }),
+            400: problemSchema,
+            403: problemSchema,
+            404: problemSchema,
+          },
+        },
+      },
+      async (request) => {
+        const contract = await loadContractForParty(services, request.params.id, request);
+        if (contract.status !== 'SENT' && contract.status !== 'PARTIALLY_SIGNED') {
+          throw badRequest('Avtalet går inte att signera i sitt nuvarande läge.');
+        }
+        if (request.body.termsHash !== hashTerms(contract.terms)) {
+          throw badRequest('Avtalstexten har ändrats. Läs igenom den igen innan du signerar.');
+        }
+
+        return recordSignature(prisma, {
+          contractId: contract.id,
+          signerUserId: request.user.sub,
+          evidence: {
+            method: 'SIMPLE',
+            ipAddress: request.ip,
+            userAgent: request.headers['user-agent'],
+          },
+        });
+      },
+    );
+  }
 
   /** Företaget betalar in arvodet, som hålls av betaltjänsten till godkänd leverans. */
   server.post(
@@ -854,6 +904,7 @@ function toContractDetail(contract: ContractRow, role: string, _userId: string) 
     dueDate: contract.dueDate.toISOString(),
     reviewDays: contract.reviewDays,
     terms: contract.terms,
+    termsHash: hashTerms(contract.terms),
     signedByInfluencerAt: contract.signedByInfluencerAt?.toISOString() ?? null,
     signedByBusinessAt: contract.signedByBusinessAt?.toISOString() ?? null,
     deliveredAt: contract.deliveredAt?.toISOString() ?? null,

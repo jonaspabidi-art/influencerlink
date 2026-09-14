@@ -28,7 +28,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Så går ett samarbete till',
     paragraphs: [
       'Ett företag publicerar en kampanj. Kreatörer och företag visar intresse, och när båda gjort det uppstår en matchning där ni kommer överens om detaljerna.',
-      'När ni är överens skapas ett avtal som båda signerar med BankID. Avtalet innehåller vad som ska levereras, när, och vad ersättningen är.',
+      'När ni är överens skapas ett avtal som båda parter signerar i appen. Signeringen sker antingen med BankID eller genom att den inloggade bekräftar avtalstexten – vilket som gäller framgår i signeringssteget. Avtalet innehåller vad som ska levereras, när, och vad ersättningen är.',
       'Företaget betalar in ersättningen innan arbetet börjar. Beloppet hålls av vår betaltjänst och betalas ut till kreatören när leveransen är godkänd.',
     ],
   },

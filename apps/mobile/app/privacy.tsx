@@ -20,7 +20,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: ['Vilka uppgifter vi har om dig beror på om du är kreatör eller företag.'],
     bullets: [
       'Konto: namn, e-postadress och ett lösenord som lagras krypterat. Vi kan aldrig läsa ditt lösenord.',
-      'Legitimering: när du signerar ett avtal med BankID sparar vi ditt personnummer i krypterad form, tillsammans med de fyra sista siffrorna maskerade så att du känner igen ditt eget konto.',
+      'Signering: signerar du med BankID sparar vi ditt personnummer i krypterad form, tillsammans med de fyra sista siffrorna maskerade så att du känner igen ditt eget konto. Signerar du genom att bekräfta avtalstexten i appen sparar vi i stället tidpunkten, din IP-adress, din webbläsare eller app, och avtalstexten ordagrant – inget personnummer.',
       'Kreatörsprofil: profilnamn, presentation, ort, nischer, prisnivåer och profilbild.',
       'Företagsprofil: företagsnamn, organisationsnummer, adress, beskrivning och logotyp.',
       'Sociala konton: användarnamn, följarantal och statistik för dina senaste videor, hämtat från plattformen efter att du loggat in där. Länkar till inlägg du själv väljer att visa upp.',

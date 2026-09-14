@@ -1,3 +1,12 @@
+/** Serverns lägen, från /health. */
+export interface ServerInfo {
+  status: string;
+  /** 'simple': den inloggade bekräftar avtalet. 'bankid': signering med BankID. */
+  signingMode: 'simple' | 'bankid';
+  bankIdMode: 'mock' | 'live';
+  mockIntegrations: string[];
+}
+
 import type {
   ExpertOrderStatus,
   Category,
@@ -304,6 +313,8 @@ export interface Contract {
   dueDate: string;
   reviewDays: number;
   terms: string;
+  /** SHA-256 av avtalstexten. Skickas tillbaka vid enkel signering. */
+  termsHash: string;
   signedByInfluencerAt: string | null;
   signedByBusinessAt: string | null;
   deliveredAt: string | null;

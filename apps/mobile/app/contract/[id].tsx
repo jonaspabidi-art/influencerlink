@@ -8,6 +8,7 @@ import { UsageRightsOffer } from '../../src/components/UsageRightsOffer';
 import { DraftReview } from '../../src/components/DraftReview';
 import { useAuth } from '../../src/auth';
 import { BankIdScreen, useBankId } from '../../src/bankid';
+import { serverInfoQuery } from '../../src/queries';
 import { CheckIcon, ChevronRightIcon, LockIcon, StarIcon } from '../../src/components/icons';
 import { RetainerOffer } from '../../src/components/RetainerOffer';
 import { ReviewCard } from '../../src/components/ReviewList';
@@ -73,6 +74,16 @@ export default function ContractDetail() {
     void queryClient.invalidateQueries({ queryKey: ['payouts'] });
     void queryClient.invalidateQueries({ queryKey: ['contract-reviews', id] });
   }, [id, queryClient]);
+
+  /*
+   * Hur avtal signeras avgörs av servern, inte av appen.
+   *
+   * Innan BankID-avtalet finns bekräftar den inloggade avtalstexten i stället.
+   * Skärmen frågar därför vilket läge som gäller i stället för att anta ett –
+   * annars skulle ett byte kräva en ny version i App Store.
+   */
+  const serverInfo = useQuery(serverInfoQuery());
+  const simpleSigning = serverInfo.data?.signingMode !== 'bankid';
 
   const bankId = useBankId({
     purpose: 'SIGN',
@@ -298,6 +309,10 @@ export default function ContractDetail() {
         deliveryUrl={deliveryUrl}
         onDeliveryUrlChange={setDeliveryUrl}
         onSign={() => {
+          if (simpleSigning) {
+            router.push(`/contract/${data.id}/sign`);
+            return;
+          }
           setSigning(true);
           void bankId.start({ contractId: data.id });
         }}
@@ -306,6 +321,7 @@ export default function ContractDetail() {
         onDeliver={() => deliver.mutate()}
         onApprove={() => approve.mutate()}
         busy={pay.isPending || deliver.isPending || approve.isPending}
+        simpleSigning={simpleSigning}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -422,6 +438,7 @@ function ActionCard({
   onDeliver,
   onApprove,
   busy,
+  simpleSigning,
 }: {
   contract: Contract;
   isBusiness: boolean;
@@ -434,6 +451,8 @@ function ActionCard({
   onDeliver: () => void;
   onApprove: () => void;
   busy: boolean;
+  /** Styr bara knappens text: vägen väljs av den som skickade in onSign. */
+  simpleSigning: boolean;
 }) {
   if (contract.awaitingMySignature) {
     return (
@@ -443,7 +462,7 @@ function ActionCard({
           När båda signerat betalar företaget in {formatSek(contract.fee)} till Pacta, där de
           ligger tills leveransen är godkänd.
         </Body>
-        <Button label="Signera med BankID" onPress={onSign} />
+        <Button label={simpleSigning ? 'Läs och signera' : 'Signera med BankID'} onPress={onSign} />
       </Card>
     );
   }

@@ -13,6 +13,7 @@ import type {
   Retainer,
   RetainerAvailability,
   RetainerRateSuggestion,
+  ServerInfo,
 } from './types';
 
 /**
@@ -22,6 +23,19 @@ import type {
  * använda exakt samma nyckel för att träffa varandra – står de på två ställen
  * glider de isär vid första ändringen, och förhämtningen blir tyst bortkastad.
  */
+
+/**
+ * Vad servern kör för lägen. Läses av skärmar som måste veta om avtal
+ * signeras med BankID eller genom att den inloggade bekräftar texten.
+ *
+ * Svaret ändras bara vid omstart av servern, så det får ligga länge.
+ */
+export const serverInfoQuery = () =>
+  queryOptions({
+    queryKey: ['server-info'],
+    queryFn: () => api.get<ServerInfo>('/health'),
+    staleTime: 60 * 60_000,
+  });
 
 export const contractsQuery = () =>
   queryOptions({

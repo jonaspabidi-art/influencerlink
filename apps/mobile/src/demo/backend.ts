@@ -252,6 +252,22 @@ function hashCode(value: string): number {
   return hash;
 }
 
+/**
+ * Avtalstextens hash i demoläget.
+ *
+ * Demon kör i webbläsaren och har ingen SHA-256 att tillgå, så det här är en
+ * enkel stand-in. Den fyller samma funktion i flödet – klienten skickar
+ * tillbaka det den fick – men är inte kryptografisk, och används aldrig
+ * någon annanstans än här.
+ */
+function demoTermsHash(terms: string): string {
+  let out = '';
+  for (let block = 0; block < 8; block += 1) {
+    out += hashCode(`${block}:${terms}`).toString(16).padStart(8, '0').slice(0, 8);
+  }
+  return out;
+}
+
 /** Avgiftsfördelningen som avtalet tecknades med. */
 function feeSplitOf(contract: { businessFeeBps: number; creatorFeeBps: number }) {
   return { businessFeeBps: contract.businessFeeBps, creatorFeeBps: contract.creatorFeeBps };
@@ -476,6 +492,7 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
     dueDate: contract.dueDate,
     reviewDays: contract.reviewDays,
     terms: contract.terms,
+    termsHash: demoTermsHash(contract.terms),
     signedByInfluencerAt: contract.signedByInfluencerAt,
     signedByBusinessAt: contract.signedByBusinessAt,
     deliveredAt: contract.deliveredAt,
@@ -748,6 +765,20 @@ route('POST', '/auth/login', ({ body }) => {
   state.sessionUserId = user.id;
   return { accessToken: `demo-token-${user.id}`, user: publicUser(user) };
 });
+
+/*
+ * Demon speglar det läge appen körs i skarpt: enkel signering.
+ *
+ * BankID-slutpunkterna finns kvar här nedan för den dag läget byts, men
+ * appen frågar den här först och går aldrig in i dem så länge svaret är
+ * 'simple'.
+ */
+route('GET', '/health', () => ({
+  status: 'ok',
+  signingMode: 'simple',
+  bankIdMode: 'mock',
+  mockIntegrations: ['BankID', 'Stripe'],
+}));
 
 route('GET', '/auth/demo-accounts', () =>
   state.users.map((user) => {
@@ -2098,6 +2129,25 @@ route('GET', '/contracts', () => {
 route('GET', '/contracts/:id', ({ params }) => {
   const contract = contractById(params[0]!);
   return publicContract(contract, currentUser().role);
+});
+
+/** Enkel signering: samma kontroll av avtalstexten som i skarpt läge. */
+route('POST', '/contracts/:id/sign', ({ params, body }) => {
+  const contract = contractById(params[0]!);
+  if (contract.status !== 'SENT' && contract.status !== 'PARTIALLY_SIGNED') {
+    throw new DemoError(400, 'bad_request', 'Avtalet går inte att signera i sitt nuvarande läge.');
+  }
+  if (body.termsHash !== demoTermsHash(contract.terms)) {
+    throw new DemoError(
+      400,
+      'bad_request',
+      'Avtalstexten har ändrats. Läs igenom den igen innan du signerar.',
+    );
+  }
+  signContract(contract.id);
+  return {
+    bothSigned: Boolean(contract.signedByInfluencerAt && contract.signedByBusinessAt),
+  };
 });
 
 route('POST', '/contracts/:id/payment', ({ params }) => {

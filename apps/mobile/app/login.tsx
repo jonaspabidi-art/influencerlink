@@ -114,7 +114,7 @@ export default function Login() {
       <View style={styles.intro}>
         <Text style={styles.title}>Företag och kreatörer, ihop.</Text>
         <Text style={styles.lead}>
-          Hitta ett samarbete, signera med BankID och låt arvodet ligga tryggt hos oss tills jobbet är
+          Hitta ett samarbete, signera avtalet i appen och låt arvodet ligga tryggt hos oss tills jobbet är
           godkänt.
         </Text>
       </View>

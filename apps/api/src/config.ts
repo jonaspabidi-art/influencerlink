@@ -23,6 +23,20 @@ const envSchema = z.object({
   TOKEN_ENCRYPTION_KEY: z.string().min(1, 'TOKEN_ENCRYPTION_KEY saknas'),
 
   BANKID_MODE: z.enum(['mock', 'live']).default('mock'),
+
+  /**
+   * Hur avtal signeras.
+   *
+   * `simple`: den inloggade bekräftar avtalstexten. Bindande, men utan
+   * BankID:s bevisvärde. `bankid`: signering med BankID, vilket kräver ett
+   * avtal med en bank och ett RP-certifikat.
+   *
+   * I `simple` registreras inga BankID-slutpunkter alls. Det är avsiktligt:
+   * ett BankID-flöde som inte är BankID får inte kunna visas för en användare,
+   * och den garantin ska ligga i koden och inte i minnet hos den som sätter
+   * miljövariabler.
+   */
+  SIGNING_MODE: z.enum(['simple', 'bankid']).default('simple'),
   BANKID_API_URL: z.string().url().default('https://appapi2.test.bankid.com/rp/v6.0'),
   BANKID_CLIENT_CERT_PATH: z.string().optional(),
   BANKID_CLIENT_KEY_PATH: z.string().optional(),
@@ -76,7 +90,10 @@ function loadConfig() {
   const isProduction = env.NODE_ENV === 'production';
 
   const mockIntegrations: string[] = [];
-  if (env.BANKID_MODE === 'mock') mockIntegrations.push('BankID');
+  // Simulerad BankID spelar bara roll när BankID faktiskt används.
+  if (env.SIGNING_MODE === 'bankid' && env.BANKID_MODE === 'mock') {
+    mockIntegrations.push('BankID');
+  }
   if (!env.STRIPE_SECRET_KEY) mockIntegrations.push('Stripe');
 
   if (isProduction && mockIntegrations.length > 0 && !env.ALLOW_MOCK_INTEGRATIONS) {
@@ -96,6 +113,8 @@ function loadConfig() {
     devLoginEnabled: env.ENABLE_DEV_LOGIN && !isProduction,
     /** Vilka integrationer som körs simulerat. Tom lista = allt är skarpt. */
     mockIntegrations,
+    /** Sant när BankID-slutpunkterna ska finnas. */
+    bankIdEnabled: env.SIGNING_MODE === 'bankid',
   };
 }
 

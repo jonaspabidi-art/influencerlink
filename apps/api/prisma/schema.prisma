@@ -458,6 +458,14 @@ model Contract {
 }
 
 /// Bevis på BankID-signering. Sparas oföränderligt för revision.
+/// Hur en signatur kom till. Avgör vilka bevisfält som är ifyllda.
+enum SignatureMethod {
+  /// BankID: signaturblob och OCSP-svar finns.
+  BANKID
+  /// Inloggat konto som bekräftat avtalstexten. Inga BankID-fält.
+  SIMPLE
+}
+
 model Signature {
   id String @id @default(cuid())
 
@@ -467,14 +475,24 @@ model Signature {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  bankIdOrderRef String
+  /// Befintliga signaturer är alla gjorda med BankID.
+  method SignatureMethod @default(BANKID)
+
+  /// De tre BankID-fälten är tomma vid enkel signering.
+  bankIdOrderRef String?
   /// Base64-kodad XML-signatur från BankID.
-  signatureBlob  String
+  signatureBlob  String?
   /// Base64-kodat OCSP-svar som tidsstämplar signaturen.
-  ocspResponse   String
+  ocspResponse   String?
+
   /// SHA-256 av avtalstexten som faktiskt signerades.
   termsHash      String
+  /// Namnet kontot hade vid signeringen. Sparas separat eftersom ett konto
+  /// kan byta namn efteråt, och då ska avtalet ändå visa vem som skrev under.
+  signerName     String?
   ipAddress      String?
+  /// Webbläsaren eller appen som bekräftade. Bevis vid enkel signering.
+  userAgent      String?
   signedAt       DateTime @default(now())
 
   @@unique([contractId, userId])

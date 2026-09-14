@@ -10,7 +10,7 @@ import {
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { hashPersonalNumber, maskPersonalNumber, sha256Hex } from '../lib/crypto.js';
+import { hashPersonalNumber, maskPersonalNumber } from '../lib/crypto.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { badRequest, conflict, forbidden, notFound, unauthorized } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
@@ -19,172 +19,182 @@ import type { SessionPayload } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { buildAutoStartUrl, buildQrData, translateBankIdHint } from '../services/bankid/index.js';
 import { buildSigningText, hashTerms } from '../services/contracts.js';
+import { recordSignature } from '../services/signing.js';
 
 export async function authRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();
   const { prisma, bankId, config } = services;
 
-  server.post(
-    '/auth/bankid/start',
-    {
-      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
-      schema: {
-        body: bankIdStartSchema,
-        response: {
-          200: bankIdStartResponseSchema.extend({ autoStartUrl: z.string() }),
-          400: problemSchema,
+  /*
+   * BankID-slutpunkterna finns bara när BankID faktiskt används.
+   *
+   * Alternativet – att låta dem ligga kvar och svara med simulatorn – vore ett
+   * BankID-flöde utan BankID framför en riktig användare. Det får inte kunna
+   * hända av misstag, så garantin ligger här och inte i en miljövariabel.
+   */
+  if (config.bankIdEnabled) {
+    server.post(
+      '/auth/bankid/start',
+      {
+        config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+        schema: {
+          body: bankIdStartSchema,
+          response: {
+            200: bankIdStartResponseSchema.extend({ autoStartUrl: z.string() }),
+            400: problemSchema,
+          },
         },
       },
-    },
-    async (request) => {
-      const { purpose, personalNumber, role, contractId } = request.body;
-      const endUserIp = request.ip;
+      async (request) => {
+        const { purpose, personalNumber, role, contractId } = request.body;
+        const endUserIp = request.ip;
 
-      let order;
-      if (purpose === 'SIGN') {
-        if (!contractId) throw badRequest('contractId krävs vid signering.');
-        const { contract, counterpartName } = await loadContractForSigning(services, contractId);
-        order = await bankId.sign({
-          endUserIp,
-          personalNumber,
-          userVisibleData: buildSigningText({
-            campaignTitle: contract.campaign.title,
-            counterpartName,
-            fee: contract.fee,
-            contractId: contract.id,
-          }),
-          // Hashen binder signaturen till exakt den avtalstext som visades.
-          userNonVisibleData: hashTerms(contract.terms),
+        let order;
+        if (purpose === 'SIGN') {
+          if (!contractId) throw badRequest('contractId krävs vid signering.');
+          const { contract, counterpartName } = await loadContractForSigning(services, contractId);
+          order = await bankId.sign({
+            endUserIp,
+            personalNumber,
+            userVisibleData: buildSigningText({
+              campaignTitle: contract.campaign.title,
+              counterpartName,
+              fee: contract.fee,
+              contractId: contract.id,
+            }),
+            // Hashen binder signaturen till exakt den avtalstext som visades.
+            userNonVisibleData: hashTerms(contract.terms),
+          });
+        } else {
+          order = await bankId.auth({ endUserIp, personalNumber });
+        }
+
+        const session = await prisma.bankIdSession.create({
+          data: {
+            orderRef: order.orderRef,
+            autoStartToken: order.autoStartToken,
+            qrStartToken: order.qrStartToken,
+            qrStartSecret: order.qrStartSecret,
+            purpose,
+            contractId: contractId ?? null,
+            requestedRole: role ?? null,
+          },
         });
-      } else {
-        order = await bankId.auth({ endUserIp, personalNumber });
-      }
 
-      const session = await prisma.bankIdSession.create({
-        data: {
-          orderRef: order.orderRef,
-          autoStartToken: order.autoStartToken,
-          qrStartToken: order.qrStartToken,
-          qrStartSecret: order.qrStartSecret,
-          purpose,
-          contractId: contractId ?? null,
-          requestedRole: role ?? null,
-        },
-      });
+        return {
+          orderRef: session.orderRef,
+          autoStartToken: session.autoStartToken,
+          qrData: buildQrData(order.qrStartToken, order.qrStartSecret, session.startedAt),
+          autoStartUrl: buildAutoStartUrl(order.autoStartToken, 'pacta://bankid/return'),
+        };
+      },
+    );
 
-      return {
-        orderRef: session.orderRef,
-        autoStartToken: session.autoStartToken,
-        qrData: buildQrData(order.qrStartToken, order.qrStartSecret, session.startedAt),
-        autoStartUrl: buildAutoStartUrl(order.autoStartToken, 'pacta://bankid/return'),
-      };
-    },
-  );
-
-  server.get(
-    '/auth/bankid/:orderRef',
-    {
-      config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
-      schema: {
-        params: z.object({ orderRef: z.string().min(1) }),
-        response: {
-          200: bankIdCollectResponseSchema.extend({ hintText: z.string() }),
-          404: problemSchema,
+    server.get(
+      '/auth/bankid/:orderRef',
+      {
+        config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
+        schema: {
+          params: z.object({ orderRef: z.string().min(1) }),
+          response: {
+            200: bankIdCollectResponseSchema.extend({ hintText: z.string() }),
+            404: problemSchema,
+          },
         },
       },
-    },
-    async (request) => {
-      const session = await prisma.bankIdSession.findUnique({
-        where: { orderRef: request.params.orderRef },
-      });
-      if (!session) throw notFound('BankID-ordern finns inte längre.');
+      async (request) => {
+        const session = await prisma.bankIdSession.findUnique({
+          where: { orderRef: request.params.orderRef },
+        });
+        if (!session) throw notFound('BankID-ordern finns inte längre.');
 
-      if (session.status !== 'PENDING') {
-        return {
-          status: session.status,
-          hintCode: session.hintCode ?? undefined,
-          hintText: translateBankIdHint(session.hintCode ?? undefined),
-        };
-      }
+        if (session.status !== 'PENDING') {
+          return {
+            status: session.status,
+            hintCode: session.hintCode ?? undefined,
+            hintText: translateBankIdHint(session.hintCode ?? undefined),
+          };
+        }
 
-      const result = await bankId.collect(session.orderRef);
+        const result = await bankId.collect(session.orderRef);
 
-      if (result.status === 'pending') {
-        return {
-          status: 'PENDING' as const,
-          hintCode: result.hintCode,
-          hintText: translateBankIdHint(result.hintCode),
-          // QR-koden roteras varje sekund, så den räknas om vid varje polling.
-          qrData: buildQrData(session.qrStartToken, session.qrStartSecret, session.startedAt),
-        };
-      }
+        if (result.status === 'pending') {
+          return {
+            status: 'PENDING' as const,
+            hintCode: result.hintCode,
+            hintText: translateBankIdHint(result.hintCode),
+            // QR-koden roteras varje sekund, så den räknas om vid varje polling.
+            qrData: buildQrData(session.qrStartToken, session.qrStartSecret, session.startedAt),
+          };
+        }
 
-      if (result.status === 'failed' || !result.completionData) {
+        if (result.status === 'failed' || !result.completionData) {
+          await prisma.bankIdSession.update({
+            where: { id: session.id },
+            data: { status: 'FAILED', hintCode: result.hintCode ?? 'unknown', completedAt: new Date() },
+          });
+          return {
+            status: 'FAILED' as const,
+            hintCode: result.hintCode,
+            hintText: translateBankIdHint(result.hintCode),
+          };
+        }
+
+        const completion = result.completionData;
+
+        if (session.purpose === 'SIGN') {
+          await completeSigning(services, session.id, session.contractId, completion, request.ip);
+          return {
+            status: 'COMPLETE' as const,
+            hintText: 'Avtalet är signerat.',
+          };
+        }
+
+        // Rollen valdes i appen när inloggningen startades.
+        const user = await upsertUserFromBankId(services, {
+          personalNumber: completion.personalNumber,
+          name: completion.name,
+          role: session.requestedRole === 'BUSINESS' ? 'BUSINESS' : 'INFLUENCER',
+        });
+
         await prisma.bankIdSession.update({
           where: { id: session.id },
-          data: { status: 'FAILED', hintCode: result.hintCode ?? 'unknown', completedAt: new Date() },
+          data: { status: 'COMPLETE', userId: user.id, completedAt: new Date() },
         });
-        return {
-          status: 'FAILED' as const,
-          hintCode: result.hintCode,
-          hintText: translateBankIdHint(result.hintCode),
-        };
-      }
 
-      const completion = result.completionData;
-
-      if (session.purpose === 'SIGN') {
-        await completeSigning(services, session.id, session.contractId, completion, request.ip);
+        const payload = await buildSessionPayload(prisma, user.id);
         return {
           status: 'COMPLETE' as const,
-          hintText: 'Avtalet är signerat.',
+          hintText: 'Legitimeringen lyckades.',
+          accessToken: server.jwt.sign(payload),
+          user: {
+            id: user.id,
+            name: user.name,
+            role: user.role,
+            onboardingComplete: user.onboardingComplete,
+          },
         };
-      }
-
-      // Rollen valdes i appen när inloggningen startades.
-      const user = await upsertUserFromBankId(services, {
-        personalNumber: completion.personalNumber,
-        name: completion.name,
-        role: session.requestedRole === 'BUSINESS' ? 'BUSINESS' : 'INFLUENCER',
-      });
-
-      await prisma.bankIdSession.update({
-        where: { id: session.id },
-        data: { status: 'COMPLETE', userId: user.id, completedAt: new Date() },
-      });
-
-      const payload = await buildSessionPayload(prisma, user.id);
-      return {
-        status: 'COMPLETE' as const,
-        hintText: 'Legitimeringen lyckades.',
-        accessToken: server.jwt.sign(payload),
-        user: {
-          id: user.id,
-          name: user.name,
-          role: user.role,
-          onboardingComplete: user.onboardingComplete,
-        },
-      };
-    },
-  );
-
-  server.post(
-    '/auth/bankid/:orderRef/cancel',
-    {
-      schema: {
-        params: z.object({ orderRef: z.string().min(1) }),
-        response: { 200: z.object({ cancelled: z.literal(true) }) },
       },
-    },
-    async (request) => {
-      await bankId.cancel(request.params.orderRef).catch(() => undefined);
-      await prisma.bankIdSession.updateMany({
-        where: { orderRef: request.params.orderRef, status: 'PENDING' },
-        data: { status: 'FAILED', hintCode: 'cancelled', completedAt: new Date() },
-      });
-      return { cancelled: true as const };
-    },
-  );
+    );
+
+    server.post(
+      '/auth/bankid/:orderRef/cancel',
+      {
+        schema: {
+          params: z.object({ orderRef: z.string().min(1) }),
+          response: { 200: z.object({ cancelled: z.literal(true) }) },
+        },
+      },
+      async (request) => {
+        await bankId.cancel(request.params.orderRef).catch(() => undefined);
+        await prisma.bankIdSession.updateMany({
+          where: { orderRef: request.params.orderRef, status: 'PENDING' },
+          data: { status: 'FAILED', hintCode: 'cancelled', completedAt: new Date() },
+        });
+        return { cancelled: true as const };
+      },
+    );
+  }
 
   server.get(
     '/auth/me',
@@ -501,8 +511,8 @@ async function loadContractForSigning(services: Services, contractId: string) {
 }
 
 /**
- * Skriver signaturen och flyttar kontraktet framåt. Kontraktet blir ACTIVE
- * först när båda parter har signerat.
+ * BankID-vägen in i signeringen: personnumret ur BankID:s svar pekar ut
+ * kontot, resten är gemensamt med enkel signering.
  */
 async function completeSigning(
   services: Services,
@@ -517,63 +527,20 @@ async function completeSigning(
   const signer = await services.prisma.user.findUnique({ where: { personalNumberHash } });
   if (!signer) throw forbidden('Den som signerade har inget konto i appen.');
 
-  const contract = await services.prisma.contract.findUniqueOrThrow({
-    where: { id: contractId },
-    include: {
-      campaign: { include: { business: true } },
-      influencer: true,
+  await recordSignature(services.prisma, {
+    contractId,
+    signerUserId: signer.id,
+    evidence: {
+      method: 'BANKID',
+      bankIdOrderRef: sessionId,
+      signatureBlob: completion.signature,
+      ocspResponse: completion.ocspResponse,
+      ipAddress,
     },
   });
 
-  const isInfluencer = contract.influencer.userId === signer.id;
-  const isBusiness = contract.campaign.business.userId === signer.id;
-  if (!isInfluencer && !isBusiness) {
-    throw forbidden('Du är inte part i det här avtalet.');
-  }
-
-  await services.prisma.$transaction(async (tx) => {
-    await tx.signature.upsert({
-      where: { contractId_userId: { contractId, userId: signer.id } },
-      create: {
-        contractId,
-        userId: signer.id,
-        bankIdOrderRef: sessionId,
-        signatureBlob: completion.signature,
-        ocspResponse: completion.ocspResponse,
-        termsHash: hashTerms(contract.terms),
-        ipAddress,
-      },
-      update: {},
-    });
-
-    const signedByInfluencerAt = isInfluencer
-      ? (contract.signedByInfluencerAt ?? new Date())
-      : contract.signedByInfluencerAt;
-    const signedByBusinessAt = isBusiness
-      ? (contract.signedByBusinessAt ?? new Date())
-      : contract.signedByBusinessAt;
-    const bothSigned = signedByInfluencerAt !== null && signedByBusinessAt !== null;
-
-    await tx.contract.update({
-      where: { id: contractId },
-      data: {
-        signedByInfluencerAt,
-        signedByBusinessAt,
-        status: bothSigned ? 'ACTIVE' : 'PARTIALLY_SIGNED',
-      },
-    });
-
-    await tx.bankIdSession.update({
-      where: { id: sessionId },
-      data: { status: 'COMPLETE', userId: signer.id, completedAt: new Date() },
-    });
-
-    await recordAudit(tx, {
-      userId: signer.id,
-      action: 'contract.signed',
-      entityType: 'Contract',
-      entityId: contractId,
-      metadata: { party: isInfluencer ? 'influencer' : 'business', termsHash: sha256Hex(contract.terms) },
-    });
+  await services.prisma.bankIdSession.update({
+    where: { id: sessionId },
+    data: { status: 'COMPLETE', userId: signer.id, completedAt: new Date() },
   });
 }

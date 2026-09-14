@@ -39,7 +39,7 @@ export const businessTour: TourStep[] = [
   },
   {
     title: 'Så går en kampanj till',
-    body: '1. Ni beskriver uppdraget och sätter en budget.\n2. Kreatörer ansöker, ni väljer vem ni vill ha.\n3. Ni signerar avtalet med BankID.\n4. Filmen levereras – ni godkänner, sedan betalas kreatören.',
+    body: '1. Ni beskriver uppdraget och sätter en budget.\n2. Kreatörer ansöker, ni väljer vem ni vill ha.\n3. Båda parter signerar avtalet.\n4. Filmen levereras – ni godkänner, sedan betalas kreatören.',
   },
   {
     route: '/business/matches',
@@ -51,7 +51,7 @@ export const businessTour: TourStep[] = [
     route: '/business/contracts',
     target: { kind: 'tab', index: 3, count: BUSINESS_TABS },
     title: 'Avtal',
-    body: 'Avtalen signeras med BankID. Arvodet betalas in när avtalet är påskrivet och ligger kvar hos Pacta tills ni godkänt filmen – kreatören vet att pengarna finns, ni betalar inte för något ni inte fått.',
+    body: 'Här signerar ni avtalen. Arvodet betalas in när avtalet är påskrivet och ligger kvar hos Pacta tills ni godkänt filmen – kreatören vet att pengarna finns, ni betalar inte för något ni inte fått.',
   },
   {
     route: '/business/profile',
@@ -84,7 +84,7 @@ export const influencerTour: TourStep[] = [
     route: '/influencer/contracts',
     target: { kind: 'tab', index: 2, count: INFLUENCER_TABS },
     title: 'Avtal',
-    body: 'Du signerar med BankID. Först då betalar företaget in arvodet, och det ligger hos Pacta tills din film är godkänd. Du börjar aldrig filma på ett löfte.',
+    body: 'Du signerar avtalet här. Först då betalar företaget in arvodet, och det ligger hos Pacta tills din film är godkänd. Du börjar aldrig filma på ett löfte.',
   },
   {
     route: '/influencer/wallet',

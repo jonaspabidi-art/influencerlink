@@ -856,6 +856,19 @@ ALTER TABLE "InfluencerProfile" ADD COLUMN     "retainerVolumeDiscountBps" INTEG
 -- AlterTable
 ALTER TABLE "BusinessProfile" ALTER COLUMN "orgNumber" DROP NOT NULL;
 
+-- === 20260921000000_simple_signing ===
+
+-- CreateEnum
+CREATE TYPE "SignatureMethod" AS ENUM ('BANKID', 'SIMPLE');
+
+-- AlterTable
+ALTER TABLE "Signature" ADD COLUMN     "method" "SignatureMethod" NOT NULL DEFAULT 'BANKID',
+ADD COLUMN     "signerName" TEXT,
+ADD COLUMN     "userAgent" TEXT,
+ALTER COLUMN "bankIdOrderRef" DROP NOT NULL,
+ALTER COLUMN "signatureBlob" DROP NOT NULL,
+ALTER COLUMN "ocspResponse" DROP NOT NULL;
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -953,6 +966,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         '0904ee68eda3418aae153e2a731ddbdaaac4ff40848c8bd7fa033788b07bfb04',
         now(), '20260920000000_optional_org_number', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '817ed1b4c90da09fde4da87a28e6b690baffb0ef603aa354f8ed1c53cc7d9b30',
+        now(), '20260921000000_simple_signing', now(), 1);
 
 -- === Demodata ===
 

@@ -103,7 +103,7 @@ export function describeNextStep(
     case 'PARTIALLY_SIGNED':
       return signedByMe
         ? 'Väntar på motpartens signatur.'
-        : 'Du signerar med BankID i avtalet.';
+        : 'Du signerar avtalet i appen.';
     case 'ACTIVE':
       return isBusiness
         ? 'Kreatören lämnar filmen för godkännande innan den publiceras.'

@@ -118,6 +118,8 @@ export async function buildApp(services: Services): Promise<FastifyInstance> {
 
   app.get('/health', async () => ({
     status: 'ok',
+    // Appen läser den här för att veta vilken signeringsskärm den ska visa.
+    signingMode: config.SIGNING_MODE,
     bankIdMode: config.BANKID_MODE,
     // Syns utåt så att ingen tror att en demomiljö är skarp.
     mockIntegrations: config.mockIntegrations,
