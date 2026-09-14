@@ -25,7 +25,7 @@ import {
 } from '../../src/components/ui';
 import { formatFollowers, formatPercent } from '../../src/format';
 import { colors, spacing, type } from '../../src/theme';
-import { useTour } from '../../src/tour/Tour';
+import { useTour, useTourAnchor } from '../../src/tour/Tour';
 import { INFLUENCER_TOUR_KEY, influencerTour } from '../../src/tour/steps';
 import type { InfluencerProfile, ProfileReviews } from '../../src/types';
 
@@ -39,6 +39,8 @@ import type { InfluencerProfile, ProfileReviews } from '../../src/types';
 export default function InfluencerProfileTab() {
   const { user, signOut } = useAuth();
   const { restart } = useTour();
+  // Rundturens sista steg pekar hit: det är det viktigaste en ny kreatör gör.
+  const socialsAnchor = useTourAnchor('influencer.socials');
 
   const profile = useQuery({
     queryKey: ['influencer', user?.profileId],
@@ -109,12 +111,14 @@ export default function InfluencerProfileTab() {
           hint="Fast inkomst"
           onPress={() => router.push('/retainer/availability')}
         />
-        <MenuRow
-          icon={<LinkIcon size={20} color={colors.primary} />}
-          label="Sociala konton"
-          hint={data ? `${data.socialAccounts.length} av 3` : undefined}
-          onPress={() => router.push('/social')}
-        />
+        <View ref={socialsAnchor.ref}>
+          <MenuRow
+            icon={<LinkIcon size={20} color={colors.primary} />}
+            label="Sociala konton"
+            hint={data ? `${data.socialAccounts.length} av 3` : undefined}
+            onPress={() => router.push('/social')}
+          />
+        </View>
         <MenuRow
           icon={<HelpIcon size={20} color={colors.primary} />}
           label="Visa rundturen igen"

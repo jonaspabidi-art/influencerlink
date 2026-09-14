@@ -22,6 +22,7 @@ import {
 } from '../../src/components/ui';
 import { describeCompensation, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
+import { useTourAnchor } from '../../src/tour/Tour';
 import type { Campaign, Retainer } from '../../src/types';
 
 const STATUS_LABELS: Record<Campaign['status'], string> = {
@@ -61,6 +62,8 @@ export default function BusinessAssignments() {
   const router = useRouter();
   const campaigns = useQuery(myCampaignsQuery());
   const retainers = useQuery(retainersQuery());
+  // Rundturen pekar hit när den visar var en kampanj skapas.
+  const newCampaignAnchor = useTourAnchor('business.newCampaign');
 
   /*
    * Att skapa en kampanj är det företaget kom hit för att göra, så knappen
@@ -70,9 +73,11 @@ export default function BusinessAssignments() {
    * hade: de stora knapparna visades bara när allt var tomt.
    */
   const newCampaign = (
-    <IconButton label="Ny kampanj" onPress={() => router.push('/campaign/new')}>
-      <PlusIcon size={20} color={colors.text} />
-    </IconButton>
+    <View ref={newCampaignAnchor.ref}>
+      <IconButton label="Ny kampanj" onPress={() => router.push('/campaign/new')}>
+        <PlusIcon size={20} color={colors.text} />
+      </IconButton>
+    </View>
   );
 
   if (campaigns.isLoading) {

@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
   type View as RNView,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getItem, setItem } from '../storage';
 import { colors, radius, spacing, type } from '../theme';
@@ -61,6 +62,12 @@ export interface TourStep {
   body: string;
   /** Utan mål visas steget som ett kort mitt på skärmen. */
   target?: TourTarget;
+  /**
+   * Skärmen steget handlar om. Turen går dit när steget visas, så att det som
+   * beskrivs faktiskt syns bakom hinnan – och så att ett ankare på den skärmen
+   * finns att mäta.
+   */
+  route?: string;
 }
 
 interface TourValue {
@@ -135,7 +142,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
    */
   const close = useCallback(() => {
     setRunning((current) => {
-      if (current) void setItem(storageKey(current.key), String(Date.now()));
+      if (!current) return null;
+      void setItem(storageKey(current.key), String(Date.now()));
+      /*
+       * Turen är en avstickare, så den lämnar tillbaka en där den hämtade en.
+       * Utan det slutar den som bara ville se kreatörer på profilsidan, och
+       * den som hoppade över vid steg två står kvar på en flik hen aldrig bad
+       * om.
+       */
+      const home = current.steps[0]?.route;
+      if (home) router.navigate(home);
       return null;
     });
   }, []);
@@ -180,6 +196,19 @@ function TourOverlay({
 
   const step = steps[Math.min(index, steps.length - 1)];
   const target = step?.target;
+  const route = step?.route;
+
+  /*
+   * Turen byter skärm åt användaren.
+   *
+   * Ett steg som beskriver Avtal med kreatörslistan bakom sig förklarar
+   * ingenting, och ett ankare på en skärm som inte visas går inte att mäta.
+   * Navigeringen sker före mätningen nedan; att vyn ännu inte hunnit ritas
+   * täcks av försöken där.
+   */
+  useEffect(() => {
+    if (route) router.navigate(route);
+  }, [route]);
 
   /*
    * Hålet räknas ut när steget visas, inte i förväg.
