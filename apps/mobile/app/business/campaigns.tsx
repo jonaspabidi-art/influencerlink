@@ -13,6 +13,7 @@ import {
   Divider,
   ErrorState,
   Header,
+  IconButton,
   Label,
   Loading,
   Screen,
@@ -61,10 +62,23 @@ export default function BusinessAssignments() {
   const campaigns = useQuery(myCampaignsQuery());
   const retainers = useQuery(retainersQuery());
 
+  /*
+   * Att skapa en kampanj är det företaget kom hit för att göra, så knappen
+   * står i headern på varje läge av den här skärmen – laddar, fel, tom eller
+   * full. Tidigare fanns den bara som en textlänk bredvid en rubrik längre
+   * ned i listan, vilket gjorde den svårare att hitta ju fler uppdrag man
+   * hade: de stora knapparna visades bara när allt var tomt.
+   */
+  const newCampaign = (
+    <IconButton label="Ny kampanj" onPress={() => router.push('/campaign/new')}>
+      <PlusIcon size={20} color={colors.text} />
+    </IconButton>
+  );
+
   if (campaigns.isLoading) {
     return (
       <Screen>
-        <Header title="Uppdrag" large />
+        <Header title="Uppdrag" large right={newCampaign} />
         <Loading />
       </Screen>
     );
@@ -72,7 +86,7 @@ export default function BusinessAssignments() {
   if (campaigns.isError) {
     return (
       <Screen>
-        <Header title="Uppdrag" large />
+        <Header title="Uppdrag" large right={newCampaign} />
         <ErrorState
           message="Kunde inte hämta uppdragen."
           onRetry={() => void campaigns.refetch()}
@@ -92,7 +106,7 @@ export default function BusinessAssignments() {
   if (data.length === 0 && running.length === 0) {
     return (
       <Screen>
-        <Header title="Uppdrag" large subtitle="Inget samarbete ännu" />
+        <Header title="Uppdrag" large subtitle="Inget samarbete ännu" right={newCampaign} />
         <View style={styles.emptyBody}>
           <ExpertOrderStatus />
           <Choice expanded />
@@ -109,6 +123,7 @@ export default function BusinessAssignments() {
       <Header
         title="Uppdrag"
         large
+        right={newCampaign}
         subtitle={[
           published > 0 ? `${published} ${published === 1 ? 'kampanj' : 'kampanjer'}` : null,
           running.length > 0 ? `${running.length} löpande` : null,

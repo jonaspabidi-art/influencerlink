@@ -27,7 +27,7 @@ export const businessTour: TourStep[] = [
   {
     target: { kind: 'tab', index: 1, count: BUSINESS_TABS },
     title: 'Uppdrag',
-    body: 'Här ligger allt ni lagt ut. Engångskampanjer är ett jobb i taget. Löpande uppdrag är en kreatör som filmar åt er varje månad, till era egna kanaler.',
+    body: 'Här ligger allt ni lagt ut, och plusknappen uppe till höger skriver en ny kampanj. Engångskampanjer är ett jobb i taget. Löpande uppdrag är en kreatör som filmar åt er varje månad, till era egna kanaler.',
   },
   {
     title: 'Så går en kampanj till',
