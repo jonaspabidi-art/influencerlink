@@ -9,8 +9,9 @@ import {
   type Platform,
 } from '@pacta/shared';
 import { useQuery } from '@tanstack/react-query';
+import { barterQuery } from '../../src/queries';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError } from '../../src/api';
 import { ImagePickerField } from '../../src/components/ImagePickerField';
@@ -39,7 +40,7 @@ import {
   formatSek,
 } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
-import type { Campaign, ExpertAvailability } from '../../src/types';
+import type { Campaign, CampaignReach, ExpertAvailability } from '../../src/types';
 
 interface CampaignDraft {
   title: string;
@@ -71,6 +72,9 @@ const STARTERS = [
 const PROMPT_MAX = 1000;
 const DEFAULT_RUN_DAYS = 30;
 
+/** Så länge väntar vi efter sista tangenttrycket innan räckvidden hämtas. */
+const REACH_DEBOUNCE_MS = 450;
+
 export default function NewCampaign() {
   const router = useRouter();
   const expert = useQuery({
@@ -78,6 +82,9 @@ export default function NewCampaign() {
     queryFn: () => api.get<ExpertAvailability>('/expert-orders/availability'),
   });
   const [step, setStep] = useState<1 | 2>(1);
+  // Mat mot innehåll kräver abonnemang. Spärren ska synas när valet görs,
+  // inte som ett nej efter att hela formuläret är ifyllt.
+  const barter = useQuery(barterQuery());
 
   const [prompt, setPrompt] = useState('');
   const [drafting, setDrafting] = useState(false);
@@ -92,12 +99,54 @@ export default function NewCampaign() {
   const [budget, setBudget] = useState('4000');
   const [productValue, setProductValue] = useState('300');
   const [slots, setSlots] = useState('3');
-  const [minFollowers, setMinFollowers] = useState('5000');
+  /*
+   * Noll, inte 5 000.
+   *
+   * Fältet är ett tyst filter: skriver någon en siffra hen inte har någon
+   * känsla för blir uppdraget osynligt för de kreatörer appen har flest av.
+   * Den som vill kräva räckvidd får höja själv, och ser då direkt vad det
+   * kostar i antal.
+   */
+  const [minFollowers, setMinFollowers] = useState('0');
   const [city, setCity] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /*
+   * Vad inställningarna betyder i antal kreatörer.
+   *
+   * Fördröjt, så att varje tangenttryck i följarfältet inte blir ett anrop.
+   * Siffran ska följa med medan man ändrar – kommer den först efter
+   * publicering är den ett besked och inte ett beslutsunderlag.
+   */
+  const [reachInput, setReachInput] = useState({ city: '', categories: '', platforms: '', minFollowers: 0 });
+  const nextReach = {
+    city: city.trim(),
+    categories: categories.join(','),
+    platforms: platforms.join(','),
+    minFollowers: Math.max(0, Number(minFollowers) || 0),
+  };
+  useEffect(() => {
+    const timer = setTimeout(() => setReachInput(nextReach), REACH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextReach.city, nextReach.categories, nextReach.platforms, nextReach.minFollowers]);
+
+  const reach = useQuery({
+    queryKey: ['campaign-reach', reachInput],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (reachInput.city) params.set('city', reachInput.city);
+      if (reachInput.categories) params.set('categories', reachInput.categories);
+      if (reachInput.platforms) params.set('platforms', reachInput.platforms);
+      params.set('minFollowers', String(reachInput.minFollowers));
+      return api.get<CampaignReach>(`/campaigns/reach?${params.toString()}`);
+    },
+    enabled: reachInput.city.length > 1,
+    staleTime: 60_000,
+  });
 
   const applyDraft = (draft: CampaignDraft) => {
     setTitle(draft.title);
@@ -114,8 +163,24 @@ export default function NewCampaign() {
     setStep(2);
   };
 
+  /*
+   * Staden frågas en gång, i steg ett, och krävs där.
+   *
+   * Den stod i båda stegen och var alltså två fält för samma uppgift. Och den
+   * behövs tidigt oavsett väg: utan ort går det varken att föreslå ett upplägg
+   * eller att räkna ut vem uppdraget når.
+   */
+  const requireCity = () => {
+    if (city.trim().length < 2) {
+      setError('Ange vilken stad uppdraget gäller.');
+      return false;
+    }
+    return true;
+  };
+
   const generateDraft = async () => {
     setError(null);
+    if (!requireCity()) return;
     if (prompt.trim().length < 10) return setError('Skriv några rader om vad du vill ha.');
 
     setDrafting(true);
@@ -269,7 +334,14 @@ export default function NewCampaign() {
               allt innan något publiceras.
             </Text>
 
-            <Button label="Jag fyller i allt själv" variant="secondary" onPress={() => setStep(2)} />
+            <Button
+              label="Jag fyller i allt själv"
+              variant="secondary"
+              onPress={() => {
+                setError(null);
+                if (requireCity()) setStep(2);
+              }}
+            />
             <Text style={styles.footnote}>Ungefär fem minuter.</Text>
           </View>
 
@@ -350,7 +422,6 @@ export default function NewCampaign() {
         />
         <Field label="Rubrik" value={title} onChangeText={setTitle} />
         <Field label="Brief till kreatören" value={brief} onChangeText={setBrief} multiline />
-        <Field label="Stad" value={city} onChangeText={setCity} placeholder="Göteborg" />
       </Card>
 
       <Card>
@@ -400,6 +471,14 @@ export default function NewCampaign() {
           value={compensationType}
           onChange={setCompensationType}
         />
+        {compensationType === 'PRODUCT' && barter.data?.blocker ? (
+          <View style={styles.reachBox}>
+            <Text style={styles.reachWarn}>{barter.data.blocker}</Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/barter/plans')}>
+              <Text style={styles.expertHint}>Se nivåer och priser</Text>
+            </Pressable>
+          </View>
+        ) : null}
         <View style={styles.moneyRow}>
           {compensationType !== 'PRODUCT' ? (
             <View style={styles.moneyField}>
@@ -439,9 +518,12 @@ export default function NewCampaign() {
               value={minFollowers}
               onChangeText={setMinFollowers}
               keyboardType="numeric"
+              hint="0 = alla får söka."
             />
           </View>
         </View>
+
+        <ReachNote reach={reach.data} city={city} loading={reach.isFetching} />
       </Card>
 
       {/*
@@ -465,7 +547,7 @@ export default function NewCampaign() {
         <Card tone="raised">
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>
-              Arvode {formatSek(kronorToOre(Number(budget) || 0))} × {slots}
+              Riktpris {formatSek(kronorToOre(Number(budget) || 0))} × {slots}
             </Text>
             <Text style={styles.summaryValue}>{formatSek(feeTotal)}</Text>
           </View>
@@ -475,13 +557,14 @@ export default function NewCampaign() {
           </View>
           <Divider />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryTotalLabel}>Du betalar in</Text>
+            <Text style={styles.summaryTotalLabel}>Ungefär att betala in</Text>
             <Text style={styles.summaryTotal}>{formatSek(money.charge)}</Text>
           </View>
           <Text style={styles.summaryNote}>
-            Först när avtalet är signerat. Beloppet ligger kvar hos oss tills du godkänt
-            leveransen. Varje kreatör får {formatSek(perCreator.net)} utbetalt – vi tar 10 % av
-            vardera part.
+            En uppskattning, inte en faktura. Ni avtalar arvodet med varje kreatör för sig, och
+            betalar in först när det avtalet är signerat – då ligger beloppet kvar hos oss tills
+            ni godkänt leveransen. Till riktpriset får kreatören {formatSek(perCreator.net)}
+            utbetalt; vi tar 10 % av vardera part.
           </Text>
         </Card>
       ) : null}
@@ -496,7 +579,62 @@ export default function NewCampaign() {
   );
 }
 
+/**
+ * Vad inställningarna betyder i antal kreatörer.
+ *
+ * Står intill fälten som styr det, eftersom det är kopplingen som saknades:
+ * stad och följarkrav avgör om uppdraget syns för någon, och ingen av dem
+ * säger det av sig själv.
+ */
+function ReachNote({
+  reach,
+  city,
+  loading,
+}: {
+  reach: CampaignReach | undefined;
+  city: string;
+  loading: boolean;
+}) {
+  if (city.trim().length < 2) {
+    return <Text style={styles.reachMuted}>Fyll i stad så räknar vi ut hur många ni når.</Text>;
+  }
+  if (!reach) {
+    return <Text style={styles.reachMuted}>{loading ? 'Räknar …' : ' '}</Text>;
+  }
+
+  if (reach.matching === 0) {
+    return (
+      <View style={styles.reachBox}>
+        <Text style={styles.reachWarn}>Ingen kreatör matchar det här ännu.</Text>
+        <Text style={styles.reachMuted}>
+          {reach.blockedByFollowers > 0
+            ? `${reach.blockedByFollowers} i ${city.trim()} passar men har för få följare. Sänk kravet så syns uppdraget för dem.`
+            : `Vi hittar ingen i ${city.trim()} med de nischerna. Uppdraget går att publicera ändå – det syns så fort någon passar.`}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.reachBox}>
+      <Text style={styles.reachStrong}>
+        {reach.matching} {reach.matching === 1 ? 'kreatör' : 'kreatörer'} i {city.trim()} matchar
+        det här
+      </Text>
+      {reach.blockedByFollowers > 0 ? (
+        <Text style={styles.reachMuted}>
+          {reach.blockedByFollowers} till skulle nås utan följarkravet.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  reachBox: { gap: 2, paddingTop: 2 },
+  reachStrong: { ...type.listTitle, color: colors.positive },
+  reachWarn: { ...type.listTitle, color: colors.accent },
+  reachMuted: { ...type.secondary, color: colors.muted },
   expertHint: { ...type.bodySmall, color: colors.primary, textAlign: 'center' },
   step1Content: { paddingTop: 0, flexGrow: 1 },
   content: { paddingTop: 0 },

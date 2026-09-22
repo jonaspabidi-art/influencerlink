@@ -1,3 +1,11 @@
+/** Hur många kreatörer ett uppdrag skulle nå med nuvarande inställningar. */
+export interface CampaignReach {
+  matching: number;
+  inCity: number;
+  /** Hur många fler som nås om följarkravet tas bort. */
+  blockedByFollowers: number;
+}
+
 /** Företagets nivå för mat mot innehåll, och vad som är kvar i månaden. */
 export interface BarterStatus {
   plan: 'NONE' | 'BASIC' | 'MEDIUM' | 'ADVANCED';

@@ -15,6 +15,24 @@ import { z } from 'zod';
 import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { assertBarterAllowed } from '../services/barter.js';
+import { aggregateStats } from '../services/social/index.js';
+
+/**
+ * Så många profiler räknas igenom för räckvidden.
+ *
+ * Följarantalet är summan av kreatörens konton och går därför inte att
+ * filtrera på i databasen. Ett tak här håller svaret snabbt; en stad med fler
+ * kreatörer än så har ändå passerat gränsen där exakta tal spelar roll.
+ */
+const REACH_SCAN_LIMIT = 500;
+
+/** "RESTAURANG,CAFE" → ['RESTAURANG', 'CAFE']. Tomma värden faller bort. */
+function splitList(value: string | undefined): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 
@@ -44,6 +62,78 @@ export const publicCampaignSchema = z.object({
 export async function campaignRoutes(app: FastifyInstance, services: Services): Promise<void> {
   const server = app.withTypeProvider<ZodTypeProvider>();
   const { prisma, ai } = services;
+
+  /**
+   * Hur många kreatörer ett uppdrag skulle nå.
+   *
+   * Stad och lägsta följarantal avgör om någon över huvud taget ser uppdraget,
+   * men ingen av dem säger vad de gör. Den som skriver 5 000 i följarkravet
+   * vet inte att hon just gjorde kampanjen osynlig för halva stan. Siffran
+   * finns därför medan man fyller i, inte som ett besked efteråt.
+   *
+   * Räknas på samma villkor som matchningen använder: ort, nisch, plattform
+   * och summerade följare.
+   */
+  server.get(
+    '/campaigns/reach',
+    {
+      preHandler: app.requireRole('BUSINESS'),
+      schema: {
+        querystring: z.object({
+          city: z.string().max(80).optional(),
+          /** Kommaseparerade, samma namn som i kampanjen. */
+          categories: z.string().max(400).optional(),
+          platforms: z.string().max(100).optional(),
+          minFollowers: z.coerce.number().int().min(0).max(10_000_000).default(0),
+        }),
+        response: {
+          200: z.object({
+            /** Kreatörer som uppfyller allt. */
+            matching: z.number().int(),
+            /** Kreatörer i staden, oavsett nisch och följarkrav. */
+            inCity: z.number().int(),
+            /** Hur många fler som skulle nås utan följarkravet. */
+            blockedByFollowers: z.number().int(),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const { city, minFollowers } = request.query;
+      const categories = splitList(request.query.categories) as Category[];
+      const platforms = splitList(request.query.platforms) as Platform[];
+
+      const candidates = await prisma.influencerProfile.findMany({
+        where: {
+          user: { onboardingComplete: true },
+          socialAccounts: { some: {} },
+          ...(city ? { city: { equals: city, mode: 'insensitive' } } : {}),
+        },
+        select: {
+          categories: true,
+          socialAccounts: { select: { platform: true, followers: true, avgViews: true, engagementRate: true } },
+        },
+        take: REACH_SCAN_LIMIT,
+      });
+
+      let matching = 0;
+      let blockedByFollowers = 0;
+      for (const candidate of candidates) {
+        const fitsCategory =
+          categories.length === 0 || categories.some((item) => candidate.categories.includes(item));
+        const fitsPlatform =
+          platforms.length === 0 ||
+          candidate.socialAccounts.some((account) => platforms.includes(account.platform));
+        if (!fitsCategory || !fitsPlatform) continue;
+
+        const followers = aggregateStats(candidate.socialAccounts).followers;
+        if (followers >= minFollowers) matching += 1;
+        else blockedByFollowers += 1;
+      }
+
+      return { matching, inCity: candidates.length, blockedByFollowers };
+    },
+  );
 
   server.post(
     '/campaigns',

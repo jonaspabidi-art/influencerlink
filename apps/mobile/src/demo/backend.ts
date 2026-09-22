@@ -1518,6 +1518,31 @@ route('PATCH', '/campaigns/:id', ({ params, body }) => {
   return publicCampaign(campaign);
 });
 
+/** Räckvidden, räknad på samma villkor som i skarpt läge. */
+route('GET', '/campaigns/reach', ({ query }) => {
+  const city = (query.get('city') ?? '').trim().toLowerCase();
+  const categories = (query.get('categories') ?? '').split(',').filter(Boolean) as Category[];
+  const platforms = (query.get('platforms') ?? '').split(',').filter(Boolean) as Platform[];
+  const minFollowers = Number(query.get('minFollowers') ?? 0) || 0;
+
+  const inCity = state.influencers.filter(
+    (profile) => !city || profile.city.toLowerCase() === city,
+  );
+  let matching = 0;
+  let blockedByFollowers = 0;
+  for (const profile of inCity) {
+    const fitsCategory =
+      categories.length === 0 || categories.some((item) => profile.categories.includes(item));
+    const fitsPlatform =
+      platforms.length === 0 ||
+      profile.socials.some((account) => platforms.includes(account.platform));
+    if (!fitsCategory || !fitsPlatform) continue;
+    if (aggregate(profile).followers >= minFollowers) matching += 1;
+    else blockedByFollowers += 1;
+  }
+  return { matching, inCity: inCity.length, blockedByFollowers };
+});
+
 route('GET', '/campaigns/:id', ({ params }) => publicCampaign(campaignById(params[0]!)));
 
 route('GET', '/me/barter', () => {
