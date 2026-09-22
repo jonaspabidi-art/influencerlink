@@ -136,3 +136,14 @@ describe('avtalstext för bartersamarbete', () => {
     expect(paid).toMatch(/återbetalas hela beloppet/);
   });
 });
+
+/*
+ * En sparad kreatör från innan fältet fanns saknar reliability. Det tog ner
+ * hela appen en gång: visningshjälparen läste .completed på undefined.
+ */
+describe('pålitlighet som saknas', () => {
+  it('tiger i stället för att kasta när fältet saknas', () => {
+    expect(describeReliability(undefined)).toBeNull();
+    expect(describeReliability(null)).toBeNull();
+  });
+});

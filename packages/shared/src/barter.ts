@@ -129,7 +129,15 @@ export interface CreatorReliability {
  * och det hade dessutom krävt att någon orkar fylla i det. Ett avtal som
  * passerat sitt datum utan leverans säger samma sak, av sig självt.
  */
-export function describeReliability(stats: CreatorReliability): string | null {
+export function describeReliability(stats?: CreatorReliability | null): string | null {
+  /*
+   * Fältet kan saknas helt.
+   *
+   * En klient kan ha ett sparat svar från innan fältet fanns, och då är rätt
+   * svar "ingenting att visa" – inte ett kastat fel mitt i en lista. En
+   * visningshjälpare får aldrig vara det som tar ner en skärm.
+   */
+  if (!stats) return null;
   const total = stats.completed + stats.abandoned;
   if (total === 0) return null;
   if (stats.abandoned === 0) {

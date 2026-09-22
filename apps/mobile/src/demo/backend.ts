@@ -281,6 +281,17 @@ function feeSplitOf(contract: { businessFeeBps: number; creatorFeeBps: number })
 const STORAGE_KEY = 'pacta.demo';
 
 /**
+ * Formatet på det sparade demoläget.
+ *
+ * Höj talet när något i tillståndet får ett nytt fält. Ett sparat läge från
+ * före ändringen saknar fältet, och koden som läser det kraschar – kontrollen
+ * nedan ser bara att listorna finns, inte vad som står i dem.
+ *
+ * 2: företag fick barterPlan, avtal fick createdAt.
+ */
+const STATE_VERSION = 2;
+
+/**
  * På webben sparas demoläget i localStorage, så att svep och avtal överlever
  * en omladdning av sidan. På native finns ingen localStorage och tillståndet
  * lever bara i minnet – appen laddas sällan om där.
@@ -307,9 +318,10 @@ function loadPersisted(): State | null {
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<State>;
+    const parsed = JSON.parse(raw) as Partial<State> & { version?: number };
     // Sparat läge från en äldre version av appen saknar fält som tillkommit
     // sedan dess. Då är det bättre att börja om än att köra vidare halvtomt.
+    if (parsed.version !== STATE_VERSION) return null;
     if (STATE_ARRAYS.some((key) => !Array.isArray(parsed[key]))) return null;
     return parsed as State;
   } catch {
@@ -319,7 +331,10 @@ function loadPersisted(): State | null {
 
 function persist(): void {
   try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state));
+    globalThis.localStorage?.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...state, version: STATE_VERSION }),
+    );
   } catch {
     // Full disk eller privat läge: demon fungerar ändå, den glömmer bara vid omladdning.
   }

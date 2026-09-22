@@ -14,6 +14,18 @@ import { Platform } from 'react-native';
  */
 const KEY = 'pacta.query';
 
+/**
+ * Formatet på det sparade svaret.
+ *
+ * Höj talet när ett API-svar får ett nytt fält som skärmarna läser. Ett sparat
+ * svar från före ändringen saknar fältet, och en skärm som läser det kraschar –
+ * hela appen slocknade en gång på just det. Ett versionsnummer som inte stämmer
+ * gör att cachen kastas i stället, och första hämtningen fyller den på nytt.
+ *
+ * 2: kreatörer fick fältet reliability.
+ */
+const VERSION = 2;
+
 /** Äldre än så här kastas bort: hellre en hämtning än siffror från i går. */
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -35,8 +47,12 @@ export function restoreQueryCache(client: QueryClient): void {
   try {
     const raw = globalThis.localStorage?.getItem(KEY);
     if (!raw) return;
-    const saved = JSON.parse(raw) as { savedAt: number; state: DehydratedState };
-    if (!saved.savedAt || Date.now() - saved.savedAt > MAX_AGE_MS) {
+    const saved = JSON.parse(raw) as {
+      version?: number;
+      savedAt: number;
+      state: DehydratedState;
+    };
+    if (saved.version !== VERSION || !saved.savedAt || Date.now() - saved.savedAt > MAX_AGE_MS) {
       globalThis.localStorage?.removeItem(KEY);
       return;
     }
@@ -62,7 +78,10 @@ export function persistQueryCache(client: QueryClient): () => void {
           query.state.status === 'success' &&
           !SKIP.some((part) => JSON.stringify(query.queryKey).includes(part)),
       });
-      globalThis.localStorage?.setItem(KEY, JSON.stringify({ savedAt: Date.now(), state }));
+      globalThis.localStorage?.setItem(
+        KEY,
+        JSON.stringify({ version: VERSION, savedAt: Date.now(), state }),
+      );
     } catch {
       // Full disk eller privat läge: appen fungerar, den minns bara inte.
     }
