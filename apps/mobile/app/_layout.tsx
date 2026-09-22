@@ -6,7 +6,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/instrument-sans';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -17,6 +17,7 @@ import { Prefetch } from '../src/components/Prefetch';
 import { persistQueryCache, restoreQueryCache } from '../src/querycache';
 import { hideHtmlSplash } from '../src/splash';
 import { TourProvider } from '../src/tour/Tour';
+import { AppError } from '../src/components/AppError';
 import { colors, type } from '../src/theme';
 
 const queryClient = new QueryClient({
@@ -42,6 +43,18 @@ const queryClient = new QueryClient({
 // Sparad data läggs tillbaka innan något ritas, annars hinner skärmarna visa
 // en spinner för data vi redan har.
 restoreQueryCache(queryClient);
+
+/**
+ * Fångar renderingsfel i hela appen.
+ *
+ * expo-router letar efter den här exporten i rotlayouten och visar den i
+ * stället för att låta felet riva komponentträdet. Utan den blir varje
+ * oväntat fel en tom skärm i bakgrundsfärgen, oavsett var i appen det
+ * uppstod.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <AppError error={error} retry={() => void retry()} />;
+}
 
 export default function RootLayout() {
   useEffect(() => persistQueryCache(queryClient), []);
