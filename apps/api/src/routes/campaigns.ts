@@ -14,6 +14,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
+import { assertBarterAllowed } from '../services/barter.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 
@@ -146,9 +147,21 @@ export async function campaignRoutes(app: FastifyInstance, services: Services): 
       },
     },
     async (request) => {
-      const campaign = await loadOwnCampaign(services, request.params.id, requireProfileId(request));
+      const businessId = requireProfileId(request);
+      const campaign = await loadOwnCampaign(services, request.params.id, businessId);
       if (campaign.endDate.getTime() < Date.now()) {
         throw badRequest('Slutdatumet har redan passerat. Uppdatera datumen först.');
+      }
+      /*
+       * Ett uppdrag mot enbart mat kräver abonnemang.
+       *
+       * Spärren sitter vid publicering och inte vid utkastet, så att den som
+       * vill titta på hur det ser ut får göra det. Får man nej först efter
+       * att ha skrivit färdigt är det ett sämre besked, men det är ärligare
+       * än att låta uppdraget ligga ute och aldrig gå att slutföra.
+       */
+      if (campaign.compensationType === 'PRODUCT') {
+        await assertBarterAllowed(prisma, businessId);
       }
       const updated = await prisma.campaign.update({
         where: { id: campaign.id },

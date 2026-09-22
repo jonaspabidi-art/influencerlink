@@ -53,6 +53,14 @@ enum Category {
   NOJE
 }
 
+/// Nivå på abonnemanget för mat mot innehåll. NONE = inget abonnemang.
+enum BarterPlan {
+  NONE
+  BASIC
+  MEDIUM
+  ADVANCED
+}
+
 enum CompensationType {
   FIXED
   PRODUCT
@@ -270,6 +278,14 @@ model BusinessProfile {
   categories  Category[]
 
   stripeCustomerId String?
+
+  /// Abonnemanget för mat mot innehåll.
+  ///
+  /// Sätts tills vidare för hand av en administratör när fakturan är betald.
+  /// Stripes prenumerationer kommer när det finns kunder att ta betalt av –
+  /// att bygga återkommande betalningar för noll abonnenter är att bygga
+  /// maskineri före efterfrågan.
+  barterPlan BarterPlan @default(NONE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

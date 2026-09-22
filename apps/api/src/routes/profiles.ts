@@ -1,5 +1,7 @@
 import type { Category, Platform } from '@pacta/shared';
 import {
+  BARTER_PLANS,
+  barterBlocker,
   businessProfileInputSchema,
   compensationTypeSchema,
   emptyRatingSummary,
@@ -27,6 +29,7 @@ import { randomUUID } from 'node:crypto';
 import { signState, verifyState } from '../lib/oauthstate.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
+import { barterUsage, creatorReliability, creatorReliabilityMap } from '../services/barter.js';
 import { buildSessionPayload } from '../lib/session.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
@@ -67,6 +70,17 @@ const publicInfluencerSchema = z.object({
   retainerPackages: z.array(
     z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
   ),
+  /**
+   * Hur kreatören skött sina uppdrag mot mat.
+   *
+   * Står på den publika profilen eftersom det är restaurangen som bär
+   * risken: utan arvode i potten finns ingenting som håller någon kvar, och
+   * då är det enda som återstår att man kan se hur det gått förut.
+   */
+  reliability: z.object({
+    completed: z.number().int(),
+    abandoned: z.number().int(),
+  }),
 });
 
 /** Så många inlägg får en profil visa upp. Fler blir bara brus i kortet. */
@@ -245,9 +259,15 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
 
       // De som redan visat intresse först. Att låta dem ligga utspridda i
       // bokstavsordning vore att gömma det enda företaget behöver se.
+      const reliability = await creatorReliabilityMap(
+        prisma,
+        profiles.map((profile) => profile.id),
+      );
+
       return profiles
         .map((profile) => ({
           ...toPublicInfluencer(profile),
+          reliability: reliability.get(profile.id) ?? { completed: 0, abandoned: 0 },
           rating: ratings.get(profile.id) ?? emptyRatingSummary(),
           interest: interest.get(profile.id) ?? null,
         }))
@@ -271,7 +291,10 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         include: { socialAccounts: true, showcase: { orderBy: { position: 'asc' } } },
       });
       if (!profile) throw notFound('Profilen hittades inte.');
-      return toPublicInfluencer(profile);
+      return {
+        ...toPublicInfluencer(profile),
+        reliability: await creatorReliability(prisma, profile.id),
+      };
     },
   );
 
@@ -777,6 +800,44 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
     },
   );
 
+  /**
+   * Företagets nivå för mat mot innehåll, och vad som är kvar i månaden.
+   *
+   * Egen slutpunkt i stället för ett fält på profilen: siffran ändras varje
+   * gång ett samarbete startas, medan profilen i övrigt ligger still. Slås de
+   * ihop måste hela profilen hämtas om för att en etta ska bli en tvåa.
+   */
+  server.get(
+    '/me/barter',
+    {
+      preHandler: app.requireRole('BUSINESS'),
+      schema: {
+        response: {
+          200: z.object({
+            plan: z.enum(BARTER_PLANS),
+            used: z.number().int(),
+            limit: z.number().int(),
+            remaining: z.number().int(),
+            canStart: z.boolean(),
+            /** Meningen som förklarar varför inget går att starta, annars null. */
+            blocker: z.string().nullable(),
+          }),
+          404: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const profile = await prisma.businessProfile.findUnique({
+        where: { userId: request.user.sub },
+        select: { id: true },
+      });
+      if (!profile) throw notFound('Företagsprofilen hittades inte.');
+
+      const allowance = await barterUsage(prisma, profile.id);
+      return { ...allowance, blocker: barterBlocker(allowance) };
+    },
+  );
+
   server.get(
     '/businesses/:id',
     {
@@ -1059,6 +1120,8 @@ export function toPublicInfluencer(profile: {
       profile.retainerBaseRate === null
         ? []
         : retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps),
+    // Fylls av anroparen, som vet om siffran hämtats en i taget eller i klump.
+    reliability: { completed: 0, abandoned: 0 },
   };
 }
 

@@ -59,6 +59,8 @@ export interface DemoBusiness {
   companyName: string;
   /** Tomt tills företaget fyller i det – behövs först vid första avtalet. */
   orgNumber: string | null;
+  /** Nivå för mat mot innehåll. */
+  barterPlan: 'NONE' | 'BASIC' | 'MEDIUM' | 'ADVANCED';
   city: string;
   address: string;
   description: string;
@@ -228,6 +230,7 @@ export const DEMO_BUSINESSES: DemoBusiness[] = [
     userId: 'usr_petra',
     companyName: 'Restaurang Kajutan',
     orgNumber: '5560123456',
+    barterPlan: 'BASIC',
     city: 'Göteborg',
     address: 'Kungsportsavenyen 12, 411 36 Göteborg',
     description: 'Västkustkök med råvaror från Fiskhamnen. 60 sittplatser.',
@@ -245,6 +248,7 @@ export const DEMO_BUSINESSES: DemoBusiness[] = [
     userId: 'usr_ali',
     companyName: 'Bageri Solrosen',
     orgNumber: '5569876543',
+    barterPlan: 'NONE',
     city: 'Göteborg',
     address: 'Andra Långgatan 4, 413 03 Göteborg',
     description: 'Surdegsbageri och kafé i Linné. Öppnar 07 varje dag.',

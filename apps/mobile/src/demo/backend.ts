@@ -1,4 +1,7 @@
 import {
+  MAX_OPEN_BARTER_PER_CREATOR,
+  barterAllowance,
+  barterBlocker,
   checkEligibility,
   checkReviewEligibility,
   creatorInsights,
@@ -130,6 +133,8 @@ interface Contract {
   deliveredAt: string | null;
   completedAt: string | null;
   paymentStatus: 'PENDING' | 'ESCROWED' | 'RELEASED' | 'REFUNDED' | 'FAILED' | null;
+  /** När avtalet skapades. Månadens bartertak räknas på det. */
+  createdAt: string;
 }
 
 interface BankIdOrder {
@@ -382,6 +387,45 @@ function businessById(id: string): DemoBusiness {
   const business = state.businesses.find((item) => item.id === id);
   if (!business) throw new DemoError(404, 'not_found', 'Företaget hittades inte.');
   return business;
+}
+
+/**
+ * Genomförda och avbrutna uppdrag mot mat, räknat som i API:t.
+ *
+ * Avbrutet = ett avtal som passerat sitt datum utan att ha levererats.
+ */
+function reliabilityFor(influencerId: string) {
+  const mine = state.contracts.filter(
+    (contract) => contract.fee === 0 && contract.influencerId === influencerId,
+  );
+  return {
+    completed: mine.filter((contract) => contract.status === 'COMPLETED').length,
+    abandoned: mine.filter(
+      (contract) =>
+        ['SENT', 'PARTIALLY_SIGNED', 'ACTIVE'].includes(contract.status) &&
+        new Date(contract.dueDate).getTime() < Date.now(),
+    ).length,
+  };
+}
+
+/** Bartersamarbeten som startat den här kalendermånaden. */
+function barterUsed(businessId: string): number {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return state.contracts.filter((contract) => {
+    if (contract.fee !== 0 || contract.status === 'CANCELLED') return false;
+    const campaign = state.campaigns.find((item) => item.id === contract.campaignId);
+    if (!campaign || campaign.businessId !== businessId) return false;
+    return new Date(contract.createdAt).getTime() >= start.getTime();
+  }).length;
+}
+
+/** Kastar samma mening som API:t när taket är nått eller nivån saknas. */
+function assertBarterAllowed(businessId: string): void {
+  const business = businessById(businessId);
+  const blocker = barterBlocker({ plan: business.barterPlan, used: barterUsed(businessId) });
+  if (blocker) throw new DemoError(400, 'bad_request', blocker);
 }
 
 /** Samma krav som i API:t: numret måste finnas när ett avtal ska skrivas. */
@@ -1207,6 +1251,7 @@ route('GET', '/influencers', ({ query }) => {
         showcase: [...profile.showcase].sort((a, b) => a.position - b.position),
         rating: ratingFor('INFLUENCER', profile.id),
         interest: pendingInterest(profile.id),
+        reliability: reliabilityFor(profile.id),
         acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
         retainerSlots: profile.retainerSlots ?? 0,
         retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
@@ -1248,6 +1293,7 @@ route('GET', '/influencers/:id', ({ params }) => {
     retainerPackages: profile.retainerBaseRate
       ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps ?? 0)
       : [],
+    reliability: reliabilityFor(profile.id),
   };
 });
 
@@ -1342,6 +1388,7 @@ route('PUT', '/me/business-profile', ({ body }) => {
     userId: user.id,
     companyName: String(body.companyName ?? ''),
     orgNumber: typeof body.orgNumber === 'string' && body.orgNumber ? body.orgNumber : null,
+    barterPlan: existing?.barterPlan ?? 'NONE',
     city: String(body.city ?? ''),
     address: String(body.address ?? ''),
     description: String(body.description ?? ''),
@@ -1458,8 +1505,17 @@ route('PATCH', '/campaigns/:id', ({ params, body }) => {
 
 route('GET', '/campaigns/:id', ({ params }) => publicCampaign(campaignById(params[0]!)));
 
+route('GET', '/me/barter', () => {
+  const user = currentUser();
+  const business = businessById(requireProfileId(user));
+  const allowance = barterAllowance({ plan: business.barterPlan, used: barterUsed(business.id) });
+  return { ...allowance, blocker: barterBlocker(allowance) };
+});
+
 route('POST', '/campaigns/:id/publish', ({ params }) => {
   const campaign = campaignById(params[0]!);
+  // Samma spärr som i skarpt läge: mat mot innehåll kräver abonnemang.
+  if (campaign.compensationType === 'PRODUCT') assertBarterAllowed(campaign.businessId);
   campaign.status = 'ACTIVE';
   return publicCampaign(campaign);
 });
@@ -2073,16 +2129,34 @@ route('POST', '/contracts', ({ body }) => {
   const business = businessById(campaign.businessId);
   const influencer = influencerById(match.influencerId);
   const influencerUser = state.users.find((item) => item.id === influencer.userId);
+  const fee = Number(body.fee ?? campaign.budgetPerCreator);
+  if (fee === 0) {
+    assertBarterAllowed(business.id);
+    const open = state.contracts.filter(
+      (item) =>
+        item.fee === 0 &&
+        item.influencerId === influencer.id &&
+        ['SENT', 'PARTIALLY_SIGNED', 'ACTIVE', 'DELIVERED'].includes(item.status),
+    ).length;
+    if (open >= MAX_OPEN_BARTER_PER_CREATOR) {
+      throw new DemoError(
+        400,
+        'bad_request',
+        `Kreatören har redan ${MAX_OPEN_BARTER_PER_CREATOR} pågående samarbeten mot mat och kan inte ta fler förrän något är klart.`,
+      );
+    }
+  }
   const contractId = nextId('ctr');
   const deliverables = (body.deliverables as DeliverableKind[]) ?? campaign.deliverables;
 
   const contract: Contract = {
     id: contractId,
+    createdAt: new Date().toISOString(),
     matchId: match.id,
     campaignId: campaign.id,
     influencerId: influencer.id,
     status: 'SENT',
-    fee: Number(body.fee ?? campaign.budgetPerCreator),
+    fee,
     ...FEE_SPLIT,
     deliverables,
     dueDate: String(body.dueDate ?? new Date().toISOString()),
@@ -2152,6 +2226,13 @@ route('POST', '/contracts/:id/sign', ({ params, body }) => {
 
 route('POST', '/contracts/:id/payment', ({ params }) => {
   const contract = contractById(params[0]!);
+  if (contract.fee === 0) {
+    throw new DemoError(
+      400,
+      'bad_request',
+      'Det här uppdraget ersätts med mat. Det finns inget att betala in.',
+    );
+  }
   if (contract.status !== 'ACTIVE') {
     throw new DemoError(400, 'bad_request', 'Avtalet måste vara signerat av båda parter.');
   }
@@ -2175,13 +2256,18 @@ route('POST', '/contracts/:id/approve', ({ params }) => {
   if (contract.status !== 'DELIVERED') {
     throw new DemoError(400, 'bad_request', 'Det finns ingen leverans att godkänna.');
   }
-  if (contract.paymentStatus !== 'ESCROWED') {
+  // Ett uppdrag mot mat har ingen utbetalning att vänta på.
+  const isBarter = contract.fee === 0;
+  if (!isBarter && contract.paymentStatus !== 'ESCROWED') {
     throw new DemoError(400, 'bad_request', 'Arvodet är inte inbetalt ännu.');
   }
   contract.status = 'COMPLETED';
   contract.completedAt = new Date().toISOString();
-  contract.paymentStatus = 'RELEASED';
-  return { status: contract.status, payout: splitFee(contract.fee, feeSplitOf(contract)).net };
+  if (!isBarter) contract.paymentStatus = 'RELEASED';
+  return {
+    status: contract.status,
+    payout: isBarter ? 0 : splitFee(contract.fee, feeSplitOf(contract)).net,
+  };
 });
 
 // Omdömen ---------------------------------------------------------------------

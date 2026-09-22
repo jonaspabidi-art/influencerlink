@@ -1,3 +1,4 @@
+export * from './barter.js';
 export * from './contracts.js';
 export * from './domain.js';
 export * from './drafts.js';

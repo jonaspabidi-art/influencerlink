@@ -1,4 +1,5 @@
 import {
+  BARTER_PLANS,
   campaignInputSchema,
   campaignStatusSchema,
   contractStatusSchema,
@@ -556,6 +557,46 @@ export async function adminRoutes(app: FastifyInstance, services: Services): Pro
   );
 
   // --- Kampanjer åt företagen ----------------------------------------------
+
+  /**
+   * Sätter företagets nivå för mat mot innehåll.
+   *
+   * Tills vidare sker faktureringen utanför appen: en faktura skickas, och
+   * när den är betald sätts nivån här. Det är fult men billigt, och det
+   * betyder att vi vet att någon vill betala innan vi bygger återkommande
+   * betalningar för noll abonnenter.
+   */
+  server.post(
+    '/admin/businesses/:id/barter-plan',
+    {
+      preHandler: app.requireRole('ADMIN'),
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: z.object({ plan: z.enum(BARTER_PLANS) }),
+        response: {
+          200: z.object({ id: z.string(), barterPlan: z.enum(BARTER_PLANS) }),
+          404: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const business = await prisma.businessProfile.findUnique({ where: { id: request.params.id } });
+      if (!business) throw notFound('Företaget hittades inte.');
+
+      const updated = await prisma.businessProfile.update({
+        where: { id: business.id },
+        data: { barterPlan: request.body.plan },
+      });
+      await recordAudit(prisma, {
+        userId: request.user.sub,
+        action: 'admin.barter_plan_set',
+        entityType: 'BusinessProfile',
+        entityId: business.id,
+        metadata: { from: business.barterPlan, to: request.body.plan },
+      });
+      return { id: updated.id, barterPlan: updated.barterPlan };
+    },
+  );
 
   /**
    * Skapar en kampanj i företagets namn.

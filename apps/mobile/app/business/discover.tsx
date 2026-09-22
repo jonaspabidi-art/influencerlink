@@ -1,4 +1,4 @@
-import { CATEGORIES, type Category } from '@pacta/shared';
+import { CATEGORIES, describeReliability, type Category } from '@pacta/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ownBusinessQuery } from '../../src/queries';
 import { router } from 'expo-router';
@@ -270,6 +270,16 @@ function CreatorRow({ creator }: { creator: Browsable }) {
               .join(', ')}
           </Text>
           <Text style={styles.price}>Från {formatSek(creator.priceMin)} per samarbete</Text>
+
+          {/*
+            Hur kreatören skött uppdrag mot mat. Står bara där det finns något
+            att säga – en tom rad "0 genomförda" hade sett ut som ett omdöme.
+          */}
+          {describeReliability(creator.reliability) ? (
+            <Text style={styles.meta} numberOfLines={1}>
+              {describeReliability(creator.reliability)}
+            </Text>
+          ) : null}
 
           {creator.interest ? (
             <Text style={styles.interest} numberOfLines={2}>

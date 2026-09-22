@@ -1,3 +1,20 @@
+/** Företagets nivå för mat mot innehåll, och vad som är kvar i månaden. */
+export interface BarterStatus {
+  plan: 'NONE' | 'BASIC' | 'MEDIUM' | 'ADVANCED';
+  used: number;
+  limit: number;
+  remaining: number;
+  canStart: boolean;
+  /** Varför inget går att starta, annars null. */
+  blocker: string | null;
+}
+
+/** Hur kreatören skött sina uppdrag mot mat. */
+export interface CreatorReliabilityStats {
+  completed: number;
+  abandoned: number;
+}
+
 /** Serverns lägen, från /health. */
 export interface ServerInfo {
   status: string;
@@ -170,6 +187,8 @@ export interface InfluencerProfile {
   /** Noll när kreatören inte erbjuder rabatt vid förskottsbetalning. */
   retainerPrepayDiscountBps: number;
   retainerPackages: { videosPerMonth: number; monthlyRate: number }[];
+  /** Genomförda och avbrutna uppdrag mot mat. */
+  reliability: CreatorReliabilityStats;
 }
 
 export interface InfluencerCard {

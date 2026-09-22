@@ -869,6 +869,14 @@ ALTER COLUMN "bankIdOrderRef" DROP NOT NULL,
 ALTER COLUMN "signatureBlob" DROP NOT NULL,
 ALTER COLUMN "ocspResponse" DROP NOT NULL;
 
+-- === 20260922000000_barter_plan ===
+
+-- CreateEnum
+CREATE TYPE "BarterPlan" AS ENUM ('NONE', 'BASIC', 'MEDIUM', 'ADVANCED');
+
+-- AlterTable
+ALTER TABLE "BusinessProfile" ADD COLUMN     "barterPlan" "BarterPlan" NOT NULL DEFAULT 'NONE';
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -971,6 +979,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         '817ed1b4c90da09fde4da87a28e6b690baffb0ef603aa354f8ed1c53cc7d9b30',
         now(), '20260921000000_simple_signing', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        'b8f4a1072541c57bd68aef6478f654b94f3b0acb199d2ab8c299df2c79d83338',
+        now(), '20260922000000_barter_plan', now(), 1);
 
 -- === Demodata ===
 

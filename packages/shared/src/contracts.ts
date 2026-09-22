@@ -25,6 +25,13 @@ export interface ContractTermsInput {
   campaignBrief: string;
   deliverables: DeliverableKind[];
   fee: Ore;
+  /**
+   * Matens eller besökets värde, i öre. Används när arvodet är noll.
+   *
+   * Ett bartersamarbete måste säga vad ersättningen faktiskt är värd. "Mat
+   * ingår" är inget avtalsvillkor – det är en känsla.
+   */
+  productValue?: Ore;
   /** Avgiftsfördelningen som gällde när avtalet tecknades. */
   feeSplit: FeeSplit;
   dueDate: Date;
@@ -65,6 +72,14 @@ const dateFormatter = new Intl.DateTimeFormat('sv-SE', {
  */
 export function renderContractTerms(input: ContractTermsInput): string {
   const money = splitFee(input.fee, input.feeSplit);
+  /*
+   * Bartersamarbete: ersättningen är mat eller ett besök, inte pengar.
+   *
+   * Då stämmer varken avgiftstabellen eller stycket om att Pacta håller
+   * beloppet, för inga pengar rör sig. Ett avtal som beskriver en
+   * betalningsgång som inte finns är värre än inget avtal alls.
+   */
+  const isBarter = input.fee === 0;
   const accounts = renderAccounts(input.businessAccounts ?? []);
   const deliverableList = input.deliverables
     .map((kind, index) => `${index + 1}. ${describeDeliverable(kind)}`)
@@ -79,7 +94,7 @@ export function renderContractTerms(input: ContractTermsInput): string {
 **Uppdragsgivare:** ${input.businessName}, org.nr ${formatOrgNumber(input.businessOrgNumber)}
 **Uppdragstagare:** ${input.influencerName}, personnr ${input.influencerPersonalNumberMask}
 
-Avtalet ingås via Pacta, som förmedlar uppdraget och hanterar betalningen.
+Avtalet ingås via Pacta${isBarter ? ', som förmedlar uppdraget' : ', som förmedlar uppdraget och hanterar betalningen'}.
 
 ## 2. Uppdraget
 
@@ -97,7 +112,14 @@ Materialet ska vara publicerat senast **${dateFormatter.format(input.dueDate)}**
 
 ## 3. Ersättning
 
-| Post | Belopp |
+${
+    isBarter
+      ? `Ersättningen utgår i form av mat eller besök hos uppdragsgivaren${
+          input.productValue ? ` till ett värde av ${formatSek(input.productValue)}` : ''
+        }. Ingen kontant ersättning utgår, och Pacta förmedlar inga pengar i det här uppdraget.
+
+Uppdragstagaren ansvarar själv för att redovisa och betala skatt på ersättningen. Ersättning i annan form än pengar är skattepliktig på samma sätt som kontant ersättning.`
+      : `| Post | Belopp |
 | --- | --- |
 | Arvode | ${formatSek(input.fee)} |
 | Förmedlingsavgift, uppdragsgivaren (${percent(input.feeSplit.businessFeeBps)} %) | +${formatSek(money.businessFee)} |
@@ -107,7 +129,8 @@ Materialet ska vara publicerat senast **${dateFormatter.format(input.dueDate)}**
 
 Uppdragsgivaren betalar in arvodet och sin del av förmedlingsavgiften till Pacta när avtalet blir bindande. Beloppet hålls kvar och betalas ut till uppdragstagaren när leveransen godkänts. Uppdragsgivaren har ${input.reviewDays} dagar på sig att granska leveransen; därefter godkänns den automatiskt och utbetalning sker.
 
-Angivna belopp är exklusive mervärdesskatt. Uppdragstagaren ansvarar själv för skatt och eventuella sociala avgifter på ersättningen.
+Angivna belopp är exklusive mervärdesskatt. Uppdragstagaren ansvarar själv för skatt och eventuella sociala avgifter på ersättningen.`
+  }
 
 ## 4. Marknadsföringsrättslig märkning
 
@@ -127,7 +150,11 @@ Medverkar någon annan person i materialet ansvarar uppdragstagaren för att ha 
 
 ## 6. Ändring och avbokning
 
-Avbokas uppdraget av uppdragsgivaren senare än 48 timmar före avtalad publicering utgår halva arvodet. Levererar uppdragstagaren inte i tid återbetalas hela beloppet till uppdragsgivaren, om parterna inte kommer överens om ett nytt datum.
+${
+    isBarter
+      ? 'Avbokning ska ske senast 48 timmar före besöket. Levererar uppdragstagaren inte i tid får uppdragsgivaren avsluta uppdraget, och uppdraget räknas då som avbrutet på uppdragstagarens profil i Pacta.'
+      : 'Avbokas uppdraget av uppdragsgivaren senare än 48 timmar före avtalad publicering utgår halva arvodet. Levererar uppdragstagaren inte i tid återbetalas hela beloppet till uppdragsgivaren, om parterna inte kommer överens om ett nytt datum.'
+  }
 
 ## 7. Personuppgifter
 

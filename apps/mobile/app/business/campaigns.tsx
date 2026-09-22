@@ -1,20 +1,19 @@
+import { BARTER_PLAN_SPECS } from '@pacta/shared';
 import { useQuery } from '@tanstack/react-query';
-import { myCampaignsQuery, retainersQuery } from '../../src/queries';
+import { barterQuery, myCampaignsQuery, retainersQuery } from '../../src/queries';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DemoBanner } from '../../src/components/DemoBanner';
 import { ExpertOrderStatus } from '../../src/components/ExpertOrderStatus';
-import { PlusIcon } from '../../src/components/icons';
+import { ChevronRightIcon, PlusIcon } from '../../src/components/icons';
 import {
   Avatar,
   Body,
   Button,
-  Card,
-  Divider,
   ErrorState,
   Header,
   IconButton,
-  Label,
   Loading,
   Screen,
   StatusBadge,
@@ -23,7 +22,7 @@ import {
 import { describeCompensation, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
 import { useTourAnchor } from '../../src/tour/Tour';
-import type { Campaign, Retainer } from '../../src/types';
+import type { BarterStatus, Campaign, Retainer } from '../../src/types';
 
 const STATUS_LABELS: Record<Campaign['status'], string> = {
   DRAFT: 'Utkast',
@@ -47,31 +46,28 @@ const RETAINER_LABELS: Record<Retainer['status'], string> = {
   ENDED: 'Avslutat',
 };
 
+type SectionKey = 'barter' | 'campaigns' | 'retainers';
+
 /**
- * Företagets uppdrag.
+ * Allt ett företag har lagt ut, på ett ställe.
  *
- * De två sätten att jobba med en kreatör låg tidigare i olika flikar: en
- * kampanj under Kampanjer, ett löpande uppdrag under Avtal. Två produkter på
- * två orelaterade ställen, och ingen av platserna nämnde att den andra fanns –
- * så företaget kunde inte se att det ens gick att välja.
+ * Tre sätt att jobba med kreatörer ryms här: mat mot innehåll,
+ * engångskampanjer och löpande uppdrag. Att ge dem var sin flik hade gjort
+ * flikraden obegriplig, och att rada dem under varandra gjorde sidan lång och
+ * mosig. Därför är de hopfällbara: stängd visar en sektion en rad om vad som
+ * finns, öppen visar innehållet och den enda knapp som hör dit.
  *
- * Nu ligger de bredvid varandra under egna rubriker, och skillnaden står
- * skriven där valet görs i stället för att behöva räknas ut.
+ * Exakt en är öppen i taget. Två öppna sektioner är en lista igen.
  */
 export default function BusinessAssignments() {
   const router = useRouter();
   const campaigns = useQuery(myCampaignsQuery());
   const retainers = useQuery(retainersQuery());
-  // Rundturen pekar hit när den visar var en kampanj skapas.
+  const barter = useQuery(barterQuery());
   const newCampaignAnchor = useTourAnchor('business.newCampaign');
 
-  /*
-   * Att skapa en kampanj är det företaget kom hit för att göra, så knappen
-   * står i headern på varje läge av den här skärmen – laddar, fel, tom eller
-   * full. Tidigare fanns den bara som en textlänk bredvid en rubrik längre
-   * ned i listan, vilket gjorde den svårare att hitta ju fler uppdrag man
-   * hade: de stora knapparna visades bara när allt var tomt.
-   */
+  const [open, setOpen] = useState<SectionKey | null>(null);
+
   const newCampaign = (
     <View ref={newCampaignAnchor.ref}>
       <IconButton label="Ny kampanj" onPress={() => router.push('/campaign/new')}>
@@ -100,7 +96,9 @@ export default function BusinessAssignments() {
     );
   }
 
-  const data = campaigns.data ?? [];
+  const all = campaigns.data ?? [];
+  const barterCampaigns = all.filter((item) => item.compensationType === 'PRODUCT');
+  const paidCampaigns = all.filter((item) => item.compensationType !== 'PRODUCT');
   const running = (retainers.data ?? []).filter(
     (retainer) =>
       retainer.status === 'REQUESTED' ||
@@ -108,20 +106,25 @@ export default function BusinessAssignments() {
       retainer.status === 'CANCELLING',
   );
 
-  if (data.length === 0 && running.length === 0) {
-    return (
-      <Screen>
-        <Header title="Uppdrag" large subtitle="Inget samarbete ännu" right={newCampaign} />
-        <View style={styles.emptyBody}>
-          <ExpertOrderStatus />
-          <Choice expanded />
-          <DemoBanner />
-        </View>
-      </Screen>
-    );
-  }
+  /*
+   * Vilken sektion som står öppen när sidan öppnas.
+   *
+   * Den första som har något att visa, annars mat mot innehåll – det är den
+   * billigaste vägen in och därmed rätt förstahandsförslag för ett ställe som
+   * inte lagt ut något än.
+   */
+  const initial: SectionKey =
+    barterCampaigns.length > 0
+      ? 'barter'
+      : paidCampaigns.length > 0
+        ? 'campaigns'
+        : running.length > 0
+          ? 'retainers'
+          : 'barter';
+  const active = open ?? initial;
+  const toggle = (key: SectionKey) => setOpen((current) => ((current ?? initial) === key ? null : key));
 
-  const published = data.filter((item) => item.status === 'ACTIVE').length;
+  const published = paidCampaigns.filter((item) => item.status === 'ACTIVE').length;
 
   return (
     <Screen>
@@ -131,236 +134,285 @@ export default function BusinessAssignments() {
         right={newCampaign}
         subtitle={[
           published > 0 ? `${published} ${published === 1 ? 'kampanj' : 'kampanjer'}` : null,
+          barterCampaigns.length > 0 ? `${barterCampaigns.length} mot mat` : null,
           running.length > 0 ? `${running.length} löpande` : null,
         ]
           .filter(Boolean)
-          .join(' · ')}
+          .join(' · ') || 'Inget uppdrag ännu'}
       />
-      <FlatList
-        data={data}
-        keyExtractor={(campaign) => campaign.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <ExpertOrderStatus />
 
-            {/*
-              Båda rubrikerna står alltid, även när sektionen är tom.
-              Ett löpande uppdrag hade tidigare ingen fast plats: rubriken
-              renderades först när man redan hade ett, så den som ville veta
-              vad det var hittade det bara i ett förklarande kort. En rubrik som
-              försvinner är ingen adress.
-            */}
-            <View style={styles.section}>
-              <View style={styles.sectionHead}>
-                <Label>LÖPANDE UPPDRAG</Label>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push('/retainer/start')}
-                  hitSlop={8}
-                >
-                  <Text style={styles.link}>Så funkar det</Text>
-                </Pressable>
-              </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ExpertOrderStatus />
 
-              {running.length === 0 ? (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push('/retainer/start')}
-                  style={({ pressed }) => [styles.emptyRow, pressed && styles.pressed]}
-                >
-                  <Text style={styles.emptyRowTitle}>Ingen jobbar löpande åt er än</Text>
-                  <Text style={styles.secondary}>
-                    En kreatör producerar innehåll till era egna kanaler varje månad. Från
-                    6 000 kr i månaden, ingen bindningstid.
-                  </Text>
-                </Pressable>
-              ) : (
-                running.map((retainer) => (
-                  <Pressable
-                    key={retainer.id}
-                    accessibilityRole="button"
-                    onPress={() => router.push(`/retainer/${retainer.id}`)}
-                    style={({ pressed }) => [styles.retainerRow, pressed && styles.pressed]}
-                  >
-                    <Avatar
-                      uri={retainer.influencerAvatarUrl}
-                      name={retainer.influencerName}
-                      size={40}
-                    />
-                    <View style={styles.retainerText}>
-                      <Text style={styles.title} numberOfLines={1}>
-                        {retainer.influencerName}
-                      </Text>
-                      <Text style={styles.secondary}>
-                        {retainer.videosPerMonth} videor i månaden till era kanaler
-                      </Text>
-                      <Text
-                        style={[
-                          styles.status,
-                          {
-                            color:
-                              retainer.status === 'ACTIVE' ? colors.positive : colors.accent,
-                          },
-                        ]}
-                      >
-                        {RETAINER_LABELS[retainer.status]}
-                      </Text>
-                    </View>
-                    <Text style={styles.amount}>
-                      {formatSek(Math.round(retainer.monthlyRate * 1.1))}
-                    </Text>
-                  </Pressable>
-                ))
-              )}
-            </View>
-
-            <View style={styles.sectionHead}>
-              <Label>ENGÅNGSKAMPANJER</Label>
-              <Pressable
-                accessibilityRole="button"
+        <Section
+          title="Mat mot innehåll"
+          summary={barterSummary(barter.data, barterCampaigns.length)}
+          open={active === 'barter'}
+          onToggle={() => toggle('barter')}
+        >
+          <Body>
+            Uppdrag där ersättningen är en måltid i stället för arvode. Passar kreatörer som
+            bygger upp sin portfölj.
+          </Body>
+          {barter.data ? <BarterMeter status={barter.data} /> : null}
+          {barterCampaigns.map((item) => (
+            <CampaignRow key={item.id} campaign={item} />
+          ))}
+          {barter.data?.plan === 'NONE' ? (
+            <Button label="Se nivåer och priser" onPress={() => router.push('/barter/plans')} />
+          ) : (
+            <>
+              <Button
+                label="Nytt uppdrag mot mat"
+                icon={<PlusIcon size={18} color={colors.ink} />}
                 onPress={() => router.push('/campaign/new')}
-                hitSlop={8}
-              >
-                <Text style={styles.link}>Ny kampanj</Text>
-              </Pressable>
-            </View>
-          </View>
-        }
-        ListFooterComponent={
-          <View style={styles.footer}>
-            <DemoBanner />
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View style={styles.rowHeader}>
-              <Text style={styles.title}>{item.title}</Text>
-              <StatusBadge label={STATUS_LABELS[item.status]} tone={STATUS_TONES[item.status]} />
-            </View>
-            <Text style={styles.amount}>
-              {describeCompensation(
-                item.compensationType,
-                item.budgetPerCreator,
-                item.productValue,
-                formatSek,
-              )}
-            </Text>
-            <Text style={styles.secondary}>
-              {item.slotsFilled} av {item.slots} platser fyllda · {item.city}
-            </Text>
-            <View style={styles.actions}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push(`/campaign/${item.id}`)}
-                hitSlop={8}
-              >
-                <Text style={styles.link}>Hantera</Text>
-              </Pressable>
-              {item.status === 'ACTIVE' ? (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push(`/discover/${item.id}`)}
-                  hitSlop={8}
+              />
+              <Button
+                label="Byt nivå"
+                variant="secondary"
+                onPress={() => router.push('/barter/plans')}
+              />
+            </>
+          )}
+        </Section>
+
+        <Section
+          title="Engångskampanjer"
+          summary={
+            paidCampaigns.length === 0
+              ? 'Inga ännu'
+              : `${paidCampaigns.length} st · ${published} publicerade`
+          }
+          open={active === 'campaigns'}
+          onToggle={() => toggle('campaigns')}
+        >
+          <Body>
+            Ett jobb i taget, med arvode. Kreatören lägger upp på sin egen kanal, inför sina
+            följare.
+          </Body>
+          {paidCampaigns.map((item) => (
+            <CampaignRow key={item.id} campaign={item} />
+          ))}
+          <Button
+            label="Ny kampanj"
+            icon={<PlusIcon size={18} color={colors.ink} />}
+            onPress={() => router.push('/campaign/new')}
+          />
+        </Section>
+
+        <Section
+          title="Löpande uppdrag"
+          summary={running.length === 0 ? 'Ingen jobbar löpande än' : `${running.length} pågående`}
+          open={active === 'retainers'}
+          onToggle={() => toggle('retainers')}
+        >
+          <Body>
+            En kreatör producerar innehåll till era egna kanaler varje månad. Från 6 000 kr i
+            månaden, ingen bindningstid.
+          </Body>
+          {running.map((retainer) => (
+            <Pressable
+              key={retainer.id}
+              accessibilityRole="button"
+              onPress={() => router.push(`/retainer/${retainer.id}`)}
+              style={({ pressed }) => [styles.retainerRow, pressed && styles.pressed]}
+            >
+              <Avatar
+                uri={retainer.influencerAvatarUrl}
+                name={retainer.influencerName}
+                size={40}
+              />
+              <View style={styles.retainerText}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {retainer.influencerName}
+                </Text>
+                <Text style={styles.secondary}>
+                  {retainer.videosPerMonth} videor i månaden till era kanaler
+                </Text>
+                <Text
+                  style={[
+                    styles.status,
+                    { color: retainer.status === 'ACTIVE' ? colors.positive : colors.accent },
+                  ]}
                 >
-                  <Text style={styles.link}>Hitta influencers</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        )}
-      />
+                  {RETAINER_LABELS[retainer.status]}
+                </Text>
+              </View>
+              <Text style={styles.amount}>
+                {formatSek(Math.round(retainer.monthlyRate * 1.1))}
+              </Text>
+            </Pressable>
+          ))}
+          <Button
+            label={running.length === 0 ? 'Så funkar det' : 'Hitta någon mer'}
+            variant={running.length === 0 ? 'primary' : 'secondary'}
+            onPress={() => router.push('/retainer/start')}
+          />
+        </Section>
+
+        <DemoBanner />
+      </ScrollView>
     </Screen>
   );
 }
 
-/**
- * De två sätten, sida vid sida.
- *
- * Skillnaden är inte storleken utan vems kanal innehållet går ut på, och det
- * är det enda som avgör vilket av dem en krögare vill ha. Den som redan har
- * uppdrag igång behöver inte läsa det varje gång, så jämförelsen ligger
- * hopfälld – men i tomma läget står den öppen, för då är det just det valet
- * man ska göra.
- */
-function Choice({ expanded = false }: { expanded?: boolean }) {
-  const router = useRouter();
+/** Raden som står när sektionen är stängd. */
+function barterSummary(status: BarterStatus | undefined, campaigns: number): string {
+  if (!status || status.plan === 'NONE') return 'Kräver abonnemang';
+  const spec = BARTER_PLAN_SPECS[status.plan];
+  const left = `${status.remaining} av ${status.limit} kvar i månaden`;
+  return campaigns === 0 ? `${spec.label} · ${left}` : `${campaigns} uppdrag · ${left}`;
+}
 
+/** Hopfällbar sektion: en rad stängd, innehåll och en knapp öppen. */
+function Section({
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <Card>
-      <Text style={styles.choiceTitle}>Två sätt att jobba med kreatörer</Text>
+    <View style={styles.section}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={onToggle}
+        style={({ pressed }) => [styles.sectionHead, pressed && styles.pressed]}
+      >
+        <View style={styles.sectionText}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={styles.secondary}>{summary}</Text>
+        </View>
+        <View style={open ? styles.chevronOpen : undefined}>
+          <ChevronRightIcon size={20} color={colors.muted} />
+        </View>
+      </Pressable>
+      {open ? <View style={styles.sectionBody}>{children}</View> : null}
+    </View>
+  );
+}
 
-      <View style={styles.option}>
-        <Text style={styles.optionTitle}>Kampanj</Text>
-        <Text style={styles.optionLead}>
-          Kreatören lägger upp på sin egen kanal, inför sina följare.
+/** Hur mycket av månadens tak som är använt. */
+function BarterMeter({ status }: { status: BarterStatus }) {
+  const filled = status.limit === 0 ? 0 : Math.min(1, status.used / status.limit);
+  return (
+    <View style={styles.meterBox}>
+      <View style={styles.meterHead}>
+        <Text style={styles.meterLabel}>{BARTER_PLAN_SPECS[status.plan].label}</Text>
+        <Text style={styles.secondary}>
+          {status.used} av {status.limit} använda
         </Text>
-        {expanded ? (
-          <Body>
-            En video, ett tillfälle. Bra för att synas snabbt eller testa om det funkar – och ni
-            får filmen att använda själva. Från ungefär 2 500 kr en gång.
-          </Body>
-        ) : null}
-        <Button
-          label="Skapa kampanj"
-          icon={<PlusIcon size={18} color={colors.ink} />}
-          onPress={() => router.push('/campaign/new')}
+      </View>
+      <View style={styles.meterTrack}>
+        <View style={[styles.meterFill, { flex: filled }]} />
+        <View style={{ flex: 1 - filled }} />
+      </View>
+      {status.blocker ? <Text style={styles.blocker}>{status.blocker}</Text> : null}
+    </View>
+  );
+}
+
+function CampaignRow({ campaign }: { campaign: Campaign }) {
+  const router = useRouter();
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowHeader}>
+        <Text style={styles.title}>{campaign.title}</Text>
+        <StatusBadge
+          label={STATUS_LABELS[campaign.status]}
+          tone={STATUS_TONES[campaign.status]}
         />
       </View>
-
-      <Divider />
-
-      <View style={styles.option}>
-        <Text style={styles.optionTitle}>Löpande uppdrag</Text>
-        <Text style={styles.optionLead}>
-          Kreatören producerar åt era egna kanaler, varje månad.
-        </Text>
-        {expanded ? (
-          <Body>
-            Fyra till tolv videor i månaden på ert eget konto, som ni godkänner innan de läggs
-            upp. Bygger något som blir ert. Från ungefär 6 000 kr i månaden, ingen bindningstid.
-          </Body>
+      <Text style={styles.amount}>
+        {describeCompensation(
+          campaign.compensationType,
+          campaign.budgetPerCreator,
+          campaign.productValue,
+          formatSek,
+        )}
+      </Text>
+      <Text style={styles.secondary}>
+        {campaign.slotsFilled} av {campaign.slots} platser fyllda · {campaign.city}
+      </Text>
+      <View style={styles.actions}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push(`/campaign/${campaign.id}`)}
+          hitSlop={8}
+        >
+          <Text style={styles.link}>Hantera</Text>
+        </Pressable>
+        {campaign.status === 'ACTIVE' ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(`/discover/${campaign.id}`)}
+            hitSlop={8}
+          >
+            <Text style={styles.link}>Hitta influencers</Text>
+          </Pressable>
         ) : null}
-        <Button
-          label="Hitta någon som jobbar löpande"
-          variant="secondary"
-          onPress={() => router.push('/retainer/start')}
-        />
       </View>
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { gap: spacing.md },
-  section: { gap: spacing.sm },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  emptyRow: {
-    gap: 4,
-    backgroundColor: colors.raised,
-    borderRadius: radius.card,
-    padding: spacing.base,
-  },
-  emptyRowTitle: { ...type.listTitle, color: colors.text },
-  list: { gap: 10, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
-  row: {
+  content: { gap: spacing.md, paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
+  section: {
     backgroundColor: colors.surface,
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.base,
+  },
+  sectionText: { flex: 1, gap: 2 },
+  sectionTitle: { ...type.rowTitle, color: colors.text },
+  sectionBody: {
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.base,
+  },
+  chevronOpen: { transform: [{ rotate: '90deg' }] },
+  pressed: { opacity: 0.9 },
+
+  meterBox: { gap: spacing.sm, backgroundColor: colors.raised, borderRadius: radius.card, padding: spacing.md },
+  meterHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  meterLabel: { ...type.listTitle, color: colors.text },
+  meterTrack: {
+    flexDirection: 'row',
+    height: 6,
+    borderRadius: radius.round,
+    backgroundColor: colors.border,
+    overflow: 'hidden',
+  },
+  meterFill: { backgroundColor: colors.primary },
+  blocker: { ...type.secondary, color: colors.muted },
+
+  row: {
+    backgroundColor: colors.raised,
+    borderRadius: radius.card,
     padding: spacing.base,
     gap: 6,
   },
-  pressed: { opacity: 0.9 },
   retainerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.raised,
     borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.base,
   },
   retainerText: { flex: 1, gap: 2 },
@@ -369,14 +421,6 @@ const styles = StyleSheet.create({
   title: { ...type.listTitle, fontSize: 16, color: colors.text, flex: 1 },
   amount: { fontFamily: type.rowTitle.fontFamily, fontSize: 17, color: colors.accent },
   secondary: { ...type.secondary, color: colors.muted },
-
-  choiceTitle: { ...type.sectionTitle, color: colors.text },
-  option: { gap: spacing.sm },
-  optionTitle: { ...type.listTitle, fontSize: 16, color: colors.text },
-  optionLead: { ...type.bodySmall, color: colors.text },
-
   actions: { flexDirection: 'row', gap: spacing.base, paddingTop: 2 },
   link: { fontFamily: type.listTitle.fontFamily, fontSize: 14, color: colors.primary },
-  footer: { paddingTop: spacing.md },
-  emptyBody: { flex: 1, paddingHorizontal: spacing.base, gap: 14 },
 });

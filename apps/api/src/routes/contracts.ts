@@ -42,6 +42,7 @@ import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
 import { hashTerms, renderContractTerms } from '../services/contracts.js';
 import { recordSignature } from '../services/signing.js';
+import { assertBarterAllowed, assertCreatorHasBarterRoom } from '../services/barter.js';
 import {
   payUsageRights,
   requestUsageRights,
@@ -132,6 +133,18 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         throw badRequest('Det finns redan ett avtal för den här matchningen.');
       }
 
+      /*
+       * Mat mot innehåll: inget arvode, men ett tak.
+       *
+       * Taket räknas här och inte när kampanjen publiceras, eftersom det är
+       * det startade samarbetet som kostar restaurangen mat – inte annonsen.
+       */
+      const isBarter = request.body.fee === 0;
+      if (isBarter) {
+        await assertBarterAllowed(prisma, businessId);
+        await assertCreatorHasBarterRoom(prisma, match.influencerId);
+      }
+
       const contractId = crypto.randomUUID();
       const terms = renderContractTerms({
         contractId,
@@ -143,6 +156,7 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         campaignBrief: match.campaign.brief,
         deliverables: request.body.deliverables,
         fee: request.body.fee,
+        productValue: isBarter ? match.campaign.productValue : undefined,
         feeSplit: DEFAULT_FEE_SPLIT,
         dueDate: new Date(request.body.dueDate),
         reviewDays: request.body.reviewDays,
@@ -284,7 +298,10 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
       },
     },
     async (request) => {
-      await loadContractForParty(services, request.params.id, request);
+      const contract = await loadContractForParty(services, request.params.id, request);
+      if (contract.fee === 0) {
+        throw badRequest('Det här uppdraget ersätts med mat. Det finns inget att betala in.');
+      }
       return createEscrow(prisma, payments, {
         contractId: request.params.id,
         userId: request.user.sub,
@@ -674,10 +691,18 @@ export async function contractRoutes(app: FastifyInstance, services: Services): 
         throw badRequest('Det finns ingen inrapporterad leverans att godkänna.');
       }
 
-      const result = await releasePayout(prisma, payments, {
-        contractId: contract.id,
-        userId: request.user.sub,
-      });
+      /*
+       * Ett bartersamarbete har ingen utbetalning att släppa. Tidigare
+       * kastade godkännandet "Avtalet saknar registrerad betalning" här, så
+       * ett uppdrag mot mat kunde aldrig bli klart.
+       */
+      const result =
+        contract.fee === 0
+          ? { payout: 0 }
+          : await releasePayout(prisma, payments, {
+              contractId: contract.id,
+              userId: request.user.sub,
+            });
       await prisma.$transaction([
         prisma.delivery.update({
           where: { contractId: contract.id },

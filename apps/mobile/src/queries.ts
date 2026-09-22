@@ -2,6 +2,7 @@ import type { Role } from '@pacta/shared';
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { api } from './api';
 import type {
+  BarterStatus,
   Campaign,
   Contract,
   CreatorInsights,
@@ -35,6 +36,19 @@ export const serverInfoQuery = () =>
     queryKey: ['server-info'],
     queryFn: () => api.get<ServerInfo>('/health'),
     staleTime: 60 * 60_000,
+  });
+
+/**
+ * Företagets nivå för mat mot innehåll.
+ *
+ * Kort livslängd: siffran ändras så fort ett samarbete startas, och ett tak
+ * som visar fel är värre än inget tak alls.
+ */
+export const barterQuery = () =>
+  queryOptions({
+    queryKey: ['barter'],
+    queryFn: () => api.get<BarterStatus>('/me/barter'),
+    staleTime: 30_000,
   });
 
 export const contractsQuery = () =>
