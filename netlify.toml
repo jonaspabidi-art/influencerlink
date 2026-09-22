@@ -9,7 +9,10 @@
   # npm-workspacen ligger. Anges här så att fältet i Netlifys gränssnitt
   # inte kan peka någon annanstans.
   base = "/"
-  command = "npm install && npm run build -w @pacta/shared && npm run export:web -w @pacta/mobile"
+  # COMMIT_REF sätts av Netlify. Den följer med in i bygget så att felskärmen
+  # kan säga vilket bygge en telefon faktiskt kör – en hemskärmsikon kan ligga
+  # kvar på ett gammalt länge, och då är "är felet rättat?" annars en gissning.
+  command = "npm install && npm run build -w @pacta/shared && EXPO_PUBLIC_BUILD=${COMMIT_REF:0:7} npm run export:web -w @pacta/mobile"
   publish = "apps/mobile/dist"
 
 [build.environment]

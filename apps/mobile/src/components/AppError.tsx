@@ -16,6 +16,15 @@ import { colors, radius, spacing, type } from '../theme';
  * behöver veta vad som hände. Ett "något gick fel" utan orsak gör felsökning
  * till gissning.
  */
+/**
+ * Vilket bygge som körs, satt vid exporten.
+ *
+ * Utan det går det inte att se om en telefon ligger kvar på ett gammalt
+ * bygge – och en hemskärmsikon gör just det, ibland länge. Att gissa om ett
+ * fel redan är rättat kostar mer tid än den här raden.
+ */
+const BUILD = process.env.EXPO_PUBLIC_BUILD ?? 'lokalt';
+
 export function AppError({ error, retry }: { error: Error; retry: () => void }) {
   return (
     <View style={styles.screen}>
@@ -31,7 +40,7 @@ export function AppError({ error, retry }: { error: Error; retry: () => void }) 
             {error?.message || 'Okänt fel'}
           </Text>
           <Text style={styles.meta} selectable>
-            {Platform.OS} · v{Constants.expoConfig?.version ?? 'okänd'}
+            {Platform.OS} · v{Constants.expoConfig?.version ?? 'okänd'} · bygge {BUILD}
           </Text>
         </View>
 
