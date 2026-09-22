@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run build -w @pacta/shared",
     "dev": "tsx watch src/server.ts",
+    "pretest": "npm run build -w @pacta/shared",
     "start": "node dist/server.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.seed.json",
