@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useAuth } from '../../src/auth';
 import { useTour } from '../../src/tour/Tour';
 import { BUSINESS_TOUR_KEY, businessTour } from '../../src/tour/steps';
-import { ChatIcon, DeckIcon, DocIcon, GridIcon, UserIcon } from '../../src/components/icons';
+import { ChatIcon, DeckIcon, GridIcon, UserIcon } from '../../src/components/icons';
 import { colors, type } from '../../src/theme';
 
 export default function BusinessTabs() {
@@ -66,18 +66,16 @@ export default function BusinessTabs() {
           tabBarIcon: ({ color }) => <GridIcon size={21} color={color} />,
         }}
       />
+      {/*
+        En flik, inte två. Matchningar och Avtal var två arkivfack för samma
+        förlopp, och för en krögare som gör en kampanj i kvartalet stod båda
+        tomma nästan jämt – två av fem flikar utan innehåll.
+      */}
       <Tabs.Screen
-        name="matches"
+        name="collaborations"
         options={{
-          title: 'Matchningar',
+          title: 'Samarbeten',
           tabBarIcon: ({ color }) => <ChatIcon size={21} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="contracts"
-        options={{
-          title: 'Avtal',
-          tabBarIcon: ({ color }) => <DocIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen

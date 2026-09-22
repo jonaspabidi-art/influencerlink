@@ -70,7 +70,11 @@ export function ContractList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
             </Text>
             <Button
               label={role === 'BUSINESS' ? 'Till matchningar' : 'Till matchningar'}
-              onPress={() => router.push(role === 'BUSINESS' ? '/business/matches' : '/influencer/matches')}
+              onPress={() =>
+                router.push(
+                  role === 'BUSINESS' ? '/business/collaborations' : '/influencer/matches',
+                )
+              }
             />
           </View>
         </View>

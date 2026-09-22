@@ -12,10 +12,10 @@ import type { TourStep } from './Tour';
  * stegen ändrats så mycket att den som redan gått igenom turen har nytta av
  * en ny – till exempel när en knapp bytt plats.
  */
-export const BUSINESS_TOUR_KEY = 'business.v2';
+export const BUSINESS_TOUR_KEY = 'business.v3';
 export const INFLUENCER_TOUR_KEY = 'influencer.v2';
 
-const BUSINESS_TABS = 5;
+const BUSINESS_TABS = 4;
 const INFLUENCER_TABS = 5;
 
 export const businessTour: TourStep[] = [
@@ -42,20 +42,14 @@ export const businessTour: TourStep[] = [
     body: '1. Ni beskriver uppdraget och sätter en budget.\n2. Kreatörer ansöker, ni väljer vem ni vill ha.\n3. Båda parter signerar avtalet.\n4. Filmen levereras – ni godkänner, sedan betalas kreatören.',
   },
   {
-    route: '/business/matches',
+    route: '/business/collaborations',
     target: { kind: 'tab', index: 2, count: BUSINESS_TABS },
-    title: 'Matchningar',
-    body: 'När ni och kreatören båda sagt ja hamnar samarbetet här. Det är också här ni skriver med varandra om tider och detaljer.',
-  },
-  {
-    route: '/business/contracts',
-    target: { kind: 'tab', index: 3, count: BUSINESS_TABS },
-    title: 'Avtal',
-    body: 'Här signerar ni avtalen. Arvodet betalas in när avtalet är påskrivet och ligger kvar hos Pacta tills ni godkänt filmen – kreatören vet att pengarna finns, ni betalar inte för något ni inte fått.',
+    title: 'Samarbeten',
+    body: 'Allt som pågår med en kreatör, sorterat efter vad som ska göras. Överst det som väntar på er: signera, betala in, godkänna filmen. Arvodet ligger kvar hos Pacta tills ni godkänt.',
   },
   {
     route: '/business/profile',
-    target: { kind: 'tab', index: 4, count: BUSINESS_TABS },
+    target: { kind: 'tab', index: 3, count: BUSINESS_TABS },
     title: 'Profil',
     body: 'Bilder på stället, era egna kanaler och organisationsnumret. Bilderna är det första en kreatör tittar på. Rundturen finns kvar här om ni vill se den igen.',
   },

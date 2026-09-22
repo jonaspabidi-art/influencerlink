@@ -9,7 +9,13 @@ import type { Match } from '../types';
 import { InsightsPrompt } from './InsightsPrompt';
 import { Avatar, Button, ErrorState, Header, Loading, Logo, Photo, Rating, Screen } from './ui';
 
-/** Matchningslistan. Samma komponent för båda rollerna, olika motpart. */
+/**
+ * Matchningslistan för kreatörer.
+ *
+ * Företagssidan har egen vy: matchningar och avtal ligger ihop där, sorterade
+ * efter vad som ska göras. Rollväxlingen nedan är kvar tills den vyn bevisat
+ * sig i drift.
+ */
 export function MatchList({ role }: { role: 'INFLUENCER' | 'BUSINESS' }) {
   const router = useRouter();
   const matches = useQuery(matchesQuery());
