@@ -189,6 +189,8 @@ export interface InfluencerProfile {
   platforms: Platform[];
   socialAccounts: SocialAccount[];
   showcase: ShowcaseItem[];
+  /** Var kreatören ska vara, om någonstans. */
+  travel: { city: string; from: string; to: string; active: boolean } | null;
   /** Tar kreatören löpande uppdrag, och till vilket pris? */
   acceptsRetainers: boolean;
   retainerSlots: number;

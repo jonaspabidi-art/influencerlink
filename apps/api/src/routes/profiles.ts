@@ -1,7 +1,12 @@
 import type { Category, Platform } from '@pacta/shared';
 import {
   BARTER_PLANS,
+  MAX_TRAVEL_DAYS_AHEAD,
+  MAX_TRAVEL_LENGTH_DAYS,
   barterBlocker,
+  isTravelOver,
+  isTravelling,
+  travelInputSchema,
   businessProfileInputSchema,
   compensationTypeSchema,
   emptyRatingSummary,
@@ -30,6 +35,7 @@ import { signState, verifyState } from '../lib/oauthstate.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { barterUsage, creatorReliability, creatorReliabilityMap } from '../services/barter.js';
+import { toTravelPlan } from '../services/feed.js';
 import { buildSessionPayload } from '../lib/session.js';
 import { requireProfileId } from '../plugins/auth.js';
 import type { Services } from '../services/index.js';
@@ -70,6 +76,17 @@ const publicInfluencerSchema = z.object({
   retainerPackages: z.array(
     z.object({ videosPerMonth: z.number().int(), monthlyRate: z.number().int() }),
   ),
+  /**
+   * Var kreatören är på väg, om någonstans.
+   *
+   * En kreatör på resa kan ta uppdrag där hen landar, och är då ofta mer
+   * intressant för restaurangen än någon som bor i staden – hen är ny för
+   * deras publik. Datumen står med eftersom "är i Stockholm" utan period
+   * inte går att planera efter.
+   */
+  travel: z
+    .object({ city: z.string(), from: z.string(), to: z.string(), active: z.boolean() })
+    .nullable(),
   /**
    * Hur kreatören skött sina uppdrag mot mat.
    *
@@ -232,7 +249,24 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
         where: {
           user: { onboardingComplete: true },
           socialAccounts: { some: {} },
-          ...(city ? { city: { equals: city, mode: 'insensitive' } } : {}),
+          /*
+           * Orten matchar hemorten eller en resa som inte passerat.
+           *
+           * Utan resan syns kreatören bara i sin hemstad, och den som är på
+           * plats i Stockholm nästa helg vore osynlig för exakt de
+           * restauranger som skulle ha mest nytta av hen.
+           */
+          ...(city
+            ? {
+                OR: [
+                  { city: { equals: city, mode: 'insensitive' as const } },
+                  {
+                    travelCity: { equals: city, mode: 'insensitive' as const },
+                    travelTo: { gte: new Date() },
+                  },
+                ],
+              }
+            : {}),
           ...(category ? { categories: { has: category } } : {}),
           ...(retainers
             ? { acceptsRetainers: true, retainerBaseRate: { not: null }, retainerSlots: { gt: 0 } }
@@ -807,6 +841,65 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
    * gång ett samarbete startas, medan profilen i övrigt ligger still. Slås de
    * ihop måste hela profilen hämtas om för att en etta ska bli en tvåa.
    */
+  /**
+   * Kreatören säger var hen ska vara, och när.
+   *
+   * Egen slutpunkt i stället för ett fält på profilen: resan ändras ofta och
+   * profilen sällan, och att behöva skicka hela profilen för att flytta ett
+   * datum inbjuder till att råka skriva över något annat.
+   */
+  server.put(
+    '/me/travel',
+    {
+      preHandler: app.requireRole('INFLUENCER'),
+      schema: {
+        body: travelInputSchema,
+        response: {
+          200: z.object({
+            city: z.string().nullable(),
+            from: z.string().nullable(),
+            to: z.string().nullable(),
+            active: z.boolean(),
+          }),
+          400: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const profileId = requireProfileId(request);
+      const { city, from, to } = request.body;
+
+      if (city && from && to) {
+        const start = new Date(from);
+        const end = new Date(to);
+        const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+        if (days > MAX_TRAVEL_LENGTH_DAYS) {
+          throw badRequest(
+            `En resa kan vara högst ${MAX_TRAVEL_LENGTH_DAYS} dagar. Längre än så är det en flytt – ändra hemorten i stället.`,
+          );
+        }
+        const ahead = Math.round((start.getTime() - Date.now()) / 86_400_000);
+        if (ahead > MAX_TRAVEL_DAYS_AHEAD) {
+          throw badRequest(
+            `Resor går att lägga in upp till ${MAX_TRAVEL_DAYS_AHEAD} dagar i förväg.`,
+          );
+        }
+      }
+
+      const updated = await prisma.influencerProfile.update({
+        where: { id: profileId },
+        data: {
+          travelCity: city,
+          travelFrom: from ? new Date(from) : null,
+          travelTo: to ? new Date(to) : null,
+        },
+      });
+      return (
+        toPublicTravel(updated) ?? { city: null, from: null, to: null, active: false }
+      );
+    },
+  );
+
   server.get(
     '/me/barter',
     {
@@ -1092,6 +1185,9 @@ export function toPublicInfluencer(profile: {
   retainerBaseRate: number | null;
   retainerPrepayDiscountBps: number;
   retainerVolumeDiscountBps: number;
+  travelCity: string | null;
+  travelFrom: Date | null;
+  travelTo: Date | null;
   socialAccounts: SocialAccountRow[];
   showcase?: ShowcaseRow[];
 }) {
@@ -1122,6 +1218,22 @@ export function toPublicInfluencer(profile: {
         : retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps),
     // Fylls av anroparen, som vet om siffran hämtats en i taget eller i klump.
     reliability: { completed: 0, abandoned: 0 },
+    travel: toPublicTravel(profile),
+  };
+}
+
+/** Resan som appen visar den, eller null när den passerat eller saknas. */
+function toPublicTravel(
+  profile: { travelCity: string | null; travelFrom: Date | null; travelTo: Date | null },
+  now = new Date(),
+) {
+  const plan = toTravelPlan(profile);
+  if (!plan || isTravelOver(plan, now)) return null;
+  return {
+    city: plan.city,
+    from: plan.from.toISOString(),
+    to: plan.to.toISOString(),
+    active: isTravelling(plan, now),
   };
 }
 

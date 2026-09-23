@@ -2,6 +2,8 @@ import {
   MAX_OPEN_BARTER_PER_CREATOR,
   barterAllowance,
   barterBlocker,
+  isTravelOver,
+  isTravelling,
   checkEligibility,
   checkReviewEligibility,
   creatorInsights,
@@ -420,6 +422,23 @@ function reliabilityFor(influencerId: string) {
         ['SENT', 'PARTIALLY_SIGNED', 'ACTIVE'].includes(contract.status) &&
         new Date(contract.dueDate).getTime() < Date.now(),
     ).length,
+  };
+}
+
+/** Resan som appen visar den, eller null när den passerat eller saknas. */
+function travelFor(profile: DemoInfluencer) {
+  if (!profile.travelCity || !profile.travelFrom || !profile.travelTo) return null;
+  const plan = {
+    city: profile.travelCity,
+    from: new Date(profile.travelFrom),
+    to: new Date(profile.travelTo),
+  };
+  if (isTravelOver(plan)) return null;
+  return {
+    city: plan.city,
+    from: plan.from.toISOString(),
+    to: plan.to.toISOString(),
+    active: isTravelling(plan),
   };
 }
 
@@ -1228,11 +1247,18 @@ function pendingInterest(influencerId: string): { campaignId: string; campaignTi
 
 route('GET', '/influencers', ({ query }) => {
   const city = query.get('city')?.toLowerCase();
+  // Samma regel som i skarpt läge: hemorten eller en resa som inte passerat.
+  const inPlace = (profile: DemoInfluencer) => {
+    if (!city) return true;
+    if (profile.city.toLowerCase() === city) return true;
+    const travel = travelFor(profile);
+    return travel !== null && travel.city.toLowerCase() === city;
+  };
   const category = query.get('category');
   const onlyRetainers = query.get('retainers') !== null;
   return state.influencers
     .filter((profile) => profile.socials.length > 0)
-    .filter((profile) => !city || profile.city.toLowerCase() === city)
+    .filter(inPlace)
     .filter((profile) => !category || profile.categories.includes(category as Category))
     .filter(
       (profile) =>
@@ -1267,6 +1293,7 @@ route('GET', '/influencers', ({ query }) => {
         rating: ratingFor('INFLUENCER', profile.id),
         interest: pendingInterest(profile.id),
         reliability: reliabilityFor(profile.id),
+        travel: travelFor(profile),
         acceptsRetainers: profile.acceptsRetainers === true && profile.retainerBaseRate != null,
         retainerSlots: profile.retainerSlots ?? 0,
         retainerPrepayDiscountBps: profile.retainerPrepayDiscountBps ?? 0,
@@ -1309,6 +1336,7 @@ route('GET', '/influencers/:id', ({ params }) => {
       ? retainerPackages(profile.retainerBaseRate, profile.retainerVolumeDiscountBps ?? 0)
       : [],
     reliability: reliabilityFor(profile.id),
+    travel: travelFor(profile),
   };
 });
 
@@ -1544,6 +1572,23 @@ route('GET', '/campaigns/reach', ({ query }) => {
 });
 
 route('GET', '/campaigns/:id', ({ params }) => publicCampaign(campaignById(params[0]!)));
+
+route('PUT', '/me/travel', ({ body }) => {
+  const profile = influencerById(requireProfileId(currentUser()));
+  const city = typeof body.city === 'string' && body.city.trim() ? body.city.trim() : null;
+  const from = typeof body.from === 'string' && body.from ? body.from : null;
+  const to = typeof body.to === 'string' && body.to ? body.to : null;
+  if ((city === null) !== (from === null) || (from === null) !== (to === null)) {
+    throw new DemoError(400, 'bad_request', 'Ange både ort och datum, eller inget alls.');
+  }
+  if (from && to && from > to) {
+    throw new DemoError(400, 'bad_request', 'Slutdatumet kan inte ligga före startdatumet.');
+  }
+  profile.travelCity = city;
+  profile.travelFrom = from;
+  profile.travelTo = to;
+  return travelFor(profile) ?? { city: null, from: null, to: null, active: false };
+});
 
 route('GET', '/me/barter', () => {
   const user = currentUser();

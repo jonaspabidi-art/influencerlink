@@ -1,10 +1,20 @@
 import type { CampaignCandidate, InfluencerCandidate } from '@pacta/shared';
-import { checkEligibility } from '@pacta/shared';
+import { checkEligibility, isTravelling, type TravelPlan } from '@pacta/shared';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { aggregateStats } from './social/index.js';
 
 /** Så många kandidater hämtas ur databasen innan rangordningen. */
 const CANDIDATE_POOL = 100;
+
+/** Resan som tre kolumner blir en resa, eller ingen alls. */
+export function toTravelPlan(profile: {
+  travelCity: string | null;
+  travelFrom: Date | null;
+  travelTo: Date | null;
+}): TravelPlan | null {
+  if (!profile.travelCity || !profile.travelFrom || !profile.travelTo) return null;
+  return { city: profile.travelCity, from: profile.travelFrom, to: profile.travelTo };
+}
 
 const influencerWithSocials = {
   include: { socialAccounts: true },
@@ -12,12 +22,24 @@ const influencerWithSocials = {
 
 type InfluencerRow = Prisma.InfluencerProfileGetPayload<typeof influencerWithSocials>;
 
-export function toInfluencerCandidate(profile: InfluencerRow): InfluencerCandidate {
+export function toInfluencerCandidate(
+  profile: InfluencerRow,
+  now = new Date(),
+): InfluencerCandidate {
   const stats = aggregateStats(profile.socialAccounts);
+  /*
+   * Resan räknas bara medan den pågår.
+   *
+   * En planerad resa syns för företag som letar, men den ska inte påverka
+   * rangordningen i kortleken förrän kreatören faktiskt är där – annars
+   * föreslås uppdrag som ska utföras innan hen rest.
+   */
+  const travel = toTravelPlan(profile);
   return {
     id: profile.id,
     displayName: profile.displayName,
     city: profile.city,
+    travelCity: isTravelling(travel, now) ? travel!.city : null,
     categories: profile.categories,
     platforms: profile.socialAccounts.map((account) => account.platform),
     followers: stats.followers,
@@ -71,7 +93,7 @@ export async function findInfluencerCandidates(
   });
 
   return rows
-    .map(toInfluencerCandidate)
+    .map((row) => toInfluencerCandidate(row))
     .filter((candidate) => checkEligibility(campaign, candidate).eligible);
 }
 

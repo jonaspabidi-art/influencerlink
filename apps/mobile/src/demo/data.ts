@@ -44,6 +44,10 @@ export interface DemoInfluencer {
   socials: DemoSocial[];
   showcase: DemoShowcase[];
   /** Löpande uppdrag: tar kreatören dem, hur många platser och till vilket pris? */
+  /** Reseläge: orten kreatören ska till, och när. */
+  travelCity?: string | null;
+  travelFrom?: string | null;
+  travelTo?: string | null;
   acceptsRetainers?: boolean;
   retainerSlots?: number;
   /** Månadspris för grundpaketet, fyra videor, i öre. */
@@ -174,6 +178,10 @@ export const DEMO_INFLUENCERS: DemoInfluencer[] = [
     displayName: 'gbgstreetfood',
     bio: 'Street food, food trucks och sena kvällsmackor. Snabba klipp med hög visningsgrad.',
     city: 'Göteborg',
+    // På resa, så att reseläget går att se i demon.
+    travelCity: 'Stockholm',
+    travelFrom: new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10),
+    travelTo: new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10),
     avatarUrl: null,
     categories: ['STREET_FOOD', 'MAT_OCH_DRYCK'],
     priceMin: kr(1_500),

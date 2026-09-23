@@ -8,6 +8,7 @@ import {
   GridIcon,
   HelpIcon,
   LinkIcon,
+  PinIcon,
   SignOutIcon,
   StarIcon,
   UserIcon,
@@ -110,6 +111,12 @@ export default function InfluencerProfileTab() {
           label="Löpande uppdrag"
           hint="Fast inkomst"
           onPress={() => router.push('/retainer/availability')}
+        />
+        <MenuRow
+          icon={<PinIcon size={20} color={colors.primary} />}
+          label="Var är du?"
+          hint={data?.travel ? data.travel.city : data?.city}
+          onPress={() => router.push('/travel')}
         />
         <View ref={socialsAnchor.ref}>
           <MenuRow

@@ -347,6 +347,29 @@ export const messageInputSchema = z.object({
 // Kontrakt och betalning
 // ---------------------------------------------------------------------------
 
+/**
+ * Reseläge. Null i alla tre fälten betyder "ingen resa".
+ *
+ * Datumen är dagar, inte tidpunkter: ingen planerar ett restaurangbesök på
+ * minuten, och en tidszonsförskjutning ska inte kunna flytta resan en dag.
+ */
+export const travelInputSchema = z
+  .object({
+    city: z.string().min(2).max(80).nullable(),
+    from: z.string().date().nullable(),
+    to: z.string().date().nullable(),
+  })
+  .refine(
+    (value) =>
+      (value.city === null && value.from === null && value.to === null) ||
+      (value.city !== null && value.from !== null && value.to !== null),
+    { message: 'Ange både ort och datum, eller inget alls.' },
+  )
+  .refine((value) => value.from === null || value.to === null || value.from <= value.to, {
+    message: 'Slutdatumet kan inte ligga före startdatumet.',
+  });
+export type TravelInput = z.infer<typeof travelInputSchema>;
+
 export const contractInputSchema = z.object({
   matchId: cuidSchema,
   fee: oreSchema,

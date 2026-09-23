@@ -1,3 +1,4 @@
+export * from './travel.js';
 export * from './barter.js';
 export * from './contracts.js';
 export * from './domain.js';

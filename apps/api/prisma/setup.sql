@@ -877,6 +877,13 @@ CREATE TYPE "BarterPlan" AS ENUM ('NONE', 'BASIC', 'MEDIUM', 'ADVANCED');
 -- AlterTable
 ALTER TABLE "BusinessProfile" ADD COLUMN     "barterPlan" "BarterPlan" NOT NULL DEFAULT 'NONE';
 
+-- === 20260923000000_travel_mode ===
+
+-- AlterTable
+ALTER TABLE "InfluencerProfile" ADD COLUMN     "travelCity" TEXT,
+ADD COLUMN     "travelFrom" TIMESTAMP(3),
+ADD COLUMN     "travelTo" TIMESTAMP(3);
+
 -- Prismas egen bokföring. Utan den försöker servern skapa tabellerna en
 -- gång till vid start och kraschar på att de redan finns.
 CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
@@ -984,6 +991,11 @@ INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, sta
 VALUES (gen_random_uuid()::text,
         'b8f4a1072541c57bd68aef6478f654b94f3b0acb199d2ab8c299df2c79d83338',
         now(), '20260922000000_barter_plan', now(), 1);
+
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+VALUES (gen_random_uuid()::text,
+        '4b9a1f4e4f8e40e1c6f7b8cb19efde128f47ad9571cf600cc278fcea7eaebf07',
+        now(), '20260923000000_travel_mode', now(), 1);
 
 -- === Demodata ===
 

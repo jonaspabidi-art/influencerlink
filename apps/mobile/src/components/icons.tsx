@@ -195,6 +195,14 @@ export const LinkIcon = (props: IconProps) => (
   </Icon>
 );
 
+/** Ort och reseläge. */
+export const PinIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <Path d="M12 21s6.5-5.4 6.5-10a6.5 6.5 0 1 0-13 0c0 4.6 6.5 10 6.5 10z" />
+    <Circle cx="12" cy="11" r="2.4" />
+  </Icon>
+);
+
 /** Rundturen och hjälpavsnitt. */
 export const HelpIcon = (props: IconProps) => (
   <Icon {...props}>

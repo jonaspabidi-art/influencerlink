@@ -202,6 +202,16 @@ model InfluencerProfile {
   retainerPrepayDiscountBps Int @default(0)
   retainerVolumeDiscountBps Int @default(0)
 
+  /// Reseläge: orten kreatören ska vara på, och när.
+  ///
+  /// Uppdragen kräver ett fysiskt besök, men en kreatör är inte fast på en
+  /// punkt. Den som ska till Stockholm över helgen kan ta uppdrag där – och
+  /// är då mer intressant för en Stockholmsrestaurang än någon som bor där,
+  /// eftersom hen är ny för deras publik.
+  travelCity String?
+  travelFrom DateTime?
+  travelTo   DateTime?
+
   /// Stripe Connect-konto som utbetalningar går till.
   stripeAccountId String? @unique
   payoutsEnabled  Boolean @default(false)

@@ -2,13 +2,15 @@ import { CATEGORIES, describeReliability, type Category } from '@pacta/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ownBusinessQuery } from '../../src/queries';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { getItem, setItem } from '../../src/storage';
+import { PlacePicker } from '../../src/components/PlacePicker';
 import { useTourAnchor } from '../../src/tour/Tour';
 import { DemoBanner } from '../../src/components/DemoBanner';
-import { PlusIcon, SparkIcon } from '../../src/components/icons';
+import { PlusIcon, SlidersIcon, SparkIcon } from '../../src/components/icons';
 import {
   Avatar,
   Body,
@@ -23,9 +25,14 @@ import {
   Rating,
   Screen,
 } from '../../src/components/ui';
-import { CATEGORY_LABELS, formatFollowers, formatSek } from '../../src/format';
+import { CATEGORY_LABELS, formatDate, formatFollowers, formatSek } from '../../src/format';
 import { colors, radius, spacing, type } from '../../src/theme';
 import type { InfluencerProfile, RatingSummary, SwipeResult } from '../../src/types';
+
+/** Var listan senast stod, och orterna man rört sig mellan. */
+const PLACE_KEY = 'pacta.discover.place';
+/** Fler än så är ingen genväg längre, det är en lista att leta i. */
+const MAX_RECENT_PLACES = 4;
 
 type Browsable = InfluencerProfile & {
   rating: RatingSummary;
@@ -46,16 +53,46 @@ export default function BusinessDiscover() {
   // Rundturen pekar hit när den förklarar hur ett samarbete startas.
   const createAnchor = useTourAnchor('business.create');
   const [category, setCategory] = useState<Category | null>(null);
-  const [nearby, setNearby] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const profile = useQuery(ownBusinessQuery());
 
-  const city = profile.data?.city ?? '';
+  /*
+   * Orten är ett eget val, inte ett filter bland andra.
+   *
+   * Den börjar på företagets egen stad men går att byta – en restaurang som
+   * öppnar i Stockholm letar där innan de flyttat. Valet sparas i telefonen
+   * så att listan öppnas där man var sist.
+   */
+  const [city, setCity] = useState<string | null>(null);
+  const [recents, setRecents] = useState<string[]>([]);
+  useEffect(() => {
+    void (async () => {
+      const saved = await getItem(PLACE_KEY);
+      if (saved !== null) {
+        const parsed = JSON.parse(saved) as { city: string; recents: string[] };
+        setCity(parsed.city);
+        setRecents(parsed.recents ?? []);
+      }
+    })().catch(() => undefined);
+  }, []);
+
+  const home = profile.data?.city ?? '';
+  const activeCity = city ?? home;
+  const chooseCity = (next: string) => {
+    setCity(next);
+    const nextRecents = [next, ...recents.filter((item) => item !== next && item !== '')]
+      .filter(Boolean)
+      .slice(0, MAX_RECENT_PLACES);
+    setRecents(nextRecents);
+    void setItem(PLACE_KEY, JSON.stringify({ city: next, recents: nextRecents }));
+  };
+
   const creators = useQuery({
-    queryKey: ['browse-influencers', nearby ? city : '', category],
+    queryKey: ['browse-influencers', activeCity, category],
     queryFn: () => {
       const params = new URLSearchParams();
-      if (nearby && city) params.set('city', city);
+      if (activeCity) params.set('city', activeCity);
       if (category) params.set('category', category);
       return api.get<Browsable[]>(`/influencers?${params.toString()}`);
     },
@@ -78,9 +115,7 @@ export default function BusinessDiscover() {
         large
         subtitle={
           creators.isSuccess
-            ? `${data.length} ${data.length === 1 ? 'kreatör' : 'kreatörer'}${
-                nearby && city ? ` i ${city}` : ''
-              }`
+            ? `${data.length} ${data.length === 1 ? 'kreatör' : 'kreatörer'}`
             : 'Kreatörer att samarbeta med'
         }
         /*
@@ -104,30 +139,23 @@ export default function BusinessDiscover() {
         ListHeaderComponent={
           <View style={styles.header}>
             {/*
-              En rad som scrollar i sidled. Tretton nischer staplade på varandra
-              hade tagit hela skärmen innan man sett en enda kreatör.
+              Var och vad, åtskilda. Förut låg orten som ett chip bredvid tretton
+              nischer, alla lika stora och lika utseende – man fick läsa varje
+              knapp för att se vilken sorts val den var.
             */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-            >
-              {city ? (
-                <Chip
-                  label={city}
-                  selected={nearby}
-                  onPress={() => setNearby((current) => !current)}
-                />
-              ) : null}
-              {CATEGORIES.map((item) => (
-                <Chip
-                  key={item}
-                  label={CATEGORY_LABELS[item]}
-                  selected={category === item}
-                  onPress={() => setCategory((current) => (current === item ? null : item))}
-                />
-              ))}
-            </ScrollView>
+            <View style={styles.controls}>
+              <PlacePicker city={activeCity} recents={recents} onChange={chooseCity} />
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setFilterOpen(true)}
+                style={({ pressed }) => [styles.filterButton, pressed && styles.pressed]}
+              >
+                <SlidersIcon size={16} color={category ? colors.ink : colors.text} />
+                <Text style={[styles.filterLabel, category ? styles.filterLabelOn : null]}>
+                  {category ? CATEGORY_LABELS[category] : 'Filter'}
+                </Text>
+              </Pressable>
+            </View>
 
             {/*
               Regeln fanns men stod ingenstans: ett företag kan svepa, men bara
@@ -200,6 +228,43 @@ export default function BusinessDiscover() {
         }
         renderItem={({ item }) => <CreatorRow creator={item} />}
       />
+
+      {/*
+        Nischerna i ett blad i stället för en rad man måste scrolla förbi.
+        De flesta rör dem aldrig, och de som gör det gör det en gång.
+      */}
+      <Modal
+        visible={filterOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setFilterOpen(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setFilterOpen(false)} />
+        <View style={styles.sheet}>
+          <Text style={styles.sheetTitle}>Vilken sorts kreatör?</Text>
+          <View style={styles.filterRowWrap}>
+            {CATEGORIES.map((item) => (
+              <Chip
+                key={item}
+                label={CATEGORY_LABELS[item]}
+                selected={category === item}
+                onPress={() => {
+                  setCategory((current) => (current === item ? null : item));
+                  setFilterOpen(false);
+                }}
+              />
+            ))}
+          </View>
+          <Button
+            label={category ? 'Visa alla sorter' : 'Stäng'}
+            variant="secondary"
+            onPress={() => {
+              setCategory(null);
+              setFilterOpen(false);
+            }}
+          />
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -281,6 +346,19 @@ function CreatorRow({ creator }: { creator: Browsable }) {
             </Text>
           ) : null}
 
+          {/*
+            Var kreatören är på väg. Står bara när det finns en resa som inte
+            passerat – och det är då den är värd mest, eftersom restaurangen
+            kan planera efter den.
+          */}
+          {creator.travel ? (
+            <Text style={styles.travel} numberOfLines={1}>
+              {creator.travel.active
+                ? `På plats i ${creator.travel.city} till ${formatDate(creator.travel.to)}`
+                : `I ${creator.travel.city} ${formatDate(creator.travel.from)}–${formatDate(creator.travel.to)}`}
+            </Text>
+          ) : null}
+
           {creator.interest ? (
             <Text style={styles.interest} numberOfLines={2}>
               Visade intresse för {creator.interest.campaignTitle}
@@ -312,6 +390,35 @@ const styles = StyleSheet.create({
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
   header: { gap: spacing.md, paddingBottom: spacing.sm },
   filterRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.base },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.round,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+  },
+  filterLabel: { ...type.listTitle, fontSize: 14, color: colors.text },
+  filterLabelOn: { color: colors.ink },
+  travel: { fontFamily: type.listTitle.fontFamily, fontSize: 13, color: colors.positive },
+  backdrop: { flex: 1, backgroundColor: 'rgba(12, 9, 7, 0.45)' },
+  sheet: {
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: radius.card,
+    borderTopRightRadius: radius.card,
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  sheetTitle: { ...type.sectionTitle, color: colors.text },
+  filterRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   interest: { fontFamily: type.listTitle.fontFamily, fontSize: 13, color: colors.primary },
   explain: { ...type.secondary, color: colors.muted },
 

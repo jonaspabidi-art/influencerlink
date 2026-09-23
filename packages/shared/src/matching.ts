@@ -4,7 +4,15 @@ import type { Ore } from './money.js';
 export interface InfluencerCandidate {
   id: string;
   displayName: string;
+  /** Hemorten. */
   city: string;
+  /**
+   * Orten kreatören är på under en pågående resa, annars null.
+   *
+   * Räknas som hemort så länge resan pågår: uppdraget kräver ett besök, och
+   * den som faktiskt är på plats kan utföra det oavsett var hen bor.
+   */
+  travelCity?: string | null;
   categories: Category[];
   platforms: Platform[];
   /** Summerade följare över alla kopplade konton. */
@@ -101,9 +109,18 @@ export function engagementScore(influencer: InfluencerCandidate): number {
   return clamp01(influencer.engagementRate / EXCELLENT_ENGAGEMENT);
 }
 
-/** Samma stad ger full poäng, allt annat halv – uppdragen kräver fysiskt besök. */
+/**
+ * Samma stad ger full poäng, allt annat halv – uppdragen kräver fysiskt besök.
+ *
+ * En pågående resa räknas som att vara på plats. Utan det hamnar kreatören som
+ * är i staden just nu under den som bor där men inte kan den veckan.
+ */
 export function geoScore(campaign: CampaignCandidate, influencer: InfluencerCandidate): number {
-  return normalizeCity(campaign.city) === normalizeCity(influencer.city) ? 1 : 0.5;
+  const onSite =
+    normalizeCity(campaign.city) === normalizeCity(influencer.city) ||
+    (influencer.travelCity != null &&
+      normalizeCity(campaign.city) === normalizeCity(influencer.travelCity));
+  return onSite ? 1 : 0.5;
 }
 
 /**
