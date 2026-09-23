@@ -1,7 +1,12 @@
-import { Redirect, Tabs } from 'expo-router';
-import { useAuth } from '../../src/auth';
-import { DocIcon, GridIcon, LockIcon, UserIcon } from '../../src/components/icons';
-import { colors, type } from '../../src/theme';
+import { Redirect, Tabs } from "expo-router";
+import { useAuth } from "../../src/auth";
+import {
+  DocIcon,
+  GridIcon,
+  LockIcon,
+  UserIcon,
+} from "../../src/components/icons";
+import { useTabScreenOptions } from "../../src/components/tabs";
 
 /**
  * Plattformsvyn, bara för ADMIN.
@@ -10,53 +15,39 @@ import { colors, type } from '../../src/theme';
  * admin, och en kapad vanlig session kan inte höja sig själv.
  */
 export default function AdminTabs() {
+  const tabOptions = useTabScreenOptions();
   const { user, loading } = useAuth();
 
   if (!loading && !user) return <Redirect href="/login" />;
-  if (!loading && user && user.role !== 'ADMIN') return <Redirect href="/" />;
+  if (!loading && user && user.role !== "ADMIN") return <Redirect href="/" />;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: colors.bg },
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 76,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { ...type.tab, marginTop: 2 },
-      }}
-    >
+    <Tabs screenOptions={tabOptions}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Översikt',
+          title: "Översikt",
           tabBarIcon: ({ color }) => <LockIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="businesses"
         options={{
-          title: 'Företag',
+          title: "Företag",
           tabBarIcon: ({ color }) => <GridIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="influencers"
         options={{
-          title: 'Kreatörer',
+          title: "Kreatörer",
           tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="contracts"
         options={{
-          title: 'Avtal',
+          title: "Avtal",
           tabBarIcon: ({ color }) => <DocIcon size={21} color={color} />,
         }}
       />

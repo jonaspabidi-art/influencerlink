@@ -1,12 +1,18 @@
-import { Redirect, Tabs } from 'expo-router';
-import { useEffect } from 'react';
-import { useAuth } from '../../src/auth';
-import { useTour } from '../../src/tour/Tour';
-import { BUSINESS_TOUR_KEY, businessTour } from '../../src/tour/steps';
-import { ChatIcon, DeckIcon, GridIcon, UserIcon } from '../../src/components/icons';
-import { colors, type } from '../../src/theme';
+import { Redirect, Tabs } from "expo-router";
+import { useEffect } from "react";
+import { useAuth } from "../../src/auth";
+import { useTour } from "../../src/tour/Tour";
+import { BUSINESS_TOUR_KEY, businessTour } from "../../src/tour/steps";
+import {
+  ChatIcon,
+  DeckIcon,
+  GridIcon,
+  UserIcon,
+} from "../../src/components/icons";
+import { useTabScreenOptions } from "../../src/components/tabs";
 
 export default function BusinessTabs() {
+  const tabOptions = useTabScreenOptions();
   const { user, loading } = useAuth();
   const { startOnce } = useTour();
 
@@ -36,33 +42,18 @@ export default function BusinessTabs() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: colors.bg },
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 76,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { ...type.tab, marginTop: 2 },
-      }}
-    >
+    <Tabs screenOptions={tabOptions}>
       <Tabs.Screen
         name="discover"
         options={{
-          title: 'Kreatörer',
+          title: "Kreatörer",
           tabBarIcon: ({ color }) => <DeckIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="campaigns"
         options={{
-          title: 'Uppdrag',
+          title: "Uppdrag",
           tabBarIcon: ({ color }) => <GridIcon size={21} color={color} />,
         }}
       />
@@ -74,14 +65,14 @@ export default function BusinessTabs() {
       <Tabs.Screen
         name="collaborations"
         options={{
-          title: 'Samarbeten',
+          title: "Samarbeten",
           tabBarIcon: ({ color }) => <ChatIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: "Profil",
           tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />

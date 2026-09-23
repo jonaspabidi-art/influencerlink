@@ -1,12 +1,19 @@
-import { Redirect, Tabs } from 'expo-router';
-import { useEffect } from 'react';
-import { useAuth } from '../../src/auth';
-import { useTour } from '../../src/tour/Tour';
-import { INFLUENCER_TOUR_KEY, influencerTour } from '../../src/tour/steps';
-import { ChatIcon, DeckIcon, DocIcon, UserIcon, WalletIcon } from '../../src/components/icons';
-import { colors, type } from '../../src/theme';
+import { Redirect, Tabs } from "expo-router";
+import { useEffect } from "react";
+import { useAuth } from "../../src/auth";
+import { useTour } from "../../src/tour/Tour";
+import { INFLUENCER_TOUR_KEY, influencerTour } from "../../src/tour/steps";
+import {
+  ChatIcon,
+  DeckIcon,
+  DocIcon,
+  UserIcon,
+  WalletIcon,
+} from "../../src/components/icons";
+import { useTabScreenOptions } from "../../src/components/tabs";
 
 export default function InfluencerTabs() {
+  const tabOptions = useTabScreenOptions();
   const { user, loading } = useAuth();
   const { startOnce } = useTour();
 
@@ -33,54 +40,39 @@ export default function InfluencerTabs() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: colors.bg },
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 76,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { ...type.tab, marginTop: 2 },
-      }}
-    >
+    <Tabs screenOptions={tabOptions}>
       <Tabs.Screen
         name="swipe"
         options={{
-          title: 'Upptäck',
+          title: "Upptäck",
           tabBarIcon: ({ color }) => <DeckIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="matches"
         options={{
-          title: 'Matchningar',
+          title: "Matchningar",
           tabBarIcon: ({ color }) => <ChatIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="contracts"
         options={{
-          title: 'Avtal',
+          title: "Avtal",
           tabBarIcon: ({ color }) => <DocIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'Plånbok',
+          title: "Plånbok",
           tabBarIcon: ({ color }) => <WalletIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: "Profil",
           tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />
