@@ -63,6 +63,14 @@ const usageRightsSchema = z.object({
 
 const contractDetailSchema = z.object({
   id: z.string(),
+  /**
+   * Matchningen avtalet kom ur, när den finns kvar.
+   *
+   * Chatten hör till matchningen, och utan den här vägen tillbaka är samtalet
+   * oåtkomligt så fort ett avtal skickats – precis när parterna har mest att
+   * stämma av.
+   */
+  matchId: z.string().nullable(),
   campaignId: z.string(),
   campaignTitle: z.string(),
   /** Kampanjbilden, så listorna går att känna igen på annat än rubriken. */
@@ -833,6 +841,7 @@ const contractInclude = {
 
 type ContractRow = {
   id: string;
+  matchId: string | null;
   campaignId: string;
   influencerId: string;
   status: 'DRAFT' | 'SENT' | 'PARTIALLY_SIGNED' | 'ACTIVE' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED';
@@ -909,6 +918,7 @@ function toContractDetail(contract: ContractRow, role: string, _userId: string) 
 
   return {
     id: contract.id,
+    matchId: contract.matchId,
     campaignId: contract.campaignId,
     campaignTitle: contract.campaign.title,
     campaignImageUrl: contract.campaign.imageUrl,

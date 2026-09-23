@@ -550,6 +550,7 @@ function publicContract(contract: Contract, role: 'INFLUENCER' | 'BUSINESS') {
 
   return {
     id: contract.id,
+    matchId: contract.matchId,
     campaignId: contract.campaignId,
     campaignTitle: campaign.title,
     campaignImageUrl: campaign.imageUrl ?? null,

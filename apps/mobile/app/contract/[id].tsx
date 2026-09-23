@@ -363,6 +363,20 @@ export default function ContractDetail() {
           <Text style={styles.termsLink}>Läs hela avtalet</Text>
         </Pressable>
       </View>
+
+      {/*
+        Vägen tillbaka till samtalet.
+        Chatten hör till matchningen, och utan den här raden var den
+        oåtkomlig så fort ett avtal skickats – precis när parterna har mest
+        att stämma av: tider, nyckel, var man parkerar.
+      */}
+      {data.matchId ? (
+        <Button
+          label={`Skriv till ${counterpart}`}
+          variant="secondary"
+          onPress={() => router.push(`/match/${data.matchId}`)}
+        />
+      ) : null}
     </ScrollScreen>
   );
 }

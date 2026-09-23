@@ -342,6 +342,8 @@ export interface Contract {
   dueDate: string;
   reviewDays: number;
   terms: string;
+  /** Matchningen avtalet kom ur, när den finns kvar. Chatten ligger där. */
+  matchId: string | null;
   /** SHA-256 av avtalstexten. Skickas tillbaka vid enkel signering. */
   termsHash: string;
   signedByInfluencerAt: string | null;
