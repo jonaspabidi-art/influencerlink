@@ -1433,6 +1433,7 @@ route('PUT', '/me/business-profile', ({ body }) => {
     companyName: String(body.companyName ?? ''),
     orgNumber: typeof body.orgNumber === 'string' && body.orgNumber ? body.orgNumber : null,
     barterPlan: existing?.barterPlan ?? 'NONE',
+    barterRenewsAt: existing?.barterRenewsAt ?? null,
     city: String(body.city ?? ''),
     address: String(body.address ?? ''),
     description: String(body.description ?? ''),
@@ -1591,11 +1592,55 @@ route('PUT', '/me/travel', ({ body }) => {
   return travelFor(profile) ?? { city: null, from: null, to: null, active: false };
 });
 
+function barterStatus(business: DemoBusiness) {
+  const allowance = barterAllowance({ plan: business.barterPlan, used: barterUsed(business.id) });
+  const subscribed = business.barterPlan !== 'NONE';
+  const now = new Date();
+  return {
+    ...allowance,
+    blocker: barterBlocker(allowance),
+    subscribed,
+    renewsAt: subscribed
+      ? (business.barterRenewsAt ??
+        new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString())
+      : null,
+    cancelsAt: null,
+    pastDue: false,
+    testMode: true,
+  };
+}
+
 route('GET', '/me/barter', () => {
   const user = currentUser();
+  return barterStatus(businessById(requireProfileId(user)));
+});
+
+/*
+ * I demoläget finns ingen betalsida: nivån slås på direkt, som om kortet
+ * redan dragits. Det räcker för att visa flödet utan att låtsas ta betalt.
+ */
+route('POST', '/me/barter/subscribe', ({ body }) => {
+  const user = currentUser();
   const business = businessById(requireProfileId(user));
-  const allowance = barterAllowance({ plan: business.barterPlan, used: barterUsed(business.id) });
-  return { ...allowance, blocker: barterBlocker(allowance) };
+  const plan = body.plan as DemoBusiness['barterPlan'];
+  if (!['BASIC', 'MEDIUM', 'ADVANCED'].includes(plan)) {
+    throw new DemoError(400, 'bad_request', 'Okänd nivå.');
+  }
+  if (business.barterPlan === plan) {
+    throw new DemoError(409, 'conflict', `Ni har redan ${plan.toLowerCase()}.`);
+  }
+  business.barterPlan = plan;
+  business.barterRenewsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  persist();
+  return { kind: 'updated', status: barterStatus(business) };
+});
+
+route('POST', '/me/barter/portal', () => {
+  throw new DemoError(
+    400,
+    'bad_request',
+    'Kundportalen finns inte i demoläget. Byt nivå direkt här på sidan.',
+  );
 });
 
 route('POST', '/campaigns/:id/publish', ({ params }) => {

@@ -65,6 +65,8 @@ export interface DemoBusiness {
   orgNumber: string | null;
   /** Nivå för mat mot innehåll. */
   barterPlan: 'NONE' | 'BASIC' | 'MEDIUM' | 'ADVANCED';
+  /** Nästa dragning i demoläget. Saknas för seedade företag. */
+  barterRenewsAt?: string | null;
   city: string;
   address: string;
   description: string;

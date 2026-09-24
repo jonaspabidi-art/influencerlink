@@ -1,9 +1,7 @@
 import type { Category, Platform } from '@pacta/shared';
 import {
-  BARTER_PLANS,
   MAX_TRAVEL_DAYS_AHEAD,
   MAX_TRAVEL_LENGTH_DAYS,
-  barterBlocker,
   isTravelOver,
   isTravelling,
   travelInputSchema,
@@ -34,7 +32,7 @@ import { randomUUID } from 'node:crypto';
 import { signState, verifyState } from '../lib/oauthstate.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
-import { barterUsage, creatorReliability, creatorReliabilityMap } from '../services/barter.js';
+import { creatorReliability, creatorReliabilityMap } from '../services/barter.js';
 import { toTravelPlan } from '../services/feed.js';
 import { buildSessionPayload } from '../lib/session.js';
 import { requireProfileId } from '../plugins/auth.js';
@@ -897,37 +895,6 @@ export async function profileRoutes(app: FastifyInstance, services: Services): P
       return (
         toPublicTravel(updated) ?? { city: null, from: null, to: null, active: false }
       );
-    },
-  );
-
-  server.get(
-    '/me/barter',
-    {
-      preHandler: app.requireRole('BUSINESS'),
-      schema: {
-        response: {
-          200: z.object({
-            plan: z.enum(BARTER_PLANS),
-            used: z.number().int(),
-            limit: z.number().int(),
-            remaining: z.number().int(),
-            canStart: z.boolean(),
-            /** Meningen som förklarar varför inget går att starta, annars null. */
-            blocker: z.string().nullable(),
-          }),
-          404: problemSchema,
-        },
-      },
-    },
-    async (request) => {
-      const profile = await prisma.businessProfile.findUnique({
-        where: { userId: request.user.sub },
-        select: { id: true },
-      });
-      if (!profile) throw notFound('Företagsprofilen hittades inte.');
-
-      const allowance = await barterUsage(prisma, profile.id);
-      return { ...allowance, blocker: barterBlocker(allowance) };
     },
   );
 

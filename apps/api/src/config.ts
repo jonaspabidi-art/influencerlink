@@ -44,8 +44,22 @@ const envSchema = z.object({
 
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /**
+   * Kampanjpengarna via Stripe Connect. Sätts till false för att köra
+   * abonnemangen mot Stripe medan kampanjbetalningarna fortfarande simuleras –
+   * till exempel medan det avgörs om utbetalningarna ska gå via Gigapay.
+   * Kräver då ALLOW_MOCK_INTEGRATIONS i produktion, precis som utan nyckel.
+   */
+  STRIPE_CAMPAIGN_PAYMENTS: booleanish.default('true'),
   STRIPE_CONNECT_RETURN_URL: z.string().default('pacta://stripe/return'),
   STRIPE_CONNECT_REFRESH_URL: z.string().default('pacta://stripe/refresh'),
+  /**
+   * Webbappens adress. Stripes betalsida skickar tillbaka hit när företaget
+   * betalat abonnemanget. Kommer anropet från en adress som redan står i
+   * CORS_ORIGINS används den i stället, så att lokalt och Netlify båda
+   * fungerar. Saknas båda används den första i CORS_ORIGINS.
+   */
+  APP_WEB_URL: z.string().url().optional(),
 
   /**
    * Supabase Storage för videoutkast. Utan dem är uppladdningen avstängd och
@@ -95,6 +109,7 @@ function loadConfig() {
     mockIntegrations.push('BankID');
   }
   if (!env.STRIPE_SECRET_KEY) mockIntegrations.push('Stripe');
+  else if (!env.STRIPE_CAMPAIGN_PAYMENTS) mockIntegrations.push('Stripe-kampanjbetalningar');
 
   if (isProduction && mockIntegrations.length > 0 && !env.ALLOW_MOCK_INTEGRATIONS) {
     throw new Error(

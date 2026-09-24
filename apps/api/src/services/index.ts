@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { Config } from '../config.js';
 import { AiService } from './ai/index.js';
 import { createBankIdClient, type BankIdClient } from './bankid/index.js';
+import { createBillingProvider, type BillingProvider } from './billing/index.js';
 import { createPaymentProvider, type PaymentProvider } from './payments/index.js';
 import { HttpOembedProvider, type OembedProvider } from './oembed.js';
 import { DemoSocialProvider, type SocialProvider } from './social/index.js';
@@ -17,6 +18,8 @@ export interface Services {
   prisma: PrismaClient;
   bankId: BankIdClient;
   payments: PaymentProvider;
+  /** Företagens månadsabonnemang. Skilt från kampanjpengarna, se billing/types.ts. */
+  billing: BillingProvider;
   ai: AiService;
   social: SocialProvider;
   oembed: OembedProvider;
@@ -34,6 +37,7 @@ export function createServices(
     prisma,
     bankId: createBankIdClient(config),
     payments: createPaymentProvider(config),
+    billing: createBillingProvider(config),
     ai: new AiService(config),
     social: new DemoSocialProvider(),
     oembed: new HttpOembedProvider(),

@@ -122,16 +122,4 @@ export class StripePaymentProvider implements PaymentProvider {
       { idempotencyKey: `refund_${paymentIntentId}` },
     );
   }
-
-  /** Verifierar webhook-signaturen och returnerar den avkodade händelsen. */
-  constructWebhookEvent(payload: Buffer, signature: string): Stripe.Event {
-    if (!this.config.STRIPE_WEBHOOK_SECRET) {
-      throw new Error('STRIPE_WEBHOOK_SECRET saknas');
-    }
-    return this.stripe.webhooks.constructEvent(
-      payload,
-      signature,
-      this.config.STRIPE_WEBHOOK_SECRET,
-    );
-  }
 }

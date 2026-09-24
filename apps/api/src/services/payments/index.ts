@@ -12,7 +12,7 @@ export { StripePaymentProvider } from './stripe.js';
  * I produktion är nyckeln obligatorisk.
  */
 export function createPaymentProvider(config: Config): PaymentProvider {
-  if (config.STRIPE_SECRET_KEY) {
+  if (config.STRIPE_SECRET_KEY && config.STRIPE_CAMPAIGN_PAYMENTS) {
     return new StripePaymentProvider(config);
   }
   // config.ts har redan avgjort om simulering får förekomma här.

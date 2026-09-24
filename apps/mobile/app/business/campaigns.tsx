@@ -315,6 +315,11 @@ function BarterMeter({ status }: { status: BarterStatus }) {
         <View style={{ flex: 1 - filled }} />
       </View>
       {status.blocker ? <Text style={styles.blocker}>{status.blocker}</Text> : null}
+      {status.pastDue ? (
+        <Text style={styles.blocker}>
+          Senaste dragningen gick inte igenom. Byt kort under Mat mot innehåll.
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -15,7 +15,22 @@ export interface BarterStatus {
   canStart: boolean;
   /** Varför inget går att starta, annars null. */
   blocker: string | null;
+  /** Nivån betalas via Stripe och kan hanteras i kundportalen. */
+  subscribed: boolean;
+  /** Nästa dragning, ISO-datum. Null om uppsagt eller inget abonnemang. */
+  renewsAt: string | null;
+  /** Sista dagen nivån gäller efter en uppsägning. */
+  cancelsAt: string | null;
+  /** Senaste dragningen misslyckades – kortet behöver bytas. */
+  pastDue: boolean;
+  /** Betalningarna går mot Stripes testläge. */
+  testMode: boolean;
 }
+
+/** Svaret när en nivå väljs: en betalsida att öppna, eller nivån bytt direkt. */
+export type BarterSubscribeResult =
+  | { kind: 'redirect'; url: string }
+  | { kind: 'updated'; status: BarterStatus };
 
 /** Hur kreatören skött sina uppdrag mot mat. */
 export interface CreatorReliabilityStats {

@@ -291,11 +291,22 @@ model BusinessProfile {
 
   /// Abonnemanget för mat mot innehåll.
   ///
-  /// Sätts tills vidare för hand av en administratör när fakturan är betald.
-  /// Stripes prenumerationer kommer när det finns kunder att ta betalt av –
-  /// att bygga återkommande betalningar för noll abonnenter är att bygga
-  /// maskineri före efterfrågan.
+  /// Speglar prenumerationen hos Stripe: den sätts när en betalning gått
+  /// igenom och nollställs när prenumerationen upphör. Stripe är facit – det
+  /// här fältet finns för att taket ska kunna räknas utan ett anrop till
+  /// Stripe för varje publicering. En administratör kan fortfarande sätta den
+  /// för hand, för företag som betalar mot faktura utanför Stripe.
   barterPlan BarterPlan @default(NONE)
+
+  /// Prenumerationen hos Stripe, om nivån betalas där.
+  stripeSubscriptionId String?   @unique
+  /// När nästa dragning sker. Visas så att ingen blir överraskad av den.
+  barterRenewsAt       DateTime?
+  /// Satt när företaget sagt upp: nivån gäller till och med det här datumet.
+  barterCancelsAt      DateTime?
+  /// Senaste dragningen misslyckades och Stripe försöker igen. Nivån gäller
+  /// under tiden, men företaget ska se att kortet behöver bytas.
+  barterPastDue        Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

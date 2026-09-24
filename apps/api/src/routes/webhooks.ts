@@ -1,18 +1,29 @@
 import type { FastifyInstance } from 'fastify';
+import Stripe from 'stripe';
 import { z } from 'zod';
 import { badRequest } from '../lib/errors.js';
 import type { Services } from '../services/index.js';
 import { markEscrowed } from '../services/payments/escrow.js';
 import { markPeriodPaid } from '../services/retainers.js';
 import { settleUsageRights } from '../services/rights.js';
-import { StripePaymentProvider } from '../services/payments/index.js';
+import { applySubscription } from '../services/billing/index.js';
 
 /**
  * Stripes webhook. Signaturen verifieras mot rå request-body, därför måste
  * den här routen ha en egen body-parser som inte gör om JSON till objekt.
  */
 export async function webhookRoutes(app: FastifyInstance, services: Services): Promise<void> {
-  const { prisma, payments } = services;
+  const { prisma, payments, billing, config } = services;
+
+  /*
+   * Signaturen kontrolleras med en egen klient, inte via betalleverantören.
+   * Abonnemangen kan gå mot Stripe medan kampanjpengarna simuleras, och då
+   * ska webhooken ändå ta emot händelser om prenumerationerna.
+   */
+  const verifier =
+    config.STRIPE_SECRET_KEY && config.STRIPE_WEBHOOK_SECRET
+      ? new Stripe(config.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' })
+      : null;
 
   app.addContentTypeParser(
     'application/json',
@@ -21,8 +32,8 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
   );
 
   app.post('/webhooks/stripe', async (request, reply) => {
-    if (!(payments instanceof StripePaymentProvider)) {
-      // Utan riktig Stripe-integration finns inget att verifiera mot.
+    if (!verifier || !config.STRIPE_WEBHOOK_SECRET) {
+      // Utan nyckel och webhook-hemlighet finns inget att verifiera mot.
       return reply.status(503).send({ error: 'not_configured', message: 'Stripe är inte konfigurerat.' });
     }
 
@@ -33,7 +44,11 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
 
     let event;
     try {
-      event = payments.constructWebhookEvent(request.body as Buffer, signature);
+      event = verifier.webhooks.constructEvent(
+        request.body as Buffer,
+        signature,
+        config.STRIPE_WEBHOOK_SECRET,
+      );
     } catch (error) {
       request.log.warn({ err: error }, 'ogiltig Stripe-signatur');
       throw badRequest('Signaturen kunde inte verifieras.');
@@ -88,6 +103,33 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
         });
         break;
       }
+      /*
+       * Abonnemanget för mat mot innehåll.
+       *
+       * Händelsens innehåll används bara för att veta vilken prenumeration det
+       * gäller – läget hämtas färskt från Stripe. Händelserna kommer inte
+       * alltid i ordning, och en sen "updated" får inte skriva över en
+       * "deleted" som redan behandlats.
+       */
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted': {
+        const snapshot = await billing.fetchSubscription(event.data.object.id);
+        if (snapshot) await applySubscription(prisma, snapshot);
+        break;
+      }
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const subscriptionId =
+          typeof session.subscription === 'string'
+            ? session.subscription
+            : session.subscription?.id;
+        if (session.mode === 'subscription' && subscriptionId) {
+          const snapshot = await billing.fetchSubscription(subscriptionId);
+          if (snapshot) await applySubscription(prisma, snapshot);
+        }
+        break;
+      }
       default:
         request.log.debug({ type: event.type }, 'obehandlad Stripe-händelse');
     }
@@ -101,6 +143,6 @@ export async function webhookRoutes(app: FastifyInstance, services: Services): P
     {
       schema: { response: { 200: z.object({ configured: z.boolean() }) } },
     },
-    async () => ({ configured: payments instanceof StripePaymentProvider }),
+    async () => ({ configured: verifier !== null }),
   );
 }

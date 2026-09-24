@@ -127,6 +127,38 @@ webbläsaren anropen och appen ser ut att hänga sig vid inloggningen.
 `/health` svarar med vilka integrationer som körs simulerat, så det går att se
 utifrån att en miljö inte är skarp.
 
+### Abonnemangen för mat mot innehåll i Stripes testläge
+
+Abonnemangen kan köras mot Stripe medan kampanjpengarna fortfarande
+simuleras. Inga priser behöver läggas upp i Stripe – API:et skapar dem själv
+första gången en nivå säljs, med beloppen från `BARTER_PLAN_SPECS`.
+
+1. Hämta testnyckeln under Developers → API keys i Stripe. Den börjar på
+   `sk_test_`.
+2. Lägg till en webhook under Developers → Webhooks:
+   - Adress: `https://ditt-api.up.railway.app/webhooks/stripe`
+   - Händelser: `checkout.session.completed`,
+     `customer.subscription.created`, `customer.subscription.updated`,
+     `customer.subscription.deleted`
+   - Kopiera signeringshemligheten, som börjar på `whsec_`.
+3. Sätt i Railway:
+
+| Variabel | Värde |
+| --- | --- |
+| `STRIPE_SECRET_KEY` | `sk_test_…` |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…` |
+| `STRIPE_CAMPAIGN_PAYMENTS` | `false` – kampanjpengarna fortsätter simuleras |
+| `APP_WEB_URL` | Webbappens adress, samma som i `CORS_ORIGINS` |
+| `ALLOW_MOCK_INTEGRATIONS` | `true` så länge kampanjpengarna simuleras |
+
+Testa sedan under Uppdrag → Mat mot innehåll med kortet
+`4242 4242 4242 4242`. Nivån slås på så fort betalsidan skickat tillbaka,
+även om webhooken inte är inlagd än – men utan webhooken märker appen inte
+när ett abonnemang sägs upp eller en dragning misslyckas.
+
+Nyckeln hör hemma i Railway och ingen annanstans. Klistra aldrig in den i en
+chatt, ett ärende eller en commit.
+
 ---
 
 ## Ordning jag skulle ta det i

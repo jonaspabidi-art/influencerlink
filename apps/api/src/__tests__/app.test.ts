@@ -6,6 +6,7 @@ import type { Config } from '../config.js';
 import { MockBankIdClient } from '../services/bankid/index.js';
 import { AiService } from '../services/ai/index.js';
 import { MockPaymentProvider } from '../services/payments/index.js';
+import { MockBillingProvider } from '../services/billing/index.js';
 import { StubOembedProvider } from '../services/oembed.js';
 import { DemoSocialProvider } from '../services/social/index.js';
 import type { Services } from '../services/index.js';
@@ -45,6 +46,7 @@ const services: Services = {
   prisma,
   bankId: new MockBankIdClient(),
   payments: new MockPaymentProvider(),
+  billing: new MockBillingProvider(),
   ai: new AiService(config),
   social: new DemoSocialProvider(),
   oembed: new StubOembedProvider(),
