@@ -1,12 +1,7 @@
-import { Redirect, Tabs } from "expo-router";
-import { useAuth } from "../../src/auth";
-import {
-  DocIcon,
-  GridIcon,
-  LockIcon,
-  UserIcon,
-} from "../../src/components/icons";
-import { useTabScreenOptions } from "../../src/components/tabs";
+import { Redirect, Tabs } from 'expo-router';
+import { useAuth } from '../../src/auth';
+import { DocIcon, GridIcon, LockIcon, UserIcon } from '../../src/components/icons';
+import { useTabScreenOptions } from '../../src/components/tabs';
 
 /**
  * Plattformsvyn, bara för ADMIN.
@@ -19,35 +14,35 @@ export default function AdminTabs() {
   const { user, loading } = useAuth();
 
   if (!loading && !user) return <Redirect href="/login" />;
-  if (!loading && user && user.role !== "ADMIN") return <Redirect href="/" />;
+  if (!loading && user && user.role !== 'ADMIN') return <Redirect href="/" />;
 
   return (
     <Tabs screenOptions={tabOptions}>
       <Tabs.Screen
         name="index"
         options={{
-          title: "Översikt",
+          title: 'Översikt',
           tabBarIcon: ({ color }) => <LockIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="businesses"
         options={{
-          title: "Företag",
+          title: 'Företag',
           tabBarIcon: ({ color }) => <GridIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="influencers"
         options={{
-          title: "Kreatörer",
+          title: 'Kreatörer',
           tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="contracts"
         options={{
-          title: "Avtal",
+          title: 'Avtal',
           tabBarIcon: ({ color }) => <DocIcon size={21} color={color} />,
         }}
       />

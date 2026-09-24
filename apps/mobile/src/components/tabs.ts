@@ -1,5 +1,5 @@
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, type } from "../theme";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, type } from '../theme';
 
 /*
  * Flikradens höjd måste räknas fram, inte skrivas in.
@@ -35,7 +35,7 @@ export function useTabScreenOptions() {
     tabBarInactiveTintColor: colors.muted,
     tabBarShowLabel: true,
     // Texten ska alltid stå under ikonen, aldrig vika ut vid sidan på en bred skärm.
-    tabBarLabelPosition: "below-icon" as const,
+    tabBarLabelPosition: 'below-icon' as const,
     /*
      * Ingen systemskalning på etiketten. Med stor systemtext växer raden förbi
      * sin höjd och klipps igen – och en förklaring som inte syns är sämre än

@@ -1,15 +1,10 @@
-import { Redirect, Tabs } from "expo-router";
-import { useEffect } from "react";
-import { useAuth } from "../../src/auth";
-import { useTour } from "../../src/tour/Tour";
-import { BUSINESS_TOUR_KEY, businessTour } from "../../src/tour/steps";
-import {
-  ChatIcon,
-  DeckIcon,
-  GridIcon,
-  UserIcon,
-} from "../../src/components/icons";
-import { useTabScreenOptions } from "../../src/components/tabs";
+import { Redirect, Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { useAuth } from '../../src/auth';
+import { useTour } from '../../src/tour/Tour';
+import { BUSINESS_TOUR_KEY, businessTour } from '../../src/tour/steps';
+import { ChatIcon, DeckIcon, GridIcon, UserIcon } from '../../src/components/icons';
+import { useTabScreenOptions } from '../../src/components/tabs';
 
 export default function BusinessTabs() {
   const tabOptions = useTabScreenOptions();
@@ -46,14 +41,14 @@ export default function BusinessTabs() {
       <Tabs.Screen
         name="discover"
         options={{
-          title: "Kreatörer",
+          title: 'Kreatörer',
           tabBarIcon: ({ color }) => <DeckIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="campaigns"
         options={{
-          title: "Uppdrag",
+          title: 'Uppdrag',
           tabBarIcon: ({ color }) => <GridIcon size={21} color={color} />,
         }}
       />
@@ -65,14 +60,14 @@ export default function BusinessTabs() {
       <Tabs.Screen
         name="collaborations"
         options={{
-          title: "Samarbeten",
+          title: 'Samarbeten',
           tabBarIcon: ({ color }) => <ChatIcon size={21} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profil",
+          title: 'Profil',
           tabBarIcon: ({ color }) => <UserIcon size={21} color={color} />,
         }}
       />
