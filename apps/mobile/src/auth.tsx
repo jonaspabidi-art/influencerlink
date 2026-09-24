@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api, setAccessToken, setUnauthorizedHandler } from './api';
+import { api, markSessionRestored, setAccessToken, setUnauthorizedHandler } from './api';
 import { clearQueryCache } from './querycache';
 import { getItem, removeItem, setItem } from './storage';
 import type { SessionUser } from './types';
@@ -60,8 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const stored = await getItem(TOKEN_KEY);
+        if (stored) setAccessToken(stored);
+        // Token är på plats (eller finns inte) – nu får skärmarna anropa servern.
+        markSessionRestored();
         if (!stored) return;
-        setAccessToken(stored);
         const me = await api.get<SessionUser>('/auth/me');
         if (!cancelled) setUser(me);
       } catch {
@@ -69,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
         await removeItem(TOKEN_KEY);
       } finally {
+        // Även om lagringen inte gick att läsa: appen får inte stå still.
+        markSessionRestored();
         if (!cancelled) setLoading(false);
       }
     })();

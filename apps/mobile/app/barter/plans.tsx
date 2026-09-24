@@ -31,10 +31,10 @@ export default function BarterPlans() {
   }>();
   const { user, loading: authLoading } = useAuth();
   /*
-   * Efter betalsidan laddas webbappen om från början, och den här skärmen
-   * ritas innan inloggningen hunnit läsas in. Ett anrop då går ut utan token,
-   * får 401 – och appen loggar ut den som just betalat. Därför väntar allt här
-   * tills sessionen är på plats.
+   * Efter betalsidan laddas webbappen om från början. Anropen väntar själva
+   * på att token lästs upp (se api.ts), men bekräftelsen ska ändå inte gå
+   * iväg förrän det är klart vem som är inloggad – den som inte är det ska
+   * till inloggningen, inte få ett felmeddelande om betalningen.
    */
   const signedIn = !authLoading && user !== null;
   const status = useQuery({ ...barterQuery(), enabled: signedIn });

@@ -35,6 +35,28 @@ export const DEMO_MODE = API_BASE_URL === null;
 let accessToken: string | null = null;
 let onUnauthorized: (() => void) | undefined;
 
+/*
+ * Inga anrop innan den sparade inloggningen är uppläst.
+ *
+ * En skärm man landar direkt på – efter TikTok-inloggningen, efter Stripes
+ * betalsida – ritas medan appen fortfarande läser upp sin token. Anropar den
+ * servern då går det ut utan inloggning, svaret blir 401 och appen loggar ut
+ * någon som var inloggad. Värst är TikTok: koden går bara att lösa in en gång,
+ * så kopplingen är förlorad också.
+ *
+ * Grinden öppnas så fort token är läst, eller konstaterats saknas. Den väntar
+ * inte på /auth/me – det anropet går själv genom grinden.
+ */
+let openSessionGate: () => void = () => undefined;
+const sessionGate = new Promise<void>((resolve) => {
+  openSessionGate = resolve;
+});
+
+/** Anropas av inloggningen när den sparade token lästs upp. Ofarlig att anropa flera gånger. */
+export function markSessionRestored(): void {
+  openSessionGate();
+}
+
 export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
@@ -51,6 +73,8 @@ interface RequestOptions {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  await sessionGate;
+
   if (DEMO_MODE) {
     try {
       return (await handleDemoRequest(options.method ?? 'GET', path, options.body, accessToken)) as T;
